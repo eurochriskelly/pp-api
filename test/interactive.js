@@ -2,7 +2,7 @@
 
  const inquirer = require('inquirer');
  const axios = require('axios');
- const chalk = require('chalk');
+ const chalk = import('chalk');
 
  const API_BASE = 'http://localhost:3000/api';
 
@@ -36,6 +36,7 @@
  };
 
  const run = async () => {
+   const { default: chalk } = await import('chalk');
    console.log(chalk.blue('\n🏆 Tournament Manager CLI 🏆\n'));
 
    while (true) {
@@ -45,9 +46,9 @@
        case 'List tournaments':
          const tournaments = await listTournaments();
          if (tournaments.length === 0) {
-           console.log(chalk.yellow('No tournaments found'));
+           console.log((await chalk).default.yellow('No tournaments found'));
          } else {
-           console.log(chalk.green('\nAvailable tournaments:'));
+           console.log((await chalk).default.green('\nAvailable tournaments:'));
            tournaments.forEach((t, i) => {
              console.log(`${i + 1}. ${t.Title} (ID: ${t.id})`);
            });
@@ -72,9 +73,9 @@
 
          try {
            const { data } = await axios.post(`${API_BASE}/tournaments`, newTournament);
-           console.log(chalk.green(`\nCreated tournament with ID: ${data.data.id}`));
+           console.log((await chalk).default.green(`\nCreated tournament with ID: ${data.data.id}`));
          } catch (error) {
-           console.error(chalk.red('Error creating tournament:', error.message));
+           console.error((await chalk).default.red('Error creating tournament:', error.message));
          }
          break;
 
@@ -96,9 +97,9 @@
 
          try {
            await axios.delete(`${API_BASE}/tournaments/${tournamentId}`);
-           console.log(chalk.green('\nTournament deleted successfully'));
+           console.log((await chalk).default.green('\nTournament deleted successfully'));
          } catch (error) {
-           console.error(chalk.red('Error deleting tournament:', error.message));
+           console.error((await chalk).default.red('Error deleting tournament:', error.message));
          }
          break;
 
@@ -120,18 +121,18 @@
 
          try {
            await axios.post(`${API_BASE}/tournaments/${resetId}/reset`);
-           console.log(chalk.green('\nTournament reset successfully'));
+           console.log((await chalk).default.green('\nTournament reset successfully'));
          } catch (error) {
-           console.error(chalk.red('Error resetting tournament:', error.message));
+           console.error((await chalk).default.red('Error resetting tournament:', error.message));
          }
          break;
 
        case 'Exit':
-         console.log(chalk.blue('\nGoodbye! 👋\n'));
+         console.log((await chalk).default.blue('\nGoodbye! 👋\n'));
          process.exit(0);
 
        default:
-         console.log(chalk.yellow('\nFeature coming soon!'));
+         console.log((await chalk).default.yellow('\nFeature coming soon!'));
      }
 
      console.log('\n');
@@ -139,7 +140,7 @@
  };
 
  run().catch(err => {
-   console.error(chalk.red('Fatal error:', err));
+   console.error((await chalk).default.red('Fatal error:', err));
    process.exit(1);
  });
 
