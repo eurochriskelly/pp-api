@@ -1,0 +1,17 @@
+{
+  "name": "pp-api",
+  "version": "1.0.0",
+  "description": "See readme.md",
+  "main": "src/server.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "backup": "bash scripts/backup.sh",
+    "start": "node src/server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
