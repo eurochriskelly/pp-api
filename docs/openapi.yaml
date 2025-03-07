@@ -1,0 +1,1876 @@
+openapi: 3.0.3
+info:
+  title: EuroTourno API
+  description: API for managing tournaments, squads, players, fixtures, and related data for the EuroTourno application.
+  version: 1.0.0
+servers:
+  - url: http://localhost:4000/api
+    description: Local development server
+paths:
+  /tournaments:
+    post:
+      summary: Create a new tournament
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TournamentCreate'
+            example:
+              title: "Spring Championship 2025"
+              date: "2025-03-01"
+              location: "London"
+              lat: 51.5074
+              lon: -0.1278
+      responses:
+        '201':
+          description: Tournament created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tournament'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: List all tournaments
+      responses:
+        '200':
+          description: List of tournaments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TournamentSummary'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{id}:
+    get:
+      summary: Get a specific tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Tournament details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Tournament'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TournamentCreate'
+            example:
+              title: "Updated Championship"
+              date: "2025-03-02"
+              location: "Paris"
+              lat: 48.8566
+              lon: 2.3522
+      responses:
+        '200':
+          description: Tournament updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tournament'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Tournament deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tournament deleted"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    paths:
+      /tournaments/{id}/fixtures:
+        delete:
+          summary: "Delete all fixtures for a tournament"
+          parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+          responses:
+            "200": { content: { "application/json": { schema: { type: object, properties: { message: { type: string } } } } } }
+            "500": { content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        post:
+          summary: "Create multiple fixtures for a tournament"
+          parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      tournamentId: { type: integer }
+                      category: { type: string }
+                      groupNumber: { type: integer }
+                      stage: { type: string }
+                      pitch: { type: string }
+                      scheduled: { type: string }
+                      started: { type: string, nullable: true }
+                      team1Planned: { type: string }
+                      team1Id: { type: string }
+                      goals1: { type: integer, nullable: true }
+                      points1: { type: integer, nullable: true }
+                      team2Planned: { type: string }
+                      team2Id: { type: string }
+                      goals2: { type: integer, nullable: true }
+                      points2: { type: integer, nullable: true }
+                      umpireTeamPlanned: { type: string }
+                      umpireTeamId: { type: string }
+          responses:
+            "201": { content: { "application/json": { schema: { type: array, items: { $ref: "#/components/schemas/Fixture" } } } } }
+            "500": { content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+      /tournaments/{id}/pitches:
+        delete:
+          summary: "Delete all pitches for a tournament"
+          parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+          responses:
+            "200": { content: { "application/json": { schema: { type: object, properties: { message: { type: string } } } } } }
+            "500": { content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        post:
+          summary: "Create multiple pitches for a tournament"
+          parameters:
+            - in: path
+              name: id
+              required: true
+              schema: { type: integer }
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Pitch"
+          responses:
+            "201": { content: { "application/json": { schema: { type: array, items: { $ref: "#/components/schemas/Pitch" } } } } }
+            "500": { content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+
+  /tournaments/{id}/cards:
+    delete:
+      summary: "Delete all cards for a tournament"
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { content: { "application/json": { schema: { type: object, properties: { message: { type: string } } } } } }
+        "500": { content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+                
+  /tournaments/{id}/reset:
+    post:
+      summary: Reset a tournament (sandbox only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID (must be 1 for sandbox)
+      responses:
+        '200':
+          description: Tournament reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tournament reset successfully"
+        '403':
+          description: Only sandbox tournament can be reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Only sandbox tournament (id=1) can be reset"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{id}/recent-matches:
+    get:
+      summary: Get recent matches for a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Recent matches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matchCount:
+                    type: integer
+                    example: 10
+                  matches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Match'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{id}/group-fixtures:
+    get:
+      summary: Get group stage fixtures for a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Group fixtures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fixture'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{id}/group-standings:
+    get:
+      summary: Get group standings for a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Group standings
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Standing'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{id}/knockout-fixtures:
+    get:
+      summary: Get knockout stage fixtures for a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Knockout fixtures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fixture'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{id}/finals-results:
+    get:
+      summary: Get finals results for a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Finals results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FinalsResult'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{id}/all-matches:
+    get:
+      summary: Get all matches for a tournament
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: All matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fixture'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/squads:
+    post:
+      summary: Create a new squad for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SquadCreate'
+            example:
+              teamName: "Red Dragons"
+              groupLetter: "A"
+              category: "Mens"
+              teamSheetSubmitted: false
+              notes: "New squad"
+      responses:
+        '201':
+          description: Squad created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Squad'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: List all squads for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: List of squads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Squad'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/squads/{id}:
+    get:
+      summary: Get a specific squad
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+      responses:
+        '200':
+          description: Squad details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Squad'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a squad
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SquadCreate'
+      responses:
+        '200':
+          description: Squad updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Squad'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a squad
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+      responses:
+        '200':
+          description: Squad deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Squad deleted"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/squads/{squadId}/players:
+    post:
+      summary: Create a new player for a squad
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: squadId
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerCreate'
+            example:
+              firstName: "John"
+              secondName: "Doe"
+              dateOfBirth: "1995-06-15"
+              foirreannId: "JD95"
+      responses:
+        '201':
+          description: Player created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: List all players for a squad
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: squadId
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+      responses:
+        '200':
+          description: List of players
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Player'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/squads/{squadId}/players/{id}:
+    get:
+      summary: Get a specific player
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: squadId
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Player ID
+      responses:
+        '200':
+          description: Player details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Player'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update a player
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: squadId
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Player ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayerCreate'
+      responses:
+        '200':
+          description: Player updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete a player
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: squadId
+          required: true
+          schema:
+            type: integer
+          description: Squad ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Player ID
+      responses:
+        '200':
+          description: Player deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Player deleted"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/fixtures:
+    get:
+      summary: Get fixtures by pitch or all for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: query
+          name: pitch
+          schema:
+            type: string
+          description: Filter by pitch name (optional)
+      responses:
+        '200':
+          description: List of fixtures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Fixture'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/fixtures/nextup:
+    get:
+      summary: Get upcoming fixtures for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Upcoming fixtures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NextUpFixture'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/fixtures/rewind:
+    post:
+      summary: Rewind the latest fixture (clear scores)
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Latest fixture rewound
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Removed score for category [Mens] fixture [123] stage [group]"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/fixtures/{id}/start:
+    post:
+      summary: Start a fixture
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Fixture ID
+      responses:
+        '200':
+          description: Fixture started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      affectedRows:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/fixtures/{id}/score:
+    post:
+      summary: Update fixture score
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Fixture ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                team1:
+                  type: object
+                  properties:
+                    goals:
+                      type: integer
+                      example: 2
+                    points:
+                      type: integer
+                      example: 5
+                team2:
+                  type: object
+                  properties:
+                    goals:
+                      type: integer
+                      example: 1
+                    points:
+                      type: integer
+                      example: 3
+              required:
+                - team1
+                - team2
+      responses:
+        '200':
+          description: Score updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Score updated successfully"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/fixtures/{id}/carded:
+    post:
+      summary: Record carded players for a fixture
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Fixture ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  playerId:
+                    type: integer
+                    example: 1
+                  cardColor:
+                    type: string
+                    enum: ["yellow", "red", "black"]
+                    example: "yellow"
+                required:
+                  - playerId
+                  - cardColor
+      responses:
+        '200':
+          description: Players carded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      affectedRows:
+                        type: integer
+                        example: 2
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/carded-players:
+    get:
+      summary: Get all carded players for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: List of carded players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardedPlayer'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/matches-by-pitch:
+    get:
+      summary: Get matches grouped by pitch for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Matches by pitch
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Fixture'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/pitches:
+    get:
+      summary: Get pitches for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: List of pitches or pitch events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/Pitch'
+                        - $ref: '#/components/schemas/PitchEvent'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/standings:
+    get:
+      summary: Get standings for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter by category (optional)
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: ["json", "csv", "xlsx"]
+            default: "json"
+          description: Response format
+      responses:
+        '200':
+          description: Tournament standings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Standing'
+            text/csv:
+              schema:
+                type: string
+                example: "category,grp,team,MatchesPlayed,Wins,Draws,Losses,PointsFrom,PointsDifference,TotalPoints\n..."
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/groups:
+    get:
+      summary: Get distinct group categories for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: List of group categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category:
+                          type: string
+                          example: "Mens"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/results/{category}:
+    get:
+      summary: Get match results for a tournament category
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+        - in: path
+          name: category
+          required: true
+          schema:
+            type: string
+          description: Category (e.g., "Mens")
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum: ["json", "csv", "xlsx"]
+            default: "json"
+          description: Response format
+      responses:
+        '200':
+          description: Match results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MatchResult'
+            text/csv:
+              schema:
+                type: string
+                example: "tournamentId,category,id,w1,team1,score1,stage,score2,team2,w2\n..."
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tournaments/{tournamentId}/categories:
+    get:
+      summary: Get categories for a tournament
+      parameters:
+        - in: path
+          name: tournamentId
+          required: true
+          schema:
+            type: integer
+          description: Tournament ID
+      responses:
+        '200':
+          description: Tournament categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /regions:
+    get:
+      summary: List all regions
+      responses:
+        '200':
+          description: List of formatted regions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+                      example: "Europe%UK"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /regions/{region}:
+    get:
+      summary: Get region information
+      parameters:
+        - in: path
+          name: region
+          required: true
+          schema:
+            type: string
+          description: Region (e.g., "Europe" or "Europe%UK")
+        - in: query
+          name: sex
+          schema:
+            type: string
+            enum: ["male", "female"]
+          description: Filter by sex (optional)
+        - in: query
+          name: sport
+          schema:
+            type: string
+            enum: ["hurling", "football", "handball", "rounders"]
+          description: Filter by sport (optional)
+        - in: query
+          name: level
+          schema:
+            type: string
+            enum: ["youth", "adult"]
+          description: Filter by level (optional)
+      responses:
+        '200':
+          description: Region club teams
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  header:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        example: 5
+                      region:
+                        type: string
+                        example: "Europe"
+                      subregion:
+                        type: string
+                        example: "UK"
+                        nullable: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClubTeam'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  example: "password123"
+              required:
+                - email
+                - password
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  email:
+                    type: string
+                    example: "user@example.com"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /upload:
+    post:
+      summary: Upload a file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+      responses:
+        '200':
+          description: File uploaded and logged
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "File received and contents logged."
+        '500':
+          description: Error reading file
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Error reading file"
+
+components:
+  schemas:
+    TournamentCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        date:
+          type: string
+          format: date
+        location:
+          type: string
+        lat:
+          type: number
+          format: float
+        lon:
+          type: number
+          format: float
+      required:
+        - title
+        - date
+        - location
+
+    TournamentSummary:
+      type: object
+      properties:
+        Id:
+          type: integer
+        Date:
+          type: string
+          format: date
+        Title:
+          type: string
+        Location:
+          type: string
+
+    Tournament:
+      type: object
+      properties:
+        id:
+          type: integer
+        Date:
+          type: string
+          format: date
+        Title:
+          type: string
+        Location:
+          type: string
+        Lat:
+          type: number
+          format: float
+        Lon:
+          type: number
+          format: float
+        squads:
+          type: array
+          items:
+            $ref: '#/components/schemas/Squad'
+        pitches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pitch'
+        groups:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupStanding'
+
+    SquadCreate:
+      type: object
+      properties:
+        teamName:
+          type: string
+        groupLetter:
+          type: string
+        category:
+          type: string
+        teamSheetSubmitted:
+          type: boolean
+        notes:
+          type: string
+      required:
+        - teamName
+
+    Squad:
+      type: object
+      properties:
+        id:
+          type: integer
+        teamName:
+          type: string
+        groupLetter:
+          type: string
+        category:
+          type: string
+        teamSheetSubmitted:
+          type: boolean
+        notes:
+          type: string
+        tournamentId:
+          type: integer
+
+    PlayerCreate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        secondName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        foirreannId:
+          type: string
+      required:
+        - firstName
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        secondName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        foirreannId:
+          type: string
+        teamId:
+          type: integer
+
+    Match:
+      type: object
+      properties:
+        id:
+          type: integer
+        start:
+          type: string
+          example: "14:30"
+        pitch:
+          type: string
+        grp:
+          type: integer
+        stage:
+          type: string
+        competition:
+          type: string
+        team1:
+          type: string
+        score1:
+          type: string
+          example: "2-05 (11)"
+        team2:
+          type: string
+        score2:
+          type: string
+          example: "1-03 (6)"
+        umpireTeam:
+          type: string
+
+    Fixture:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+        g:
+          type: integer
+        pitch:
+          type: string
+        stage:
+          type: string
+        scheduledTime:
+          type: string
+        team1:
+          type: string
+        goals1:
+          type: integer
+          nullable: true
+        points1:
+          type: integer
+          nullable: true
+        team2:
+          type: string
+        goals2:
+          type: integer
+          nullable: true
+        points2:
+          type: integer
+          nullable: true
+        umpireTeam:
+          type: string
+        started:
+          type: string
+          enum: ["true", "false"]
+
+    Standing:
+      type: object
+      properties:
+        category:
+          type: string
+        grp:
+          type: integer
+        team:
+          type: string
+        tournamentId:
+          type: integer
+        MatchesPlayed:
+          type: integer
+        Wins:
+          type: integer
+        Draws:
+          type: integer
+        Losses:
+          type: integer
+        PointsFrom:
+          type: integer
+        PointsDifference:
+          type: integer
+        TotalPoints:
+          type: integer
+
+    FinalsResult:
+      type: object
+      properties:
+        category:
+          type: string
+        division:
+          type: string
+        team1:
+          type: string
+        goals1:
+          type: integer
+        points1:
+          type: integer
+        team2:
+          type: string
+        goals2:
+          type: integer
+        points2:
+          type: integer
+        winner:
+          type: string
+
+    CardedPlayer:
+      type: object
+      properties:
+        playerId:
+          type: integer
+        firstName:
+          type: string
+        secondName:
+          type: string
+        team:
+          type: string
+        cardColor:
+          type: string
+          enum: ["yellow", "red", "black"]
+
+    Pitch:
+      type: object
+      properties:
+        id:
+          type: integer
+        pitch:
+          type: string
+        location:
+          type: string
+        type:
+          type: string
+          enum: ["grass", "astro"]
+        tournamentId:
+          type: integer
+
+    PitchEvent:
+      type: object
+      properties:
+        pitch:
+          type: string
+        location:
+          type: string
+        type:
+          type: string
+          enum: ["grass", "astro"]
+        tournamentId:
+          type: integer
+        category:
+          type: string
+        team1:
+          type: string
+        team2:
+          type: string
+        startedTime:
+          type: string
+          nullable: true
+        scheduledTime:
+          type: string
+
+    NextUpFixture:
+      type: object
+      properties:
+        tournamentId:
+          type: integer
+        category:
+          type: string
+        pitch:
+          type: string
+        scheduledTime:
+          type: string
+        startedTime:
+          type: string
+          nullable: true
+        grp:
+          type: integer
+        team1:
+          type: string
+        team2:
+          type: string
+        umpireTeam:
+          type: string
+        goals1:
+          type: integer
+          nullable: true
+        points1:
+          type: integer
+          nullable: true
+        goals2:
+          type: integer
+          nullable: true
+        points2:
+          type: integer
+          nullable: true
+        matchId:
+          type: integer
+        isType:
+          type: string
+          enum: ["ranked", "recent"]
+
+    MatchResult:
+      type: object
+      properties:
+        tournamentId:
+          type: integer
+        category:
+          type: string
+        id:
+          type: string
+        w1:
+          type: string
+        team1:
+          type: string
+        score1:
+          type: string
+        stage:
+          type: string
+        score2:
+          type: string
+        team2:
+          type: string
+        w2:
+          type: string
+
+    Category:
+      type: object
+      properties:
+        tournamentId:
+          type: integer
+        category:
+          type: string
+        latestStage:
+          type: string
+        totalGames:
+          type: integer
+        currentGame:
+          type: integer
+        brackets:
+          type: array
+          items:
+            type: string
+
+    ClubTeam:
+      type: object
+      properties:
+        clubId:
+          type: integer
+        clubName:
+          type: string
+        post_code:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        subregion:
+          type: string
+        clubStatus:
+          type: string
+        domain:
+          type: string
+        teamId:
+          type: integer
+        teamName:
+          type: string
+        category:
+          type: string
+        teamStatus:
+          type: string
+
+    GroupStanding:
+      type: object
+      properties:
+        category:
+          type: string
+        grp:
+          type: integer
+        team:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
