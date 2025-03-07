@@ -1,6 +1,6 @@
 const mysql = require("mysql");
 const { processArgs } = require("./lib/process-args");
-const { dbConf } = require("../../config/config");
+const { dbConf } = require("../config");
 const apiSetup = require("./api/index");
 const ARGS = processArgs(process.argv);
 
