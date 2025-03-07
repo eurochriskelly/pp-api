@@ -10,6 +10,7 @@
   },
   "scripts": {
     "backup": "bash scripts/backup.sh",
+    "interactive": "bash test/interactive",
     "start": "node src/server.js"
   },
   "author": "",
