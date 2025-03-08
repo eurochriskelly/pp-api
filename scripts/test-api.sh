@@ -30,8 +30,13 @@ case $API in
             TOURNAMENT_ID=$(echo "$*" | grep -oP '(?<=--tournamentId=)[0-9]+')
         fi
         
-        curl -s "${PROTOCOL}://${HOST}:${PORT}/api/tournaments/${TOURNAMENT_ID}/nextup"
-        echo
+        echo -e "\nCalling API: ${PROTOCOL}://${HOST}:${PORT}/api/tournaments/${TOURNAMENT_ID}/fixtures/nextup"
+        echo "Fetching next matches for tournament ID: ${TOURNAMENT_ID}"
+        
+        response=$(curl -s -w "\nHTTP Status: %{http_code}\n" "${PROTOCOL}://${HOST}:${PORT}/api/tournaments/${TOURNAMENT_ID}/fixtures/nextup")
+        
+        echo -e "\nResponse:"
+        echo "$response"
         ;;
     *)
         echo "Unknown API endpoint"
