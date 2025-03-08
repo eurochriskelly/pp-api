@@ -42,3 +42,70 @@ umpireTeamId AS umpireTeam,
 CASE WHEN goals1 IS NOT NULL AND points1 IS NOT NULL AND goals2 IS NOT NULL AND points2 IS NOT NULL THEN TRUE ELSE FALSE END AS played
 FROM fixtures 
 ORDER BY scheduled;
+
+CREATE ALGORITHM=UNDEFINED 
+DEFINER=`root`@`localhost` 
+SQL SECURITY DEFINER 
+VIEW `v_next_up` AS 
+
+WITH RankedFixtures AS (
+    SELECT 
+        vfi.tournamentId,
+        vfi.category,
+        vfi.pitch,
+        vfi.scheduledTime,
+        vfi.startedTime,
+        vfi.groupNumber AS grp,
+        vfi.team1,
+        vfi.team2,
+        vfi.umpireTeam,
+        vfi.goals1,
+        vfi.points1,
+        vfi.goals2,
+        vfi.points2,
+        vfi.id AS matchId,
+        'ranked' AS isType,
+        ROW_NUMBER() OVER (
+            PARTITION BY vfi.category 
+            ORDER BY vfi.scheduledTime
+        ) AS rn
+    FROM v_fixture_information vfi
+    WHERE vfi.played = 0
+),
+
+RecentPlayedFixtures AS (
+    SELECT 
+        vfi.tournamentId,
+        vfi.category,
+        vfi.pitch,
+        vfi.scheduledTime,
+        vfi.startedTime,
+        vfi.groupNumber AS grp,
+        vfi.team1,
+        vfi.team2,
+        vfi.umpireTeam,
+        vfi.goals1,
+        vfi.points1,
+        vfi.goals2,
+        vfi.points2,
+        vfi.id AS matchId,
+        'recent' AS isType,
+        ROW_NUMBER() OVER (
+            PARTITION BY vfi.category 
+            ORDER BY vfi.startedTime DESC
+        ) AS rn
+    FROM v_fixture_information vfi
+    WHERE vfi.played = 1
+)
+
+SELECT * 
+FROM RankedFixtures 
+WHERE rn <= 3
+
+UNION ALL
+
+SELECT * 
+FROM RecentPlayedFixtures 
+WHERE rn = 1
+
+ORDER BY category, scheduledTime;

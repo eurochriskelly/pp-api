@@ -1,7 +1,6 @@
 const { promisify } = require("util");
 const { mysqlCurrentTime } = require("../../lib/utils");
 const { calculateRankings } = require('../../lib/queries');
-console.log('TEST TEST TEST')
 
 module.exports = (db) => {
   const query = promisify(db.query).bind(db);
@@ -413,10 +412,44 @@ module.exports = (db) => {
     },
 
     getNextFixtures: async (tournamentId) => {
-      return await query(
-        `SELECT * FROM v_next_up WHERE tournamentId = ? ORDER BY scheduledTime ASC`,
-        [tournamentId]
-      );
+      const rows = (t) => `
+        vfi.tournamentId,
+        vfi.category, 
+        vfi.pitch,
+        vfi.scheduledTime, vfi.startedTime,
+        vfi.groupNumber AS grp, vfi.team1, vfi.team2, vfi.umpireTeam, 
+        vfi.goals1, vfi.points1, vfi.goals2, vfi.points2, 
+        vfi.id AS matchId,
+        '${t}' AS isType,
+     `
+      const q = `
+        WITH RankedFixtures AS (
+            SELECT ${rows('ranked')}
+                ROW_NUMBER() OVER (
+                    PARTITION BY vfi.category 
+                    ORDER BY vfi.scheduledTime
+                ) AS rn
+            FROM (select * from v_fixture_information where tournamentId=${tournamentId}) vfi
+            WHERE vfi.played = 0
+        ),
+
+        RecentPlayedFixtures AS (
+            SELECT ${rows('recent')}
+                ROW_NUMBER() OVER (
+                    PARTITION BY vfi.category 
+                    ORDER BY vfi.startedTime DESC
+                ) AS rn
+            FROM (select * from v_fixture_information where tournamentId=${tournamentId}) vfi
+            WHERE vfi.played = 1
+        )
+
+        SELECT * FROM RankedFixtures WHERE rn <= 3
+        UNION ALL
+        SELECT * FROM RecentPlayedFixtures WHERE rn = 1
+
+        ORDER BY category, scheduledTime;
+      `
+      return await query(q, [tournamentId]);
     },
 
     rewindLatestFixture: async (tournamentId) => {
