@@ -1,0 +1,21 @@
+FinalsResult:
+  type: object
+  properties:
+    category:
+      type: string
+    division:
+      type: string
+    team1:
+      type: string
+    goals1:
+      type: integer
+    points1:
+      type: integer
+    team2:
+      type: string
+    goals2:
+      type: integer
+    points2:
+      type: integer
+    winner:
+      type: string

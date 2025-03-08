@@ -10,8 +10,17 @@
   },
   "scripts": {
     "backup": "bash scripts/backup.sh",
+    "interactive": "node test/interactive.js",
     "start": "node src/server.js"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.8.2",
+    "express": "^4.21.2",
+    "inquirer": "^12.4.2",
+    "morgan": "^1.10.0",
+    "mysql": "^2.18.1",
+    "xlsx": "^0.18.5"
+  }
 }

@@ -1,0 +1,21 @@
+TournamentCreate:
+  type: object
+  properties:
+    title:
+      type: string
+    date:
+      type: string
+      format: date
+    location:
+      type: string
+    lat:
+      type: number
+      format: float
+    lon:
+      type: number
+      format: float
+  required:
+    - title
+    - date
+    - location
+

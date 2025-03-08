@@ -1,0 +1,29 @@
+Match:
+  type: object
+  properties:
+    id:
+      type: integer
+    start:
+      type: string
+      example: "14:30"
+    pitch:
+      type: string
+    grp:
+      type: integer
+    stage:
+      type: string
+    competition:
+      type: string
+    team1:
+      type: string
+    score1:
+      type: string
+      example: "2-05 (11)"
+    team2:
+      type: string
+    score2:
+      type: string
+      example: "1-03 (6)"
+    umpireTeam:
+      type: string
+
