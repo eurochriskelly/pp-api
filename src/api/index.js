@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 module.exports = (db, ARGS) => {
   console.log("Setting up API endpoints ...");
   app.use(morgan('dev'));
-  app.use(express.static(path.join(__dirname, ARGS.staticPath)));
+  app.use(express.static(ARGS.staticPath));
 
   // Direct endpoint (unchanged)
   app.post("/api/upload", (req, res) => {
@@ -45,7 +45,7 @@ module.exports = (db, ARGS) => {
   app.get("*", (req, res) => {
     console.log(`Catch-all triggered: Requested path -> ${req.path}`);
     console.log(`Serving [${ARGS.staticPath}]`);  
-    res.sendFile(path.join(__dirname, ARGS.staticPath + "/index.html"));
+    res.sendFile(ARGS.staticPath + "/index.html");
   });
 
   // Global error handler
