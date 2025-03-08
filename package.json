@@ -12,7 +12,8 @@
     "backup": "bash scripts/backup.sh",
     "interactive": "node test/interactive.js",
     "start": "node src/server.js",
-    "api": "bash scripts/host-api.sh"
+    "api": "bash scripts/host-api.sh",
+    "test:api": "bash scripts/test-api.sh"
   },
   "author": "",
   "license": "ISC",
