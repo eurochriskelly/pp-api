@@ -1,0 +1,118 @@
+/tournaments:
+  post:
+    summary: Create a new tournament
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/TournamentCreate.yaml"
+    responses:
+      "201":
+        description: Tournament created successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Tournament.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+  get:
+    summary: List all tournaments
+    responses:
+      "200":
+        description: List of tournaments
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "../components/schemas/TournamentSummary.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+  
+/tournaments/{id}:
+  get:
+    summary: Get a specific tournament
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+    responses:
+      "200":
+        description: Tournament details
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Tournament.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+  put:
+    summary: Update a tournament
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/TournamentCreate.yaml"
+    responses:
+      "200":
+        description: Tournament updated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Tournament.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+  delete:
+    summary: Delete a tournament
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+    responses:
+      "200":
+        description: Tournament deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Tournament deleted"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"

@@ -1,0 +1,38 @@
+Fixture:
+  type: object
+  properties:
+    id:
+      type: integer
+    category:
+      type: string
+    g:
+      type: integer
+    pitch:
+      type: string
+    stage:
+      type: string
+    scheduledTime:
+      type: string
+    team1:
+      type: string
+    goals1:
+      type: integer
+      nullable: true
+    points1:
+      type: integer
+      nullable: true
+    team2:
+      type: string
+    goals2:
+      type: integer
+      nullable: true
+    points2:
+      type: integer
+      nullable: true
+    umpireTeam:
+      type: string
+    started:
+      type: string
+      enum: ["true", "false"]
+
+
