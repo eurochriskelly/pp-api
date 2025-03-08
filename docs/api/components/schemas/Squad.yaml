@@ -1,0 +1,17 @@
+Squad:
+  type: object
+  properties:
+    id:
+      type: integer
+    teamName:
+      type: string
+    groupLetter:
+      type: string
+    category:
+      type: string
+    teamSheetSubmitted:
+      type: boolean
+    notes:
+      type: string
+    tournamentId:
+      type: integer

@@ -1,0 +1,15 @@
+PlayerCreate:
+  type: object
+  properties:
+    firstName:
+      type: string
+    secondName:
+      type: string
+    dateOfBirth:
+      type: string
+      format: date
+    foirreannId:
+      type: string
+  required:
+    - firstName
+

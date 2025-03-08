@@ -1,0 +1,15 @@
+Pitch:
+  type: object
+  properties:
+    id:
+      type: integer
+    pitch:
+      type: string
+    location:
+      type: string
+    type:
+      type: string
+      enum: ["grass", "astro"]
+    tournamentId:
+      type: integer
+
