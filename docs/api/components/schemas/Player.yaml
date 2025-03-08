@@ -1,0 +1,17 @@
+Player:
+  type: object
+  properties:
+    id:
+      type: integer
+    firstName:
+      type: string
+    secondName:
+      type: string
+    dateOfBirth:
+      type: string
+      format: date
+    foirreannId:
+      type: string
+    teamId:
+      type: integer
+

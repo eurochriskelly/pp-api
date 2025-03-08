@@ -1,0 +1,23 @@
+PitchEvent:
+  type: object
+  properties:
+    pitch:
+      type: string
+    location:
+      type: string
+    type:
+      type: string
+      enum: ["grass", "astro"]
+    tournamentId:
+      type: integer
+    category:
+      type: string
+    team1:
+      type: string
+    team2:
+      type: string
+    startedTime:
+      type: string
+      nullable: true
+    scheduledTime:
+      type: string

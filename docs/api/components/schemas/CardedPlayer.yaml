@@ -1,0 +1,15 @@
+CardedPlayer:
+  type: object
+  properties:
+    playerId:
+      type: integer
+    firstName:
+      type: string
+    secondName:
+      type: string
+    team:
+      type: string
+    cardColor:
+      type: string
+      enum: ["yellow", "red", "black"]
+

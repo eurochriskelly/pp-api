@@ -1,0 +1,10 @@
+GroupStanding:
+  type: object
+  properties:
+    category:
+      type: string
+    grp:
+      type: integer
+    team:
+      type: string
+

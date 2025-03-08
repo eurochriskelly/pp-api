@@ -1,0 +1,12 @@
+TournamentSummary:
+  type: object
+  properties:
+    id:
+      type: integer
+    date:
+      type: string
+      format: date
+    title:
+      type: string
+    location:
+      type: string

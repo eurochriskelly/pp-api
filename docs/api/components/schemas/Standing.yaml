@@ -1,0 +1,25 @@
+Standing:
+  type: object
+  properties:
+    category:
+      type: string
+    grp:
+      type: integer
+    team:
+      type: string
+    tournamentId:
+      type: integer
+    MatchesPlayed:
+      type: integer
+    Wins:
+      type: integer
+    Draws:
+      type: integer
+    Losses:
+      type: integer
+    PointsFrom:
+      type: integer
+    PointsDifference:
+      type: integer
+    TotalPoints:
+      type: integer

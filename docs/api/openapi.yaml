@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+  title: EuroTourno API
+  description: API for managing tournaments, squads, players, fixtures, and related data for the EuroTourno application.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:4000/api
+    description: Local development server
+
+paths:
+  /tournaments:
+    $ref: './paths/tournaments.yaml'
+  /tournaments/{tournamentId}/squads:
+    $ref: './paths/squads.yaml'
+  /tournaments/{tournamentId}/squads/{squadId}/players:
+    $ref: './paths/players.yaml'
+  /tournaments/{tournamentId}/fixtures:
+    $ref: './paths/fixtures.yaml'
+  /regions:
+    $ref: './paths/regions.yaml'
+  /auth/login:
+    $ref: './paths/auth.yaml'
+  /upload:
+    $ref: './paths/uploads.yaml'
+
+components:
+  schemas:
+    TournamentCreate:
+      $ref: './components/schemas/TournamentCreate.yaml'
+    TournamentSummary:
+      $ref: './components/schemas/TournamentSummary.yaml'
+    Tournament:
+      $ref: './components/schemas/Tournament.yaml'
+    SquadCreate:
+      $ref: './components/schemas/SquadCreate.yaml'
+    Squad:
+      $ref: './components/schemas/Squad.yaml'
+    PlayerCreate:
+      $ref: './components/schemas/PlayerCreate.yaml'
+    Player:
+      $ref: './components/schemas/Player.yaml'
+    Match:
+      $ref: './components/schemas/Match.yaml'
+    Fixture:
+      $ref: './components/schemas/Fixture.yaml'
+    Standing:
+      $ref: './components/schemas/Standing.yaml'
+    FinalsResult:
+      $ref: './components/schemas/FinalsResult.yaml'
+    CardedPlayer:
+      $ref: './components/schemas/CardedPlayer.yaml'
+    Pitch:
+      $ref: './components/schemas/Pitch.yaml'
+    PitchEvent:
+      $ref: './components/schemas/PitchEvent.yaml'
+    NextUpFixture:
+      $ref: './components/schemas/NextUpFixture.yaml'
+    MatchResult:
+      $ref: './components/schemas/MatchResult.yaml'
+    Category:
+      $ref: './components/schemas/Category.yaml'
+    ClubTeam:
+      $ref: './components/schemas/ClubTeam.yaml'
+    GroupStanding:
+      $ref: './components/schemas/GroupStanding.yaml'
+    Error:
+      $ref: './components/schemas/Error.yaml'

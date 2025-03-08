@@ -1,0 +1,17 @@
+Category:
+  type: object
+  properties:
+    tournamentId:
+      type: integer
+    category:
+      type: string
+    latestStage:
+      type: string
+    totalGames:
+      type: integer
+    currentGame:
+      type: integer
+    brackets:
+      type: array
+      items:
+        type: string

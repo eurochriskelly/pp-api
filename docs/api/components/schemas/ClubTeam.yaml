@@ -1,0 +1,30 @@
+ClubTeam:
+  type: object
+  properties:
+    clubId:
+      type: integer
+    clubName:
+      type: string
+    post_code:
+      type: string
+    country:
+      type: string
+    city:
+      type: string
+    region:
+      type: string
+    subregion:
+      type: string
+    clubStatus:
+      type: string
+    domain:
+      type: string
+    teamId:
+      type: integer
+    teamName:
+      type: string
+    category:
+      type: string
+    teamStatus:
+      type: string
+

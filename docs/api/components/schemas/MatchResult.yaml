@@ -1,0 +1,24 @@
+MatchResult:
+  type: object
+  properties:
+    tournamentId:
+      type: integer
+    category:
+      type: string
+    id:
+      type: string
+    w1:
+      type: string
+    team1:
+      type: string
+    score1:
+      type: string
+    stage:
+      type: string
+    score2:
+      type: string
+    team2:
+      type: string
+    w2:
+      type: string
+

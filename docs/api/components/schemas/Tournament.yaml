@@ -1,0 +1,30 @@
+Tournament:
+  type: object
+  properties:
+    id:
+      type: integer
+    date:
+      type: string
+      format: date
+    title:
+      type: string
+    location:
+      type: string
+    lat:
+      type: number
+      format: float
+    lon:
+      type: number
+      format: float
+    squads:
+      type: array
+      items:
+        $ref: "#/Squad"
+    pitches:
+      type: array
+      items:
+        $ref: "#/Pitch"
+    groups:
+      type: array
+      items:
+        $ref: "#/GroupStanding"

@@ -1,0 +1,16 @@
+SquadCreate:
+  type: object
+  properties:
+    teamName:
+      type: string
+    groupLetter:
+      type: string
+    category:
+      type: string
+    teamSheetSubmitted:
+      type: boolean
+    notes:
+      type: string
+  required:
+    - teamName
+

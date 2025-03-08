@@ -1,0 +1,40 @@
+NextUpFixture:
+  type: object
+  properties:
+    tournamentId:
+      type: integer
+    category:
+      type: string
+    pitch:
+      type: string
+    scheduledTime:
+      type: string
+    startedTime:
+      type: string
+      nullable: true
+    grp:
+      type: integer
+    team1:
+      type: string
+    team2:
+      type: string
+    umpireTeam:
+      type: string
+    goals1:
+      type: integer
+      nullable: true
+    points1:
+      type: integer
+      nullable: true
+    goals2:
+      type: integer
+      nullable: true
+    points2:
+      type: integer
+      nullable: true
+    matchId:
+      type: integer
+    isType:
+      type: string
+      enum: ["ranked", "recent"]
+

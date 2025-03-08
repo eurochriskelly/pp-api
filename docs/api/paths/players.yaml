@@ -1,0 +1,182 @@
+/tournaments/{tournamentId}/squads/{squadId}/players:
+  post:
+    summary: Create a new player for a squad
+    parameters:
+      - in: path
+        name: tournamentId
+        required: true
+        schema:
+          type: integer
+        description: Tournament ID
+      - in: path
+        name: squadId
+        required: true
+        schema:
+          type: integer
+        description: Squad ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/PlayerCreate.yaml"
+    responses:
+      "201":
+        description: Player created
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Player.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+  get:
+    summary: List all players for a squad
+    parameters:
+      - in: path
+        name: tournamentId
+        required: true
+        schema:
+          type: integer
+        description: Tournament ID
+      - in: path
+        name: squadId
+        required: true
+        schema:
+          type: integer
+        description: Squad ID
+    responses:
+      "200":
+        description: List of players
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "../components/schemas/Player.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+/tournaments/{tournamentId}/squads/{squadId}/players/{id}:
+  get:
+    summary: Get a specific player
+    parameters:
+      - in: path
+        name: tournamentId
+        required: true
+        schema:
+          type: integer
+        description: Tournament ID
+      - in: path
+        name: squadId
+        required: true
+        schema:
+          type: integer
+        description: Squad ID
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Player ID
+    responses:
+      "200":
+        description: Player details
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Player.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+  put:
+    summary: Update a player
+    parameters:
+      - in: path
+        name: tournamentId
+        required: true
+        schema:
+          type: integer
+        description: Tournament ID
+      - in: path
+        name: squadId
+        required: true
+        schema:
+          type: integer
+        description: Squad ID
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Player ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/PlayerCreate.yaml"
+    responses:
+      "200":
+        description: Player updated
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Player.yaml"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
+
+  delete:
+    summary: Delete a player
+    parameters:
+      - in: path
+        name: tournamentId
+        required: true
+        schema:
+          type: integer
+        description: Tournament ID
+      - in: path
+        name: squadId
+        required: true
+        schema:
+          type: integer
+        description: Squad ID
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Player ID
+    responses:
+      "200":
+        description: Player deleted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Player deleted"
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              $ref: "../components/schemas/Error.yaml"
