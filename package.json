@@ -13,6 +13,7 @@
     "interactive": "node test/interactive.js",
     "start": "node src/server.js",
     "api": "bash scripts/host-api.sh",
+    "fixtures-to-acc": "bash scripts/transfer-fixtures-to-acc.sh",
     "test:api": "bash scripts/test-api.sh"
   },
   "author": "",

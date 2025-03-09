@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: EuroTourno API
+  title: Gaelic Tournametn API
   description: API for managing tournaments, squads, players, fixtures, and related data for the EuroTourno application.
   version: 1.0.0
 
