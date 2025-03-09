@@ -38,7 +38,7 @@ JOIN clubTeams ct ON c.clubId = ct.clubId;
 CREATE VIEW `v_fixture_information` AS 
 SELECT id, tournamentId, category, groupNumber, pitch, stage, scheduled, TIME_FORMAT(scheduled, '%H:%i') AS scheduledTime,
 started, TIME_FORMAT(started, '%H:%i') AS startedTime, team1Id AS team1, goals1, points1, team2Id AS team2, goals2, points2,
-umpireTeamId AS umpireTeam,
+umpireTeamId AS umpireTeam, outcome,
 CASE WHEN goals1 IS NOT NULL AND points1 IS NOT NULL AND goals2 IS NOT NULL AND points2 IS NOT NULL THEN TRUE ELSE FALSE END AS played
 FROM fixtures 
 ORDER BY scheduled;
