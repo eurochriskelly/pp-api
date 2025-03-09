@@ -339,7 +339,7 @@ module.exports = (db) => {
                 IF(started IS NULL, 'false', 'true') AS started 
          FROM v_fixture_information 
          WHERE tournamentId = ? 
-         ORDER BY scheduledTime`,
+         ORDER BY scheduledTime, id`,
         [id]
       );
     },
@@ -421,7 +421,8 @@ module.exports = (db) => {
         vfi.goals1, vfi.points1, vfi.goals2, vfi.points2, 
         vfi.id AS matchId,
         '${t}' AS isType,
-     `
+      `
+
       const q = `
         WITH RankedFixtures AS (
             SELECT ${rows('ranked')}
@@ -447,7 +448,7 @@ module.exports = (db) => {
         UNION ALL
         SELECT * FROM RecentPlayedFixtures WHERE rn = 1
 
-        ORDER BY category, scheduledTime;
+        ORDER BY scheduledTime, matchId;
       `
       return await query(q, [tournamentId]);
     },
@@ -475,6 +476,7 @@ module.exports = (db) => {
     },
 
     updateScore: async (id, team1, team2, tournamentId) => {
+      console.log('Settings scrs ......', team1, team2)
       console.log(`Settings score for fixture [${id}], Team1 [${team1.name}] vs Team2 [${team2.name}] with scores ${team1.goals}-${team1.points} and ${team2.goals}-${team2.points}`);
       const t = mysqlCurrentTime();
       await query(
