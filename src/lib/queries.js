@@ -45,22 +45,23 @@ module.exports = {
     goalsPoints = 3, pointsPoints = 1
   )  => {
     const t1Score = `((f.goals1 * ${goalsPoints}) + (f.points1 * ${pointsPoints}))`
-    const t2Score = `((f.goals1 * ${goalsPoints}) + (f.points1 * ${pointsPoints}))`
-    return `(
+    const t2Score = `((f.goals2 * ${goalsPoints}) + (f.points2 * ${pointsPoints}))`
+    const query = `
+      (
       SELECT 
-          combined.category AS category,
-          combined.grp AS grp,
-          combined.team AS team,
-          combined.tournamentId AS tournamentId,
-          SUM(combined.MatchesPlayed) AS MatchesPlayed,
-          SUM(combined.Wins) AS Wins,
-          SUM(combined.Draws) AS Draws,
-          SUM(combined.Losses) AS Losses,
-          SUM(combined.PointsFrom) AS PointsFrom,
-          SUM(combined.PointsDifference) AS PointsDifference,
-          SUM(combined.TotalPoints) AS TotalPoints
+          c.category,
+          c.grp,
+          c.team,
+          c.tournamentId,
+          SUM(c.MatchesPlayed) AS MatchesPlayed,
+          SUM(c.Wins) AS Wins,
+          SUM(c.Draws) AS Draws,
+          SUM(c.Losses) AS Losses,
+          SUM(c.PointsFrom) AS PointsFrom,
+          SUM(c.PointsDifference) AS PointsDifference,
+          SUM(c.TotalPoints) AS TotalPoints
       FROM (
-          -- Stats for Team 1
+          -- Stats for team1
           SELECT 
               f.category,
               f.groupNumber AS grp,
@@ -79,13 +80,13 @@ module.exports = {
                       ELSE ${lossAward} 
                   END
               ) AS TotalPoints
-          FROM AccTourno.fixtures f
+          FROM fixtures f
           WHERE f.stage = 'group'
           GROUP BY f.category, f.groupNumber, f.team1Id, f.tournamentId
 
           UNION ALL
 
-          -- Stats for Team 2
+          -- Stats for team2
           SELECT 
               f.category,
               f.groupNumber AS grp,
@@ -99,20 +100,24 @@ module.exports = {
               SUM(${t2Score} - ${t1Score}) AS PointsDifference,
               SUM(
                   CASE 
-                      WHEN ${t2Score} > ${t1Score} THEN ${winAward} 
+                      WHEN ${t2Score} > ${t1Score} THEN ${winAward}
                       WHEN ${t2Score} = ${t1Score} THEN ${drawAward} 
                       ELSE ${lossAward} 
                   END
               ) AS TotalPoints
-          FROM EuroTourno.fixtures f
+          FROM fixtures f
           WHERE f.stage = 'group'
           GROUP BY f.category, f.groupNumber, f.team2Id, f.tournamentId
-      ) combined
-      GROUP BY combined.category, combined.grp, combined.team, combined.tournamentId
-      ORDER BY combined.category DESC, combined.grp, TotalPoints DESC, PointsDifference DESC, PointsFrom DESC
-
-     ) as vgs `
+      ) c
+      GROUP BY c.category, c.grp, c.team, c.tournamentId
+      ORDER BY 
+          c.category DESC, 
+          c.grp, 
+          TotalPoints DESC, 
+          PointsDifference DESC, 
+          PointsFrom DESC) vgs
+      `
+    return query 
   }
 }
-
 
