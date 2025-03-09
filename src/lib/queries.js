@@ -39,6 +39,85 @@ module.exports = {
       .sort((a, b) => (a.place > b.place ? 1 : a.place < b.place ? -1 : 0));
     console.table(rankings);
     return rankings;
+  },
+  sqlGroupStandings: (
+    winAward = 2, drawAward = 1, lossAward = 0,
+    goalsPoints = 3, pointsPoints = 1
+  )  => {
+    const t1Score = `((f.goals1 * ${goalsPoints}) + (f.points1 * ${pointsPoints}))`
+    const t2Score = `((f.goals2 * ${goalsPoints}) + (f.points2 * ${pointsPoints}))`
+    const query = `
+      (
+      SELECT 
+          c.category,
+          c.grp,
+          c.team,
+          c.tournamentId,
+          SUM(c.MatchesPlayed) AS MatchesPlayed,
+          SUM(c.Wins) AS Wins,
+          SUM(c.Draws) AS Draws,
+          SUM(c.Losses) AS Losses,
+          SUM(c.PointsFrom) AS PointsFrom,
+          SUM(c.PointsDifference) AS PointsDifference,
+          SUM(c.TotalPoints) AS TotalPoints
+      FROM (
+          -- Stats for team1
+          SELECT 
+              f.category,
+              f.groupNumber AS grp,
+              f.team1Id AS team,
+              f.tournamentId,
+              COUNT(*) AS MatchesPlayed,
+              SUM(CASE WHEN ${t1Score} > ${t2Score} THEN 1 ELSE 0 END) AS Wins,
+              SUM(CASE WHEN ${t1Score} = ${t2Score} THEN 1 ELSE 0 END) AS Draws,
+              SUM(CASE WHEN ${t1Score} < ${t2Score} THEN 1 ELSE 0 END) AS Losses,
+              SUM(${t1Score}) AS PointsFrom,
+              SUM(${t1Score} - ${t2Score}) AS PointsDifference,
+              SUM(
+                  CASE 
+                      WHEN ${t1Score} > ${t2Score} THEN ${winAward}
+                      WHEN ${t1Score} = ${t2Score} THEN ${drawAward} 
+                      ELSE ${lossAward} 
+                  END
+              ) AS TotalPoints
+          FROM fixtures f
+          WHERE f.stage = 'group'
+          GROUP BY f.category, f.groupNumber, f.team1Id, f.tournamentId
+
+          UNION ALL
+
+          -- Stats for team2
+          SELECT 
+              f.category,
+              f.groupNumber AS grp,
+              f.team2Id AS team,
+              f.tournamentId,
+              COUNT(*) AS MatchesPlayed,
+              SUM(CASE WHEN ${t2Score} > ${t1Score} THEN 1 ELSE 0 END) AS Wins,
+              SUM(CASE WHEN ${t2Score} = ${t1Score} THEN 1 ELSE 0 END) AS Draws,
+              SUM(CASE WHEN ${t2Score} < ${t1Score} THEN 1 ELSE 0 END) AS Losses,
+              SUM(${t2Score}) AS PointsFrom,
+              SUM(${t2Score} - ${t1Score}) AS PointsDifference,
+              SUM(
+                  CASE 
+                      WHEN ${t2Score} > ${t1Score} THEN ${winAward}
+                      WHEN ${t2Score} = ${t1Score} THEN ${drawAward} 
+                      ELSE ${lossAward} 
+                  END
+              ) AS TotalPoints
+          FROM fixtures f
+          WHERE f.stage = 'group'
+          GROUP BY f.category, f.groupNumber, f.team2Id, f.tournamentId
+      ) c
+      GROUP BY c.category, c.grp, c.team, c.tournamentId
+      ORDER BY 
+          c.category DESC, 
+          c.grp, 
+          TotalPoints DESC, 
+          PointsDifference DESC, 
+          PointsFrom DESC) vgs
+      `
+    return query 
   }
 }
 

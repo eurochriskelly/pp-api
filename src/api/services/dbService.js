@@ -1,12 +1,11 @@
 const { promisify } = require("util");
 const { mysqlCurrentTime } = require("../../lib/utils");
-const { calculateRankings } = require('../../lib/queries');
-console.log('TEST TEST TEST')
+const { calculateRankings, sqlGroupStandings } = require('../../lib/queries');
+const winAward = 3;
 
 module.exports = (db) => {
   const query = promisify(db.query).bind(db);
  
-
   async function processStageCompletion(fixtureId) {
     console.log(`Processing stage completion for grouo [${fixtureId}]`);
     const selQuery = `SELECT tournamentId, stage, groupNumber, category FROM fixtures WHERE id = ?`;
@@ -22,12 +21,11 @@ module.exports = (db) => {
         goals1 is null
     `;
     const completedData = await query(completedQuery, [tournamentId, stage, groupNumber, category]);
-    console.log(completedData);
     const remainingMatchesInStage = +completedData[0].remaining;
     if (!remainingMatchesInStage) {
       console.log(`Stage [${stage}] has been completed ... Updating calculated teams`);
       const qGroupStandings = `
-         SELECT * FROM v_group_standings WHERE 
+         SELECT * FROM ${sqlGroupStandings(winAward)} WHERE 
          tournamentId = ? and 
          grp = ? and 
          category = ?
@@ -185,8 +183,9 @@ module.exports = (db) => {
       if (!tournamentRows?.length) return null;
       const tournament = tournamentRows.shift();
       const tId = id || tournament.id; // if we had to get the tournament from it's uuid, use this instead
+      const q = `SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`
       const [groups, pitches] = await Promise.all([
-        query(`SELECT category, grp, team FROM v_group_standings WHERE tournamentId = ?`, [tId]),
+        query(`SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`, [tId]),
         query(`SELECT id, pitch, location FROM pitches WHERE tournamentId = ?`, [tId]),
       ]);
       tournament.groups = groups;
@@ -291,14 +290,14 @@ module.exports = (db) => {
 
     getGroupStandings: async (id) => {
       const groups = await query(
-        `SELECT DISTINCT grp as gnum, category FROM v_group_standings WHERE tournamentId = ?`,
+        `SELECT DISTINCT grp as gnum, category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`,
         [id]
       );
       const standings = {};
       for (const { gnum, category } of groups) {
         const rows = await query(
           `SELECT category, grp, team, tournamentId, MatchesPlayed, Wins, Draws, Losses, PointsFrom, PointsDifference, TotalPoints 
-           FROM v_group_standings 
+           FROM ${sqlGroupStandings(winAward)} 
            WHERE tournamentId = ? AND category = ? AND grp LIKE ? 
            ORDER BY TotalPoints DESC, PointsDifference DESC, PointsFrom DESC`,
           [id, category, gnum]
@@ -340,7 +339,7 @@ module.exports = (db) => {
                 IF(started IS NULL, 'false', 'true') AS started 
          FROM v_fixture_information 
          WHERE tournamentId = ? 
-         ORDER BY scheduledTime`,
+         ORDER BY scheduledTime, id`,
         [id]
       );
     },
@@ -413,10 +412,45 @@ module.exports = (db) => {
     },
 
     getNextFixtures: async (tournamentId) => {
-      return await query(
-        `SELECT * FROM v_next_up WHERE tournamentId = ? ORDER BY scheduledTime ASC`,
-        [tournamentId]
-      );
+      const rows = (t) => `
+        vfi.tournamentId,
+        vfi.category, 
+        vfi.pitch,
+        vfi.scheduledTime, vfi.startedTime,
+        vfi.groupNumber AS grp, vfi.team1, vfi.team2, vfi.umpireTeam, 
+        vfi.goals1, vfi.points1, vfi.goals2, vfi.points2, 
+        vfi.id AS matchId,
+        '${t}' AS isType,
+      `
+
+      const q = `
+        WITH RankedFixtures AS (
+            SELECT ${rows('ranked')}
+                ROW_NUMBER() OVER (
+                    PARTITION BY vfi.category 
+                    ORDER BY vfi.scheduledTime
+                ) AS rn
+            FROM (select * from v_fixture_information where tournamentId=${tournamentId}) vfi
+            WHERE vfi.played = 0
+        ),
+
+        RecentPlayedFixtures AS (
+            SELECT ${rows('recent')}
+                ROW_NUMBER() OVER (
+                    PARTITION BY vfi.category 
+                    ORDER BY vfi.startedTime DESC
+                ) AS rn
+            FROM (select * from v_fixture_information where tournamentId=${tournamentId}) vfi
+            WHERE vfi.played = 1
+        )
+
+        SELECT * FROM RankedFixtures WHERE rn <= 3
+        UNION ALL
+        SELECT * FROM RecentPlayedFixtures WHERE rn = 1
+
+        ORDER BY scheduledTime, matchId;
+      `
+      return await query(q, [tournamentId]);
     },
 
     rewindLatestFixture: async (tournamentId) => {
@@ -442,6 +476,7 @@ module.exports = (db) => {
     },
 
     updateScore: async (id, team1, team2, tournamentId) => {
+      console.log('Settings scrs ......', team1, team2)
       console.log(`Settings score for fixture [${id}], Team1 [${team1.name}] vs Team2 [${team2.name}] with scores ${team1.goals}-${team1.points} and ${team2.goals}-${team2.points}`);
       const t = mysqlCurrentTime();
       await query(
@@ -513,8 +548,8 @@ module.exports = (db) => {
       const extra = category ? ` AND category = ?` : "";
       const params = category ? [tournamentId, category] : [tournamentId];
       const [groups, standings] = await Promise.all([
-        query(`SELECT DISTINCT category FROM v_group_standings WHERE tournamentId = ? ${extra}`, params),
-        query(`SELECT * FROM v_group_standings WHERE tournamentId = ? ${extra}`, params)
+        query(`SELECT DISTINCT category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ? ${extra}`, params),
+        query(`SELECT * FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ? ${extra}`, params)
       ]);
       return { groups: groups.map(g => g.category), data: standings };
     },
