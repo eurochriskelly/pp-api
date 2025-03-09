@@ -5,6 +5,15 @@ module.exports = (db) => {
   const dbSvc = dbService(db);
 
   return {
+    updateCalculatedFixtures: async (req, res) => {
+      const { tournamentId, fixtureId } = req.params;
+      try {
+        const fixtures = await dbSvc.updateCalculatedFixtures(tournamentId, id);
+        res.json({ data: fixtures });
+      } catch (err) {
+        throw err;
+      }
+    },
 
     fixturesByPitch: async (req, res) => {
       const { tournamentId, pitch } = req.params;
@@ -76,6 +85,7 @@ module.exports = (db) => {
         res.status(500).json({ error: "Internal server error in reschedule" });
       }
     },
+
     updateScore: async (req, res) => {
       const { tournamentId, id } = req.params;
       const { team1, team2 } = req.body;

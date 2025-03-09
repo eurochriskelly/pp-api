@@ -310,7 +310,7 @@ module.exports = (db) => {
 
     getKnockoutFixtures: async (id) => {
       return await query(
-        `SELECT id, category, stage, pitch, scheduledTime, team1, goals1, points1, team2, goals2, points2, umpireTeam, 
+        `SELECT id, category, stage, pitch, scheduledTime, team1, goals1, points1, team2, goals2, points2, umpireTeam, outcome,
                 IF(started IS NULL, 'false', 'true') AS started 
          FROM v_fixture_information 
          WHERE tournamentId = ? AND stage != 'group' 
@@ -321,7 +321,7 @@ module.exports = (db) => {
 
     getFinalsResults: async (id) => {
       return await query(
-        `SELECT category, REPLACE(stage, '_finals', '') AS division, team1, goals1, points1, team2, goals2, points2, 
+        `SELECT category, REPLACE(stage, '_finals', '') AS division, team1, goals1, points1, team2, goals2, points2, outcome,
                 CASE WHEN (goals1 * 3 + points1) > (goals2 * 3 + points2) THEN team1 
                      WHEN (goals1 * 3 + points1) < (goals2 * 3 + points2) THEN team2 
                      ELSE 'Draw' END AS winner 
