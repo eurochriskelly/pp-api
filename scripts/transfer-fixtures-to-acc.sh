@@ -1,15 +1,17 @@
 #!/bin/bash
 
 # Get DB credentials first
-if [ -f "../gaelic-football-planner/gg_env.sh" ];then
-  source "../gaelic-football-planner/gg_env.sh"
+envfile="../gaelic-cup-planner/gg_env.sh"
+if [ -f "$envfile" ];then
+  source "$envfile"
 else
-  read -p "Enter MySQL username: " DB_USER
-  read -s -p "Enter MySQL password: " DB_PASS
+  echo "Env file [$envfile] not found" 
+  read -p "Enter MySQL username: " GG_USR
+  read -s -p "Enter MySQL password: " GG_PWD
   echo
 fi
 
-MYSQL="mysql -u$DB_USER -p$DB_PASS -N -B -e"
+MYSQL="mysql -u$GG_USR -p$GG_PWD -N -B -e"
 
 # Get tournament ID
 read -p "Enter tournamentId: " TOURNAMENT_ID
