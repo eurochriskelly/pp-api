@@ -11,7 +11,9 @@
   "scripts": {
     "backup": "bash scripts/backup.sh",
     "interactive": "node test/interactive.js",
-    "start": "node src/server.js",
+    "start": "make start env=production",
+    "start:prod": "make start-production",
+    "start:acc": "make start-acceptance",
     "api": "bash scripts/host-api.sh",
     "fixtures-to-acc": "bash scripts/transfer-fixtures-to-acc.sh",
     "test:api": "bash scripts/test-api.sh"
