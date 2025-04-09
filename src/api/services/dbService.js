@@ -190,6 +190,7 @@ module.exports = (db) => {
       ]);
       tournament.groups = groups;
       tournament.pitches = pitches;
+      tournament.categories = [...new Set(groups.map(g => g.category))];
       return tournament;
     },
 
