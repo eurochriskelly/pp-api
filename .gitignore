@@ -1,2 +1,4 @@
 .aider*
 docs/api/openapi_bundle.yaml
+gg_env.sh
+logs
