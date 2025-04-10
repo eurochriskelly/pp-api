@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid');
 const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { sqlGroupStandings } = require('../../lib/queries');
@@ -7,7 +8,7 @@ module.exports = (db) => {
   const winAward = 3;
 
   return {
-    createTournament: async ({ title, date, location, lat, lon, eventUuid }) => {
+    createTournament: async ({ title, date, location, lat, lon, eventUuid = uuidv4() }) => {
       const result = await insert(
         `INSERT INTO tournaments (Title, Date, Location, Lat, Lon, eventUuid) 
          VALUES (?, ?, ?, ?, ?, ?)`,
