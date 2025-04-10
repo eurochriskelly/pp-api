@@ -157,74 +157,6 @@ module.exports = (db) => {
   }
 
   return {
-    // Tournament CRUD (New)
-    createTournament: async ({ title, date, location, lat, lon, eventUuid}) => {
-      const result = await query(
-        `INSERT INTO tournaments (Title, Date, Location, Lat, Lon, eventUuid) VALUES (?, ?, ?, ?, ?, ?)`,
-        [title, date, location, lat, lon, eventUuid]
-      );
-      return result.insertId;
-    },
-
-    getTournaments: async () => {
-      console.log('geting tournaments')
-      return await query(`SELECT Id, Date, Title, Location, eventUuid FROM tournaments`);
-    },
-
-    getTournament: async (id, uuid) => {
-      let tournamentRows;
-      if (uuid) {
-        console.log(`Getting tournaments by uuid [${uuid}]`);
-        tournamentRows = await query(`SELECT id, Date, Title, Location, eventUuid, code FROM tournaments WHERE eventUuid = ?`, [uuid]);
-      } else {
-        tournamentRows = await query(`SELECT id, Date, Title, Location, eventUuid, code FROM tournaments WHERE Id = ?`, [id]);
-      }
-      if (!tournamentRows) return null
-      if (!tournamentRows?.length) return null;
-      const tournament = tournamentRows.shift();
-      const tId = id || tournament.id; // if we had to get the tournament from it's uuid, use this instead
-      const q = `SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`
-      const [groups, pitches] = await Promise.all([
-        query(`SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`, [tId]),
-        query(`SELECT id, pitch, location FROM pitches WHERE tournamentId = ?`, [tId]),
-      ]);
-      tournament.groups = groups;
-      tournament.pitches = pitches;
-      tournament.categories = [...new Set(groups.map(g => g.category))];
-      return tournament;
-    },
-
-    updateTournament: async (id, { title, date, location, lat, lon }) => {
-      await query(
-        `UPDATE tournaments SET Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ? WHERE id = ?`,
-        [title, date, location, lat, lon, id]
-      );
-    },
-
-    deleteTournament: async (id) => {
-      await query(`DELETE FROM tournaments WHERE id = ?`, [id]);
-    },
-
-    resetTournament: async (id) => {
-      await query(
-        `UPDATE fixtures SET 
-          started = NULL, 
-          ended = NULL, 
-          scheduled = scheduledPlanned, 
-          pitch = pitchPlanned, 
-          team1Id = team1Planned,
-          team2Id = team2Planned,
-          umpireTeamId = umpireTeamPlanned,
-          goals1 = NULL, 
-          points1 = NULL, 
-          goals2 = NULL, 
-          points2 = NULL, 
-          outcome = 'not played' 
-          WHERE tournamentId = ?
-        `,
-        [id]
-      );
-    },
 
     // Tournament Methods (Original + Updates)
     getTournamentGroups: async (id) => {
@@ -246,15 +178,6 @@ module.exports = (db) => {
       }));
     },
 
-    getFixture: async (fixtureId) => {
-      const query = `SELECT * FROM fixtures WHERE id = ${db.escape(fixtureId)}`;
-      return new Promise((resolve, reject) => {
-        db.query(query, (err, results) => {
-          if (err) return reject(err);
-          resolve(results[0]);
-        });
-      });
-    },
 
     getStartedMatchCount: async (id) => {
       const result = await query(
@@ -406,11 +329,6 @@ module.exports = (db) => {
     },
 
     // Fixtures (Original + Schema Updates)
-    getFixturesByPitch: async (tournamentId, pitch) => {
-      let where = `WHERE tournamentId = ?`;
-      if (pitch) where += ` AND pitch = ?`;
-      return await query(`SELECT * FROM v_fixture_information ${where}`, pitch ? [tournamentId, pitch] : [tournamentId]);
-    },
 
     getNextFixtures: async (tournamentId) => {
       const rows = (t) => `
@@ -535,61 +453,7 @@ module.exports = (db) => {
       );
     },
 
-    // General (Original)
-    listPitches: async (tournamentId) => {
-      const pitchEvents = await query(
-        `SELECT * FROM v_pitch_events WHERE tournamentId = ?`,
-        [tournamentId]
-      );
-      if (pitchEvents.length) return pitchEvents;
-      return await query(`SELECT * FROM pitches WHERE tournamentId = ?`, [tournamentId]);
-    },
 
-    listStandings: async (tournamentId, category) => {
-      const extra = category ? ` AND category = ?` : "";
-      const params = category ? [tournamentId, category] : [tournamentId];
-      const [groups, standings] = await Promise.all([
-        query(`SELECT DISTINCT category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ? ${extra}`, params),
-        query(`SELECT * FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ? ${extra}`, params)
-      ]);
-      return { groups: groups.map(g => g.category), data: standings };
-    },
-
-    // Regions (Original)
-    listRegions: async () => {
-      const rows = await query(
-        `SELECT DISTINCT CASE WHEN subregion IS NOT NULL AND subregion <> '' 
-         THEN CONCAT(region, '%', subregion) ELSE region END AS formatted_region 
-         FROM clubs`
-      );
-      return rows.map(x => x.formatted_region);
-    },
-
-    listRegionInfo: async (region, { sex, sport, level }) => {
-      const { region: reg, subregion } = splitRegion(region);
-      let constraints = [`region = ?`];
-      const params = [reg];
-      if (subregion) {
-        constraints.push(`subregion = ?`);
-        params.push(subregion);
-      }
-      if (sex) constraints.push(sex === "male" ? `category IN ('gaa', 'hurling')` : `category IN ('lgfa', 'camogie')`);
-      if (sport) {
-        const sportMap = {
-          hurling: `'hurling', 'camogie', 'youthhurling'`,
-          football: `'gaa', 'lgfa', 'youthfootball'`,
-          handball: `'handball'`,
-          rounders: `'rounders'`,
-        };
-        if (sportMap[sport]) constraints.push(`category IN (${sportMap[sport]})`);
-      }
-      if (level) constraints.push(level === "youth" ? `category IN ('youthhurling', 'youthfootball')` : `category IN ('gaa', 'lgfa', 'hurling', 'camogie', 'handball', 'rounders')`);
-      const rows = await query(
-        `SELECT * FROM v_club_teams WHERE ${constraints.join(" AND ")}`,
-        params
-      );
-      return { header: { count: rows.length, region: reg, subregion }, data: rows };
-    },
 
     deleteFixtures: async (tournamentId) => {
       try {
