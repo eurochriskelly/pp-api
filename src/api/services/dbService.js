@@ -591,17 +591,6 @@ module.exports = (db) => {
       return { header: { count: rows.length, region: reg, subregion }, data: rows };
     },
 
-    // Auth (Original)
-    login: async (email, password) => {
-      const users = await query(
-        `SELECT * FROM sec_users WHERE Email = ? AND Pass = ? AND IsActive = 1`,
-        [email, password] // Hash in production
-      );
-      if (!users.length) throw new Error("Invalid credentials");
-      const user = users[0];
-      await query(`UPDATE sec_users SET LastAuthenticated = CURDATE() WHERE id = ?`, [user.id]);
-      return { id: user.id, email: user.Email };
-    },
     deleteFixtures: async (tournamentId) => {
       try {
         console.log('Deleting cards')
