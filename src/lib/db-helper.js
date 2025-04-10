@@ -1,4 +1,5 @@
 const { II, DD, EE } = require('./logging');
+const { promisify } = require("util");
 
 module.exports = (db) => {
   const execute = (query, params = []) => {

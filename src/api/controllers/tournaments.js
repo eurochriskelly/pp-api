@@ -3,7 +3,7 @@ const { jsonToCsv, sendXsls } = require("../../lib/utils");
 const tournamentsService = require("../services/tournaments.service");
 
 module.exports = (db) => {
-  const tournamentSvc = tournamentsService(db);
+  const dbSvc = tournamentsService(db);
 
   return {
     // Tournament CRUD
