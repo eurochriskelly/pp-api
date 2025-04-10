@@ -1,8 +1,8 @@
 const { II } = require("../../lib/logging");
-const dbService = require("../services/dbService");
+const fixturesService = require("../services/fixtures.service");
 
 module.exports = (db) => {
-  const dbSvc = dbService(db);
+  const fixturesSvc = fixturesService(db);
 
   return {
     updateCalculatedFixtures: async (req, res) => {

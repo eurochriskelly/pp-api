@@ -1,14 +1,14 @@
 const { II } = require("../../lib/logging");
 const { jsonToCsv, sendXsls } = require("../../lib/utils");
-const dbService = require("../services/dbService");
+const generalService = require("../services/general.service");
 
 module.exports = (db) => {
-  const dbSvc = dbService(db);
+  const generalSvc = generalService(db);
 
   return {
     listPitches: async (req, res) => {
       try {
-        const pitches = await dbSvc.listPitches(req.params.tournamentId);
+        const pitches = await generalSvc.listPitches(req.params.tournamentId);
         res.json({ data: pitches });
       } catch (err) {
         throw err;
@@ -19,7 +19,7 @@ module.exports = (db) => {
       const { tournamentId } = req.params;
       const { format = "json", category } = req.query;
       try {
-        const { groups, data } = await dbSvc.listStandings(tournamentId, category);
+        const { groups, data } = await generalSvc.listStandings(tournamentId, category);
         switch (format) {
           case "csv":
             const csv = jsonToCsv(data);

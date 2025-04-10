@@ -1,9 +1,9 @@
 const { II } = require("../../lib/logging");
 const { jsonToCsv, sendXsls } = require("../../lib/utils");
-const dbService = require("../services/dbService");
+const tournamentsService = require("../services/tournaments.service");
 
 module.exports = (db) => {
-  const dbSvc = dbService(db);
+  const tournamentSvc = tournamentsService(db);
 
   return {
     // Tournament CRUD
