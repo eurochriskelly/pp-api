@@ -27,13 +27,6 @@
           application/json:
             schema:
               $ref: "../components/schemas/Player.yaml"
-      "500":
-        description: Internal server error
-        content:
-          application/json:
-            schema:
-              $ref: "../components/schemas/Error.yaml"
-
   get:
     summary: List all players for a squad
     parameters:
@@ -58,16 +51,9 @@
               type: array
               items:
                 $ref: "../components/schemas/Player.yaml"
-      "500":
-        description: Internal server error
-        content:
-          application/json:
-            schema:
-              $ref: "../components/schemas/Error.yaml"
-
 /tournaments/{tournamentId}/squads/{squadId}/players/{id}:
   get:
-    summary: Get a specific player
+    summary: Get a player by ID
     parameters:
       - in: path
         name: tournamentId
@@ -94,15 +80,14 @@
           application/json:
             schema:
               $ref: "../components/schemas/Player.yaml"
-      "500":
-        description: Internal server error
+      "404":
+        description: Player not found
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   put:
-    summary: Update a player
+    summary: Update a player by ID
     parameters:
       - in: path
         name: tournamentId
@@ -135,15 +120,14 @@
           application/json:
             schema:
               $ref: "../components/schemas/Player.yaml"
-      "500":
-        description: Internal server error
+      "404":
+        description: Player not found
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   delete:
-    summary: Delete a player
+    summary: Delete a player by ID
     parameters:
       - in: path
         name: tournamentId
@@ -164,18 +148,10 @@
           type: integer
         description: Player ID
     responses:
-      "200":
+      "204":
         description: Player deleted
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: "Player deleted"
-      "500":
-        description: Internal server error
+      "404":
+        description: Player not found
         content:
           application/json:
             schema:

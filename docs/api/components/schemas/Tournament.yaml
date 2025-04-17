@@ -19,12 +19,4 @@ Tournament:
     squads:
       type: array
       items:
-        $ref: "#/Squad"
-    pitches:
-      type: array
-      items:
-        $ref: "#/Pitch"
-    groups:
-      type: array
-      items:
-        $ref: "#/GroupStanding"
+        $ref: "./Squad.yaml#/Squad"
