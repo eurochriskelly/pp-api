@@ -23,9 +23,8 @@
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   post:
-    summary: Create multiple fixtures for a tournament
+    summary: Create fixtures for a tournament
     parameters:
       - in: path
         name: tournamentId
@@ -56,39 +55,9 @@
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
 /tournaments/{tournamentId}/fixtures/{id}:
-  get:
-    summary: Get details of a fixture
-    parameters:
-      - in: path
-        name: tournamentId
-        required: true
-        schema:
-          type: integer
-        description: Tournament ID
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-        description: Fixture ID
-    responses:
-      "200":
-        description: Fixture details
-        content:
-          application/json:
-            schema:
-              $ref: "../components/schemas/Fixture.yaml"
-      "500":
-        description: Internal server error
-        content:
-          application/json:
-            schema:
-              $ref: "../components/schemas/Error.yaml"
-
   put:
-    summary: Update a fixture
+    summary: Update a fixture by ID
     parameters:
       - in: path
         name: tournamentId
@@ -115,15 +84,14 @@
           application/json:
             schema:
               $ref: "../components/schemas/Fixture.yaml"
-      "500":
-        description: Internal server error
+      "404":
+        description: Fixture not found
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   delete:
-    summary: Delete a fixture
+    summary: Delete a fixture by ID
     parameters:
       - in: path
         name: tournamentId
@@ -138,18 +106,10 @@
           type: integer
         description: Fixture ID
     responses:
-      "200":
+      "204":
         description: Fixture deleted
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: "Fixture deleted"
-      "500":
-        description: Internal server error
+      "404":
+        description: Fixture not found
         content:
           application/json:
             schema:
