@@ -43,13 +43,11 @@ module.exports = (db) => {
         const newValue = groupStandings[position]?.team;
         
         const updateTeam = async (teamField) => {
-          console.log('(*********) Updating ---- team ----', teamField)
           const result = await update(
             `UPDATE fixtures SET ${teamField}Id = ? 
              WHERE ${teamField}Planned = ? AND tournamentId = ? AND category = ?`,
             [newValue, placeHolder, fixture.tournamentId, fixture.category]
           );
-          console.log(result)
           return result.affectedRows;
         };
 
@@ -183,7 +181,7 @@ module.exports = (db) => {
           [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
         );
         await update(
-          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId = ? AND category = ?`,
+          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId`,
           [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
         );
     
@@ -197,7 +195,7 @@ module.exports = (db) => {
           [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
         );
         await update(
-          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId = ? AND category = ?`,
+          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId`,
           [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
         );
      }
