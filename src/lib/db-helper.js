@@ -1,9 +1,12 @@
 const { II, DD, EE } = require('./logging');
+const { promisify } = require("util");
 
 module.exports = (db) => {
-  const execute = (query, params = []) => {
+  const execute = (type, query, params = []) => {
     return new Promise((resolve, reject) => {
-      DD(`Executing query: ${query}`, params);
+      DD(`Executing [${type}]`);
+      DD(`- query: ${query.split('\n').join(' ').replace(/ /g, ' ')}`);
+      DD(`- params: ${params}`);
       db.query(query, params, (err, results) => {
         if (err) {
           EE(`Query failed: ${err.message}`);
@@ -17,20 +20,20 @@ module.exports = (db) => {
 
   return {
     // Basic CRUD operations
-    select: (query, params) => execute(query, params),
-    insert: (query, params) => execute(query, params).then(r => r.insertId),
-    update: (query, params) => execute(query, params).then(r => r.affectedRows),
-    delete: (query, params) => execute(query, params).then(r => r.affectedRows),
+    select: (query, params) => execute('select', query, params),
+    insert: (query, params) => execute('insert', query, params).then(r => r.insertId),
+    update: (query, params) => execute('update', query, params).then(r => r.affectedRows),
+    delete: (query, params) => execute('delete', query, params).then(r => r.affectedRows),
 
     // Helper for transactions
     transaction: async (operations) => {
       try {
-        await execute('START TRANSACTION');
+        await execute('tx', 'START TRANSACTION');
         const result = await operations();
-        await execute('COMMIT');
+        await execute('tx', 'COMMIT');
         return result;
       } catch (err) {
-        await execute('ROLLBACK');
+        await execute('tx', 'ROLLBACK');
         throw err;
       }
     }

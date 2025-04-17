@@ -14,6 +14,10 @@ TournamentCreate:
     lon:
       type: number
       format: float
+    eventUuid:
+      type: string
+      format: uuid
+      description: Optional - will be auto-generated if not provided
   required:
     - title
     - date

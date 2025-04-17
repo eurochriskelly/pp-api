@@ -20,7 +20,6 @@
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   get:
     summary: List all tournaments
     responses:
@@ -38,14 +37,12 @@
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
-  
 /tournaments/{id}:
   get:
-    summary: Get a specific tournament
+    summary: Get a tournament by ID
     parameters:
-      - in: path
-        name: id
+      - name: id
+        in: path
         required: true
         schema:
           type: integer
@@ -56,18 +53,17 @@
           application/json:
             schema:
               $ref: "../components/schemas/Tournament.yaml"
-      "500":
-        description: Internal server error
+      "404":
+        description: Tournament not found
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   put:
-    summary: Update a tournament
+    summary: Update a tournament by ID
     parameters:
-      - in: path
-        name: id
+      - name: id
+        in: path
         required: true
         schema:
           type: integer
@@ -79,39 +75,30 @@
             $ref: "../components/schemas/TournamentCreate.yaml"
     responses:
       "200":
-        description: Tournament updated
+        description: Tournament updated successfully
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Tournament.yaml"
-      "500":
-        description: Internal server error
+      "404":
+        description: Tournament not found
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   delete:
-    summary: Delete a tournament
+    summary: Delete a tournament by ID
     parameters:
-      - in: path
-        name: id
+      - name: id
+        in: path
         required: true
         schema:
           type: integer
     responses:
-      "200":
-        description: Tournament deleted
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: "Tournament deleted"
-      "500":
-        description: Internal server error
+      "204":
+        description: Tournament deleted successfully
+      "404":
+        description: Tournament not found
         content:
           application/json:
             schema:

@@ -21,13 +21,6 @@
           application/json:
             schema:
               $ref: "../components/schemas/Squad.yaml"
-      "500":
-        description: Internal server error
-        content:
-          application/json:
-            schema:
-              $ref: "../components/schemas/Error.yaml"
-
   get:
     summary: List all squads for a tournament
     parameters:
@@ -46,16 +39,9 @@
               type: array
               items:
                 $ref: "../components/schemas/Squad.yaml"
-      "500":
-        description: Internal server error
-        content:
-          application/json:
-            schema:
-              $ref: "../components/schemas/Error.yaml"
-
 /tournaments/{tournamentId}/squads/{id}:
   get:
-    summary: Get a specific squad
+    summary: Get a squad by ID
     parameters:
       - in: path
         name: tournamentId
@@ -76,15 +62,14 @@
           application/json:
             schema:
               $ref: "../components/schemas/Squad.yaml"
-      "500":
-        description: Internal server error
+      "404":
+        description: Squad not found
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   put:
-    summary: Update a squad
+    summary: Update a squad by ID
     parameters:
       - in: path
         name: tournamentId
@@ -111,15 +96,14 @@
           application/json:
             schema:
               $ref: "../components/schemas/Squad.yaml"
-      "500":
-        description: Internal server error
+      "404":
+        description: Squad not found
         content:
           application/json:
             schema:
               $ref: "../components/schemas/Error.yaml"
-
   delete:
-    summary: Delete a squad
+    summary: Delete a squad by ID
     parameters:
       - in: path
         name: tournamentId
@@ -134,18 +118,10 @@
           type: integer
         description: Squad ID
     responses:
-      "200":
+      "204":
         description: Squad deleted
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: "Squad deleted"
-      "500":
-        description: Internal server error
+      "404":
+        description: Squad not found
         content:
           application/json:
             schema:

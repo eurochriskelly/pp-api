@@ -20,7 +20,7 @@
               - password
     responses:
       "200":
-        description: Successful login
+        description: Login successful
         content:
           application/json:
             schema:
@@ -28,18 +28,11 @@
               properties:
                 id:
                   type: integer
-                  example: 1
                 email:
                   type: string
-                  example: "user@example.com"
+                  format: email
       "401":
         description: Invalid credentials
-        content:
-          application/json:
-            schema:
-              $ref: "../components/schemas/Error.yaml"
-      "500":
-        description: Internal server error
         content:
           application/json:
             schema:
