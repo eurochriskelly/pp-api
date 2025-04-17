@@ -4,7 +4,7 @@ const { calculateRankings, sqlGroupStandings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
 
 module.exports = (db) => {
-  const { select, insert, update, transaction } = dbHelper(db);
+  const { select, insert, update, transaction, query } = dbHelper(db);
   const winAward = 3;
 
   async function processStageCompletion(fixtureId) {
@@ -43,19 +43,23 @@ module.exports = (db) => {
         const newValue = groupStandings[position]?.team;
         
         const updateTeam = async (teamField) => {
-          const [result] = await update(
+          console.log('(*********) Updating ---- team ----', teamField)
+          const result = await update(
             `UPDATE fixtures SET ${teamField}Id = ? 
              WHERE ${teamField}Planned = ? AND tournamentId = ? AND category = ?`,
             [newValue, placeHolder, fixture.tournamentId, fixture.category]
           );
+          console.log(result)
           return result.affectedRows;
         };
+
 
         totalUpdated += 
           await updateTeam("team1") + 
           await updateTeam("team2") + 
           await updateTeam("umpireTeam");
       }
+
       DD(`Updated ${totalUpdated} fixtures for completed stage`);
       return true;
     }
@@ -157,6 +161,46 @@ module.exports = (db) => {
          WHERE id = ?`,
         [team1.goals, team1.points, team2.goals, team2.points, timestamp, fixtureId]
       );
+
+      // Retrieve fixture details to get the category used for updates.
+      const [fixture] = await select(
+        `SELECT tournamentId, category FROM fixtures WHERE id = ?`,
+        [fixtureId]
+      );
+      if (fixture) {
+        const { category } = fixture;
+        // Decide winner and loser based on goals (adjust logic for draws as needed).
+        const winner = team1.goals > team2.goals ? team1.name : team2.name;
+        const loser  = team1.goals > team2.goals ? team2.name : team1.name;
+    
+        // Update all references for the winning team.
+        await update(
+          `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
+          [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
+        );
+        await update(
+          `UPDATE fixtures SET team2Id = ? WHERE team2Planned = ? AND tournamentId = ? AND category = ?`,
+          [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
+        );
+        await update(
+          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId = ? AND category = ?`,
+          [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
+        );
+    
+        // Update all references for the losing team.
+        await update(
+          `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
+          [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
+        );
+        await update(
+          `UPDATE fixtures SET team2Id = ? WHERE team2Planned = ? AND tournamentId = ? AND category = ?`,
+          [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
+        );
+        await update(
+          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId = ? AND category = ?`,
+          [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
+        );
+     }
       await processStageCompletion(fixtureId);
       return { updated: true };
     },
