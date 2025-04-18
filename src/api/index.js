@@ -2,8 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 const fs = require("fs");
-const morgan = require("morgan")
-const { useMockEndpoints } = require("./mocks");
+const morgan = require("morgan");
 const tournamentRoutes = require("./routes/tournaments");
 const fixtureRoutes = require("./routes/fixtures");
 const regionRoutes = require("./routes/regions");
@@ -32,15 +31,11 @@ module.exports = (db, ARGS) => {
     });
   });
 
-  if (ARGS.mock) {
-    useMockEndpoints(app);
-  } else {
-    app.use("/api/tournaments", tournamentRoutes(db));
-    app.use("/api/tournaments/:tournamentId/fixtures", fixtureRoutes(db));
-    app.use("/api/regions", regionRoutes(db));
-    app.use("/api", generalRoutes(db));
-    app.use("/api/auth", authRoutes(db));
-  }
+  app.use("/api/tournaments", tournamentRoutes(db));
+  app.use("/api/tournaments/:tournamentId/fixtures", fixtureRoutes(db));
+  app.use("/api/regions", regionRoutes(db));
+  app.use("/api", generalRoutes(db));
+  app.use("/api/auth", authRoutes(db));
 
   app.get("*", (req, res) => {
     console.log(`Catch-all triggered: Requested path -> ${req.path}`);
