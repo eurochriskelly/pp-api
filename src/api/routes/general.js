@@ -6,6 +6,7 @@ module.exports = (db) => {
   const ctrl = generalController(db);
 
   router.get("/tournaments/:tournamentId/pitches", ctrl.listPitches);
+  router.get("/tournaments/:tournamentId/teams", ctrl.listTeams);
   router.get("/tournaments/:tournamentId/standings", ctrl.listStandings);
 
   return router;
