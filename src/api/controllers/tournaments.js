@@ -14,8 +14,9 @@ module.exports = (db) => {
       return tournament;
     }, 201),
 
-    getTournaments: handleRoute(async () => {
-      const tournaments = await dbSvc.getTournaments();
+    getTournaments: handleRoute(async (req) => {
+      const status = req.query.status || 'all';
+      const tournaments = await dbSvc.getTournaments(status);
       return { data: tournaments };
     }),
 
