@@ -66,10 +66,10 @@ module.exports = (db) => {
   }
 
   return {
-    getFixture: async (fixtureId) => {
+    getFixture: async (tournamentId, fixtureId) => {
       const [fixture] = await select(
-        `SELECT * FROM fixtures WHERE id = ?`,
-        [fixtureId]
+        `SELECT * FROM fixtures WHERE id = ? and tournamentId = ?`,
+        [fixtureId, tournamentId]
       );
       return fixture;
     },
