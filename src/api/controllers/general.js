@@ -6,12 +6,31 @@ module.exports = (db) => {
   const dbSvc = generalService(db);
 
   return {
+
+    listTeams: async (req, res) => {
+      try {
+        const phase = req.query.stage.split('_').shift();
+        const groupNumber = req.query.group || 0;
+        const teams = await dbSvc.listTeams(
+          req.params.tournamentId,
+          req.query.category,
+          phase,
+          groupNumber,
+        );
+        res.json({ data: teams });
+      } catch (err) {
+        console.log(err);
+        res.status(500).json({ code: 500, message: 'Internal Server Error' });
+      }
+    },
+
     listPitches: async (req, res) => {
       try {
         const pitches = await dbSvc.listPitches(req.params.tournamentId);
         res.json({ data: pitches });
       } catch (err) {
-        throw err;
+        console.log(err);
+        res.status(500).json({ code: 500, message: 'Internal Server Error' });
       }
     },
 
@@ -35,7 +54,8 @@ module.exports = (db) => {
             break;
         }
       } catch (err) {
-        throw err;
+        console.log(err);
+        res.status(500).json({ code: 500, message: 'Internal Server Error' });
       }
     },
   };

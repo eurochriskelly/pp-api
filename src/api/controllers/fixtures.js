@@ -26,9 +26,10 @@ module.exports = (db) => {
     },
 
     getFixture: async (req, res) => {
-      const fixtureId = req.params.id;
+      const tournamentId = req.params.tournamentId;
+      const fixtureId = req.params.fixtureId;
       try {
-        const fixture = await dbSvc.getFixture(fixtureId);
+        const fixture = await dbSvc.getFixture(tournamentId, fixtureId);
         res.json({ data: fixture });
       } catch (err) {
         console.error("Error in getFixture:", err);
