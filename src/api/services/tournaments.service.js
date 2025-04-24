@@ -121,11 +121,15 @@ module.exports = (db) => {
       return result;
     },
 
-    getTournaments: async () => {
-      DD('Getting all tournaments');
-      return await select(
-        `SELECT Id, Date, Title, Location, eventUuid FROM tournaments`
-      );
+    getTournaments: async (status) => {
+      DD('Getting tournaments with status = [' || status || ']');
+      const statuses = status.split(',') || []
+      const sql = `
+         SELECT 
+           Id, Date, Title, Location, region, season, eventUuid, status, code 
+         FROM tournaments
+         WHERE status IN (${statuses.map(v => `'${v}'`).join(', ')})`
+      return await select(sql);
     },
 
     getTournament: async (id, uuid) => {
@@ -408,11 +412,6 @@ module.exports = (db) => {
       }));
     },
 
-    getTournaments: async () => {
-      console.log('geting tournaments')
-      return await select(`SELECT Id, Date, Title, Location, eventUuid FROM tournaments`);
-    },
-    
     resetTournament: async (id) => {
       await update(
         `UPDATE fixtures SET 
