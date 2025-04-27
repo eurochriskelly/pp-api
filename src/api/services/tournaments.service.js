@@ -123,12 +123,16 @@ module.exports = (db) => {
 
     getTournaments: async (status) => {
       DD('Getting tournaments with status = [' || status || ']');
-      const statuses = status.split(',') || []
+      let cond = '';
+      if (status.toLowerCase() != 'all') {
+        const statuses = status.split(',') || []
+        cond = `WHERE status IN (${statuses.map(v => `'${v}'`).join(', ')})`
+      }
       const sql = `
          SELECT 
            Id, Date, Title, Location, region, season, eventUuid, status, code 
          FROM tournaments
-         WHERE status IN (${statuses.map(v => `'${v}'`).join(', ')})`
+         ${cond}`
       return await select(sql);
     },
 
