@@ -8,10 +8,10 @@ module.exports = (db) => {
 
   router.get("/", ctrl.fixturesByPitch);
   router.get("/nextup", ctrl.nextFixtures);
+  router.get("/pitches/:pitch/fixtures", ctrl.fixturesByPitch);
   router.get("/:fixtureId/rewind", ctrl.rewindFixture);
   router.get("/:fixtureId/carded-players", ctrl.getCardedPlayers);
   router.get("/:fixtureId", ctrl.getFixture);
-  router.get("/:pitch", ctrl.fixturesByPitch);
   // modify
   router.put("/update-calculated-fixtures", ctrl.updateCalculatedFixtures);
   router.put("/:fixtureId/update-calculated-fixtures", ctrl.updateCalculatedFixtures);
