@@ -3,6 +3,8 @@ const dbHelper = require('../../lib/db-helper');
 const { calculateRankings, sqlGroupStandings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
 
+
+
 module.exports = (db) => {
   const { select, insert, update, transaction, query } = dbHelper(db);
   const winAward = 3;
@@ -71,17 +73,17 @@ module.exports = (db) => {
         `SELECT * FROM fixtures WHERE id = ? and tournamentId = ?`,
         [fixtureId, tournamentId]
       );
-      return fixture;
+      return embellishFixture(fixture);
     },
 
     getFixturesByPitch: async (tournamentId, pitch) => {
       const where = pitch 
         ? `WHERE tournamentId = ? AND pitch = ?`
         : `WHERE tournamentId = ?`;
-      return await select(
+      return (await select(
         `SELECT * FROM v_fixture_information ${where}`,
         pitch ? [tournamentId, pitch] : [tournamentId]
-      );
+      )).map(embellishFixture);
     },
 
     getNextFixtures: async (tournamentId) => {
@@ -244,3 +246,11 @@ module.exports = (db) => {
     }
   };
 };
+
+
+function embellishFixture(fixture) {
+  return {
+    ...fixture,
+    isResult: !!(fixture?.goals1 === 0 || fixture?.goals1)
+  }
+}

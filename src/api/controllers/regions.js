@@ -1,5 +1,5 @@
 const { II } = require("../../lib/logging");
-const regionsService = require("../services/regions.service");
+const regionsService = require("../services/regions");
 
 module.exports = (db) => {
   const dbSvc = regionsService(db);

@@ -1,5 +1,5 @@
 const { II } = require("../../lib/logging");
-const fixturesService = require("../services/fixtures.service");
+const fixturesService = require("../services/fixtures");
 
 module.exports = (db) => {
   const dbSvc = fixturesService(db);
@@ -26,6 +26,7 @@ module.exports = (db) => {
     },
 
     getFixture: async (req, res) => {
+      II(`in endpong getFixture`);
       const tournamentId = req.params.tournamentId;
       const fixtureId = req.params.fixtureId;
       try {
