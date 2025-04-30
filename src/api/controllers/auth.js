@@ -1,5 +1,5 @@
 const { II } = require("../../lib/logging");
-const authService = require("../services/auth.service");
+const authService = require("../services/auth");
 
 module.exports = (db) => {
   const dbSvc = authService(db);

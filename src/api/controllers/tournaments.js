@@ -1,6 +1,6 @@
 const { II } = require("../../lib/logging");
 const { jsonToCsv, sendXsls } = require("../../lib/utils");
-const tournamentsService = require("../services/tournaments.service");
+const tournamentsService = require("../services/tournaments");
 
 module.exports = (db) => {
   const dbSvc = tournamentsService(db);
