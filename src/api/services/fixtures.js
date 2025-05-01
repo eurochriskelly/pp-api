@@ -184,27 +184,12 @@ module.exports = (db) => {
       return { updated: true };
     },
 
-    // Renamed from cardPlayers and modified to handle a single card object
-    addCard: async (tournamentId, fixtureId, cardData) => {
-      DD(`Adding card for tournament [${tournamentId}], fixture [${fixtureId}], player [${cardData.playerId}]`);
-
-      // 1. Check if player exists
-      const [playerExists] = await select(
-        `SELECT 1 FROM players WHERE id = ? LIMIT 1`,
-        [cardData.playerId]
-      );
-
-      if (!playerExists) {
-        DD(`Player with ID [${cardData.playerId}] not found. Cannot add card.`);
-        // Throw a specific error type or use a code
-        const error = new Error(`Player with ID ${cardData.playerId} not found.`);
-        error.code = 'PLAYER_NOT_FOUND'; // Custom code for controller handling
-        throw error;
-      }
-
-      // 2. Player exists, proceed with insert
+    // This function should handle adding a card based on a single object input
+    cardPlayers: async (tournamentId, fixtureId, cardData) => {
+      DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], player [${cardData.playerId}]`);
       // Assuming 'cards' table has columns: tournamentId, fixtureId, playerId, cardColor, team
       // Adjust column names if necessary based on your actual schema
+      // Insert a single row based on the cardData object
       const result = await insert(
         `INSERT INTO cards (tournamentId, fixtureId, playerId, cardColor, team) VALUES (?, ?, ?, ?, ?)`,
         [tournamentId, fixtureId, cardData.playerId, cardData.cardColor, cardData.team]
@@ -212,6 +197,7 @@ module.exports = (db) => {
       // The insert helper returns the insertId
       return { cardAdded: true, cardId: result };
     },
+
 
     getCardedPlayers: async (tournamentId) => {
       return await select(
