@@ -4,8 +4,8 @@ const { z } = require('zod'); // Import Zod
 
 // Define Zod schema for a single card object in the request body
 const cardPlayerSchema = z.object({
-  // Treat 'id' from the input as the playerId for the database
-  id: z.number().int().positive({ message: "Player ID (sent as 'id') must be a positive integer" }),
+  // 'id' is the primary key of the card record itself. Nullable/optional for inserts.
+  id: z.number().int().positive().nullable().optional(),
   team: z.string({ required_error: "Team is required" }).min(1, { message: "Team cannot be empty" }),
   cardColor: z.enum(['yellow', 'red', 'black'], { required_error: "Card color is required", invalid_type_error: "Invalid card color" }),
 }).passthrough(); // Allow other fields like playerNumber, playerName, confirmed
