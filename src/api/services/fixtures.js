@@ -6,9 +6,11 @@ const { mysqlCurrentTime } = require('../../lib/utils');
 const stageCompletion = require('./fixtures/stage-completion');
 
 module.exports = (db) => {
-  const { select, insert, update, transaction, query } = dbHelper(db);
+  // Destructure 'delete' from dbHelper as well
+  const { select, insert, update, transaction, query, delete: dbDelete } = dbHelper(db);
   // Instantiate stage completion processor with necessary dependencies
   const loggers = { II, DD };
+  // Pass dbDelete to dbHelpers if stageCompletion needs it, otherwise it's available in this scope
   const dbHelpers = { select, insert, update, transaction, query };
   // Assuming sqlGroupStandings is needed and imported/available
   const { sqlGroupStandings } = require('../../lib/queries'); // Make sure this is imported if not already
