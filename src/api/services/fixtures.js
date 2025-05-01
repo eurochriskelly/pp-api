@@ -214,9 +214,26 @@ module.exports = (db) => {
       }
     },
 
+    deleteCard: async (tournamentId, fixtureId, cardId) => {
+      DD(`Deleting card record with ID [${cardId}] for tournament [${tournamentId}], fixture [${fixtureId}]`);
+      // Use the destructured 'dbDelete' function
+      const affectedRows = await dbDelete(
+        `DELETE FROM cards WHERE id = ? AND tournamentId = ? AND fixtureId = ?`,
+        [cardId, tournamentId, fixtureId]
+      );
+
+      if (affectedRows > 0) {
+        DD(`Successfully deleted card record with ID [${cardId}]. Affected rows: ${affectedRows}`);
+        return { cardDeleted: true };
+      } else {
+        DD(`Card record with ID [${cardId}] not found or not associated with tournament [${tournamentId}] / fixture [${fixtureId}]. Affected rows: ${affectedRows}`);
+        return { cardDeleted: false }; // Indicate deletion failed (likely not found)
+      }
+    },
+
     getCardedPlayers: async (tournamentId) => {
       return await select(
-        `SELECT c.playerId, p.firstName, p.secondName, c.team, c.cardColor 
+        `SELECT c.playerId, p.firstName, p.secondName, c.team, c.cardColor
          FROM cards c JOIN players p ON c.playerId = p.id 
          WHERE c.tournamentId = ? 
          ORDER BY c.team, p.firstName`,
