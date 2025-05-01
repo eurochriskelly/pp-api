@@ -6,7 +6,38 @@ const stageCompletion = require('../controllers/fixtures/stage-completion');
 
 module.exports = (db) => {
   const { select, insert, update, transaction, query } = dbHelper(db);
-  const stageCompletionProcessor = stageCompletion(db);
+  // Instantiate stage completion processor with necessary dependencies
+  const loggers = { II, DD };
+  const dbHelpers = { select, insert, update, transaction, query };
+  // Assuming sqlGroupStandings is needed and imported/available
+  const { sqlGroupStandings } = require('../../lib/queries'); // Make sure this is imported if not already
+  const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings });
+
+
+  // Define embellishFixture inside the factory to access 'select'
+  async function embellishFixture(fixture, options = {}) {
+    if (!fixture) return null; // Handle null fixture input
+
+    const embellished = {
+      ...fixture,
+      isResult: !!(fixture.goals1 === 0 || fixture.goals1) // Use fixture directly
+    };
+
+    if (options.cards && fixture.id && fixture.tournamentId) {
+      DD(`Embellishing fixture [${fixture.id}] with card data.`);
+      embellished.cards = await select(
+        `SELECT * FROM cards WHERE tournamentId = ? AND fixtureId = ?`,
+        [fixture.tournamentId, fixture.id]
+      );
+      DD(`Found ${embellished.cards.length} cards for fixture [${fixture.id}].`);
+    } else if (options.cards) {
+        DD(`Card embellishment requested but fixture ID or tournament ID missing for fixture: ${JSON.stringify(fixture)}`);
+        embellished.cards = []; // Add empty array if requested but IDs missing
+    }
+
+    return embellished;
+  }
+
 
   return {
     getFixture: async (tournamentId, fixtureId) => {
@@ -14,7 +45,9 @@ module.exports = (db) => {
         `SELECT * FROM fixtures WHERE id = ? and tournamentId = ?`,
         [fixtureId, tournamentId]
       );
-      return embellishFixture(fixture);
+      // Pass options if needed, e.g., embellishFixture(fixture, { cards: true })
+      // For now, defaulting to no cards
+      return await embellishFixture(fixture);
     },
 
     getFixturesByPitch: async (tournamentId, pitch) => {
@@ -24,7 +57,9 @@ module.exports = (db) => {
       return (await select(
         `SELECT * FROM v_fixture_information ${where}`,
         pitch ? [tournamentId, pitch] : [tournamentId]
-      )).map(embellishFixture);
+      );
+      // Embellish each fixture; use Promise.all for async mapping
+      return await Promise.all(fixtures.map(f => embellishFixture(f))); // Defaulting to no cards
     },
 
     getNextFixtures: async (tournamentId) => {
@@ -185,13 +220,6 @@ module.exports = (db) => {
       );
       return { fixtureId, newScheduled, pitch };
     }
+    // Note: embellishFixture is now defined inside the factory function scope above
   };
 };
-
-
-function embellishFixture(fixture) {
-  return {
-    ...fixture,
-    isResult: !!(fixture?.goals1 === 0 || fixture?.goals1)
-  }
-}
