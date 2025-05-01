@@ -103,11 +103,19 @@ module.exports = (db) => {
     cardPlayers: async (req, res) => {
       const { tournamentId, id } = req.params;
       try {
-        const cards = req.body.map(p => ({
-          playerId: p.playerId,  // Expect client to send playerId
-          cardColor: p.cardColor,
-        }));
-        const result = await dbSvc.cardPlayers(tournamentId, id, cards);
+        console.log('CARDING PLAYER')
+        console.log(req.body)
+        /*
+          {
+            id: 99,
+            team: 'Eindhoven A',
+            cardColor: 'black',
+            playerNumber: '33',
+            playerName: 'Not provided',
+            confirmed: true
+          }
+          */
+        const result = await dbSvc.cardPlayers(tournamentId, id, card);
         res.json({ data: result });
       } catch (err) {
         throw err;
