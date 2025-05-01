@@ -1,8 +1,11 @@
-module.exports = {
-  processStageCompletion,
-}
+const { II, DD } = require('../../lib/logging');
+const { sqlGroupStandings } = require('../../lib/queries');
 
-async function processStageCompletion(fixtureId) {
+module.exports = (db) => {
+  const { select, update } = require('../../lib/db-helper')(db);
+  const winAward = 3;
+
+  async function processStageCompletion(fixtureId) {
   DD(`Processing stage completion for fixture [${fixtureId}]`);
   const [fixture] = await select(
     `SELECT tournamentId, stage, groupNumber, category FROM fixtures WHERE id = ?`,
@@ -55,6 +58,11 @@ async function processStageCompletion(fixtureId) {
     DD(`Updated ${totalUpdated} fixtures for completed stage`);
     return true;
   }
-  DD(`Stage has ${remaining.remaining} remaining matches`);
-  return false;
-}
+    DD(`Stage has ${remaining.remaining} remaining matches`);
+    return false;
+  }
+
+  return {
+    processStageCompletion
+  };
+};
