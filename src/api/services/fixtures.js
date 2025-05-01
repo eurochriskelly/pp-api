@@ -23,16 +23,16 @@ module.exports = (db) => {
       isResult: !!(fixture.goals1 === 0 || fixture.goals1) // Use fixture directly
     };
 
-    if (options.cards && fixture.id && fixture.tournamentId) {
+    if (options.cardedPlayers && fixture.id && fixture.tournamentId) {
       DD(`Embellishing fixture [${fixture.id}] with card data.`);
-      embellished.cards = await select(
+      embellished.cardedPlayers = await select(
         `SELECT * FROM cards WHERE tournamentId = ? AND fixtureId = ?`,
         [fixture.tournamentId, fixture.id]
       );
-      DD(`Found ${embellished.cards.length} cards for fixture [${fixture.id}].`);
-    } else if (options.cards) {
+      DD(`Found ${embellished.cardedPlayers.length} cards for fixture [${fixture.id}].`);
+    } else if (options.cardedPlayers) {
         DD(`Card embellishment requested but fixture ID or tournament ID missing for fixture: ${JSON.stringify(fixture)}`);
-        embellished.cards = []; // Add empty array if requested but IDs missing
+        embellished.cardedPlayers = []; // Add empty array if requested but IDs missing
     }
 
     return embellished;
@@ -47,17 +47,17 @@ module.exports = (db) => {
       );
       // Pass options if needed, e.g., embellishFixture(fixture, { cards: true })
       // For now, defaulting to no cards
-      return await embellishFixture(fixture);
+      return await embellishFixture(fixture, {cardedPlayers: true});
     },
 
     getFixturesByPitch: async (tournamentId, pitch) => {
-      const where = pitch 
+      const where = pitch
         ? `WHERE tournamentId = ? AND pitch = ?`
         : `WHERE tournamentId = ?`;
-      return (await select(
+      const fixtures = await select( // Assign result to 'fixtures'
         `SELECT * FROM v_fixture_information ${where}`,
         pitch ? [tournamentId, pitch] : [tournamentId]
-      );
+      ); // Removed semicolon
       // Embellish each fixture; use Promise.all for async mapping
       return await Promise.all(fixtures.map(f => embellishFixture(f))); // Defaulting to no cards
     },
