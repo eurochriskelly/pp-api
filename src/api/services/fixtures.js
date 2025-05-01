@@ -184,13 +184,17 @@ module.exports = (db) => {
       return { updated: true };
     },
 
-    cardPlayers: async (tournamentId, fixtureId, cards) => {
-      const values = cards.map(c => [tournamentId, fixtureId, c.playerId, c.cardColor]);
-      await insert(
-        `INSERT INTO cards (tournamentId, fixtureId, playerId, cardColor) VALUES ?`,
-        [values]
+    // Renamed from cardPlayers and modified to handle a single card object
+    addCard: async (tournamentId, fixtureId, cardData) => {
+      DD(`Adding card for tournament [${tournamentId}], fixture [${fixtureId}], player [${cardData.playerId}]`);
+      // Assuming 'cards' table has columns: tournamentId, fixtureId, playerId, cardColor, team
+      // Adjust column names if necessary based on your actual schema
+      const result = await insert(
+        `INSERT INTO cards (tournamentId, fixtureId, playerId, cardColor, team) VALUES (?, ?, ?, ?, ?)`,
+        [tournamentId, fixtureId, cardData.playerId, cardData.cardColor, cardData.team]
       );
-      return { cardsAdded: cards.length };
+      // The insert helper returns the insertId
+      return { cardAdded: true, cardId: result };
     },
 
     getCardedPlayers: async (tournamentId) => {
