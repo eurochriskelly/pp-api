@@ -8,7 +8,10 @@ const cardPlayerSchema = z.object({
   id: z.number().int().positive().nullable().optional(),
   team: z.string({ required_error: "Team is required" }).min(1, { message: "Team cannot be empty" }),
   cardColor: z.enum(['yellow', 'red', 'black'], { required_error: "Card color is required", invalid_type_error: "Invalid card color" }),
-}).passthrough(); // Allow other fields like playerNumber, playerName, confirmed
+  // Add playerNumber and playerName - assuming they are strings and can be empty
+  playerNumber: z.string({ required_error: "playerNumber is required" }),
+  playerName: z.string({ required_error: "playerName is required" }),
+}).passthrough(); // Allow other fields like confirmed
 
 
 module.exports = (db) => {

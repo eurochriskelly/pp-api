@@ -186,26 +186,27 @@ module.exports = (db) => {
 
     // This function handles adding (if id is null) or updating (if id exists) a card record.
     cardPlayers: async (tournamentId, fixtureId, cardData) => {
-      // cardData contains: id (card primary key, nullable), cardColor, team
-      const { id, cardColor, team } = cardData;
+      // cardData contains: id (card primary key, nullable), cardColor, team, playerNumber, playerName
+      const { id, cardColor, team, playerNumber, playerName } = cardData; // Destructure new fields
       DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], card ID [${id || 'NEW'}]`);
 
       if (id) {
         // UPDATE existing card record based on its primary key 'id'
         DD(`Updating existing card record with ID [${id}]`);
-        // Update only relevant fields like cardColor and team. Ignore playerId.
+        // Update all relevant fields passed from the client
         await update(
-          `UPDATE cards SET cardColor = ?, team = ? WHERE id = ?`,
-          [cardColor, team, id]
+          `UPDATE cards SET cardColor = ?, team = ?, playerNumber = ?, playerName = ? WHERE id = ?`,
+          [cardColor, team, playerNumber, playerName, id] // Add new fields to update
         );
         return { cardUpdated: true, cardId: id };
       } else {
         // INSERT new card record. Ignore playerId column.
         DD(`Inserting new card record for fixture [${fixtureId}]`);
         // Ensure your 'cards' table allows INSERT without playerId or has a default.
+        // Include playerNumber and playerName in the INSERT statement.
         const insertId = await insert(
-          `INSERT INTO cards (tournamentId, fixtureId, cardColor, team) VALUES (?, ?, ?, ?)`,
-          [tournamentId, fixtureId, cardColor, team]
+          `INSERT INTO cards (tournamentId, fixtureId, cardColor, team, playerNumber, playerName) VALUES (?, ?, ?, ?, ?, ?)`,
+          [tournamentId, fixtureId, cardColor, team, playerNumber, playerName] // Add new fields to insert
         );
         return { cardAdded: true, cardId: insertId };
       }
