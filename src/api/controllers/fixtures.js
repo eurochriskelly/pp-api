@@ -2,16 +2,13 @@ const { II } = require("../../lib/logging");
 const fixturesService = require("../services/fixtures");
 const { z } = require('zod'); // Import Zod
 
-// Define Zod schema for the cardPlayers request body
-const cardPlayerSchema = z.array(
-  z.object({
-    playerId: z.number().int().positive({ message: "Player ID must be a positive integer" }),
-    cardColor: z.enum(['yellow', 'red', 'black'], { message: "Invalid card color" }),
-    // Add other fields if they are strictly required by the frontend/business logic,
-    // even if not directly used by this specific service call.
-    // For now, focusing on what dbSvc.cardPlayers needs.
-  }).strict() // Use .strict() if no extra properties are allowed
-).min(1, { message: "Request body must be an array containing at least one card object" });
+// Define Zod schema for a single card object in the request body
+const cardPlayerSchema = z.object({
+  // Treat 'id' from the input as the playerId for the database
+  id: z.number().int().positive({ message: "Player ID (sent as 'id') must be a positive integer" }),
+  team: z.string({ required_error: "Team is required" }).min(1, { message: "Team cannot be empty" }),
+  cardColor: z.enum(['yellow', 'red', 'black'], { required_error: "Card color is required", invalid_type_error: "Invalid card color" }),
+}).passthrough(); // Allow other fields like playerNumber, playerName, confirmed
 
 
 module.exports = (db) => {
@@ -130,12 +127,19 @@ module.exports = (db) => {
       }
 
       // Use validated data
-      const validatedCards = validationResult.data;
+      const validatedCardData = validationResult.data;
 
       try {
         II(`Processing cardPlayers request for tournament [${tournamentId}], fixture [${fixtureId}]`);
-        // Pass the validated array to the service
-        const result = await dbSvc.cardPlayers(tournamentId, fixtureId, validatedCards);
+        // Call the service method to add a single card
+        // Map the input 'id' field to 'playerId' for the service
+        const cardInput = {
+            playerId: validatedCardData.id,
+            cardColor: validatedCardData.cardColor,
+            team: validatedCardData.team
+            // Include other fields from validatedCardData if the service needs them
+        };
+        const result = await dbSvc.addCard(tournamentId, fixtureId, cardInput); // Changed service call
         res.json({ data: result });
       } catch (err) {
          // Log the error for server-side inspection
