@@ -144,8 +144,18 @@ module.exports = (db) => {
       } catch (err) {
          // Log the error for server-side inspection
         console.error(`Error in cardPlayers controller for fixture [${fixtureId}]:`, err);
+
+        // Check for the specific player not found error
+        if (err.code === 'PLAYER_NOT_FOUND') {
+          return res.status(404).json({ // 404 Not Found is appropriate here
+            message: "Cannot add card: Player not found.",
+            error: err.message
+          });
+        }
+
+        // Handle other potential errors (like DB connection issues, other constraints)
         // Send a generic 500 error to the client
-        res.status(500).json({ error: "Internal server error while processing cards." });
+        res.status(500).json({ error: "Internal server error while processing card." });
       }
     },
 

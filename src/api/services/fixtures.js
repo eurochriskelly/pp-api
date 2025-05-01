@@ -187,6 +187,22 @@ module.exports = (db) => {
     // Renamed from cardPlayers and modified to handle a single card object
     addCard: async (tournamentId, fixtureId, cardData) => {
       DD(`Adding card for tournament [${tournamentId}], fixture [${fixtureId}], player [${cardData.playerId}]`);
+
+      // 1. Check if player exists
+      const [playerExists] = await select(
+        `SELECT 1 FROM players WHERE id = ? LIMIT 1`,
+        [cardData.playerId]
+      );
+
+      if (!playerExists) {
+        DD(`Player with ID [${cardData.playerId}] not found. Cannot add card.`);
+        // Throw a specific error type or use a code
+        const error = new Error(`Player with ID ${cardData.playerId} not found.`);
+        error.code = 'PLAYER_NOT_FOUND'; // Custom code for controller handling
+        throw error;
+      }
+
+      // 2. Player exists, proceed with insert
       // Assuming 'cards' table has columns: tournamentId, fixtureId, playerId, cardColor, team
       // Adjust column names if necessary based on your actual schema
       const result = await insert(
