@@ -184,20 +184,36 @@ module.exports = (db) => {
       return { updated: true };
     },
 
-    // This function should handle adding a card based on a single object input
+    // This function handles adding or updating a card (upsert)
     cardPlayers: async (tournamentId, fixtureId, cardData) => {
-      DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], player [${cardData.playerId}]`);
-      // Assuming 'cards' table has columns: tournamentId, fixtureId, playerId, cardColor, team
-      // Adjust column names if necessary based on your actual schema
-      // Insert a single row based on the cardData object
-      const result = await insert(
-        `INSERT INTO cards (tournamentId, fixtureId, playerId, cardColor, team) VALUES (?, ?, ?, ?, ?)`,
-        [tournamentId, fixtureId, cardData.playerId, cardData.cardColor, cardData.team]
-      );
-      // The insert helper returns the insertId
-      return { cardAdded: true, cardId: result };
-    },
+      const { playerId, cardColor, team } = cardData;
+      DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], player [${playerId}]`);
 
+      // 1. Check if a card already exists for this player in this fixture
+      const [existingCard] = await select(
+        `SELECT id FROM cards WHERE tournamentId = ? AND fixtureId = ? AND playerId = ? LIMIT 1`,
+        [tournamentId, fixtureId, playerId]
+      );
+
+      if (existingCard) {
+        // 2a. Update existing card
+        DD(`Existing card found (ID: ${existingCard.id}). Updating card color to [${cardColor}] and team to [${team}].`);
+        await update(
+          `UPDATE cards SET cardColor = ?, team = ? WHERE id = ?`,
+          [cardColor, team, existingCard.id]
+        );
+        return { cardUpdated: true, cardId: existingCard.id };
+      } else {
+        // 2b. Insert new card
+        DD(`No existing card found for player [${playerId}] in fixture [${fixtureId}]. Inserting new card.`);
+        // Assuming 'cards' table columns: tournamentId, fixtureId, playerId, cardColor, team
+        const insertId = await insert(
+          `INSERT INTO cards (tournamentId, fixtureId, playerId, cardColor, team) VALUES (?, ?, ?, ?, ?)`,
+          [tournamentId, fixtureId, playerId, cardColor, team]
+        );
+        return { cardAdded: true, cardId: insertId };
+      }
+    },
 
     getCardedPlayers: async (tournamentId) => {
       return await select(
