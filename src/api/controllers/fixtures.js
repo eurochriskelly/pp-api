@@ -90,9 +90,10 @@ module.exports = (db) => {
 
     updateScore: async (req, res) => {
       const { tournamentId, id } = req.params;
-      const { team1, team2 } = req.body;
+      const { scores, outcome } = req.body;
+      const { team1, team2 } = scores;
       try {
-        await dbSvc.updateScore(id, team1, team2, tournamentId);
+        await dbSvc.updateScore(tournamentId, id, team1, team2, outcome);
         res.json({ message: "Score updated successfully" });
       } catch (err) {
         throw err;
