@@ -2,6 +2,7 @@ const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { calculateRankings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
+
 const stageCompletion = require('./fixtures/stage-completion');
 
 module.exports = (db) => {
@@ -12,7 +13,6 @@ module.exports = (db) => {
   // Assuming sqlGroupStandings is needed and imported/available
   const { sqlGroupStandings } = require('../../lib/queries'); // Make sure this is imported if not already
   const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings });
-
 
   // Define embellishFixture inside the factory to access 'select'
   async function embellishFixture(fixture, options = {}) {
