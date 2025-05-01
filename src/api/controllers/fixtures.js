@@ -131,16 +131,10 @@ module.exports = (db) => {
 
       try {
         II(`Processing cardPlayers request for tournament [${tournamentId}], fixture [${fixtureId}]`);
-        // Call the service method to add a single card
-        // Map the input 'id' field to 'playerId' for the service
-        const cardInput = {
-            playerId: validatedCardData.id,
-            cardColor: validatedCardData.cardColor,
-            team: validatedCardData.team
-            // Include other fields from validatedCardData if the service needs them
-        };
-        // Call the original service method name
-        const result = await dbSvc.cardPlayers(tournamentId, fixtureId, cardInput);
+        // Call the service method with the validated data directly.
+        // The service expects an object with an 'id' field (player's ID), cardColor, and team.
+        // validatedCardData already has this structure.
+        const result = await dbSvc.cardPlayers(tournamentId, fixtureId, validatedCardData);
         res.json({ data: result });
       } catch (err) {
          // Log the error for server-side inspection
