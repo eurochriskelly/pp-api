@@ -165,5 +165,31 @@ module.exports = (db) => {
       }
     },
 
+    deleteCard: async (req, res) => {
+      // Note: The route uses ':id' for fixtureId
+      const { tournamentId, id: fixtureId, cardId } = req.params;
+
+      // Basic validation for cardId
+      const cardIdNum = parseInt(cardId, 10);
+      if (isNaN(cardIdNum) || cardIdNum <= 0) {
+          return res.status(400).json({ error: "Invalid Card ID format." });
+      }
+
+      try {
+        II(`Processing deleteCard request for tournament [${tournamentId}], fixture [${fixtureId}], card [${cardIdNum}]`);
+        const result = await dbSvc.deleteCard(tournamentId, fixtureId, cardIdNum);
+
+        if (result.cardDeleted) {
+          res.status(200).json({ message: `Card with ID ${cardIdNum} deleted successfully.` });
+        } else {
+          // If the service returns cardDeleted: false, it means the card wasn't found
+          res.status(404).json({ error: `Card with ID ${cardIdNum} not found for the specified tournament/fixture.` });
+        }
+      } catch (err) {
+        console.error(`Error in deleteCard controller for card [${cardIdNum}]:`, err);
+        res.status(500).json({ error: "Internal server error while deleting card." });
+      }
+    },
+
   };
 };
