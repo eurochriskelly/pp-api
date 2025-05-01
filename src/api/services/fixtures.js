@@ -2,7 +2,7 @@ const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { calculateRankings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
-const stageCompletion = require('../controllers/fixtures/stage-completion');
+const stageCompletion = require('./fixtures/stage-completion');
 
 module.exports = (db) => {
   const { select, insert, update, transaction, query } = dbHelper(db);
