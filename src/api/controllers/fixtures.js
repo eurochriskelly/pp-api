@@ -117,6 +117,7 @@ module.exports = (db) => {
       const { tournamentId, id: fixtureId } = req.params; // Renamed id to fixtureId for clarity
 
       // Validate request body
+      console.log('card', req.body)
       const validationResult = cardPlayerSchema.safeParse(req.body);
 
       if (!validationResult.success) {
