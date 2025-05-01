@@ -1,5 +1,18 @@
 const { II } = require("../../lib/logging");
 const fixturesService = require("../services/fixtures");
+const { z } = require('zod'); // Import Zod
+
+// Define Zod schema for the cardPlayers request body
+const cardPlayerSchema = z.array(
+  z.object({
+    playerId: z.number().int().positive({ message: "Player ID must be a positive integer" }),
+    cardColor: z.enum(['yellow', 'red', 'black'], { message: "Invalid card color" }),
+    // Add other fields if they are strictly required by the frontend/business logic,
+    // even if not directly used by this specific service call.
+    // For now, focusing on what dbSvc.cardPlayers needs.
+  }).strict() // Use .strict() if no extra properties are allowed
+).min(1, { message: "Request body must be an array containing at least one card object" });
+
 
 module.exports = (db) => {
   const dbSvc = fixturesService(db);
@@ -101,24 +114,33 @@ module.exports = (db) => {
     },
 
     cardPlayers: async (req, res) => {
-      const { tournamentId, id } = req.params;
+      const { tournamentId, id: fixtureId } = req.params; // Renamed id to fixtureId for clarity
+
+      // Validate request body
+      const validationResult = cardPlayerSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        console.error("CardPlayers validation error:", validationResult.error.flatten());
+        // Return a 400 Bad Request with validation errors
+        return res.status(400).json({
+          message: "Invalid request body for carding players.",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      // Use validated data
+      const validatedCards = validationResult.data;
+
       try {
-        console.log('CARDING PLAYER')
-        console.log(req.body)
-        /*
-          {
-            id: 99,
-            team: 'Eindhoven A',
-            cardColor: 'black',
-            playerNumber: '33',
-            playerName: 'Not provided',
-            confirmed: true
-          }
-          */
-        const result = await dbSvc.cardPlayers(tournamentId, id, card);
+        II(`Processing cardPlayers request for tournament [${tournamentId}], fixture [${fixtureId}]`);
+        // Pass the validated array to the service
+        const result = await dbSvc.cardPlayers(tournamentId, fixtureId, validatedCards);
         res.json({ data: result });
       } catch (err) {
-        throw err;
+         // Log the error for server-side inspection
+        console.error(`Error in cardPlayers controller for fixture [${fixtureId}]:`, err);
+        // Send a generic 500 error to the client
+        res.status(500).json({ error: "Internal server error while processing cards." });
       }
     },
 
