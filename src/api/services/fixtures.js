@@ -20,6 +20,9 @@ module.exports = (db) => {
 
     const embellished = {
       ...fixture,
+      // todo: get rid v_fixture_information. Centralize abstractions in the code.
+      team1: fixture.team1Id || fixture.team1,
+      team2: fixture.team2Id || fixture.team2,
       isResult: !!(fixture.goals1 === 0 || fixture.goals1) // Use fixture directly
     };
 
