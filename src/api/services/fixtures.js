@@ -187,7 +187,7 @@ module.exports = (db) => {
     // This function handles adding or updating a card (upsert)
     cardPlayers: async (tournamentId, fixtureId, cardData) => {
       // cardData contains: id (player's ID), cardColor, team
-      const { id: /* player */ id, cardColor, team } = cardData; // Use 'id' for the player's identifier internally
+      const { id, cardColor, team } = cardData; // Use 'id' for the player's identifier internally
       DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], player ID [${id}]`);
 
       // 1. Check if a card already exists for this player (using the 'id' variable) in this fixture
@@ -210,6 +210,7 @@ module.exports = (db) => {
         DD(`No existing card found for player ID [${id}] in fixture [${fixtureId}]. Inserting new card.`);
         // Assuming 'cards' table columns: tournamentId, fixtureId, playerId, cardColor, team
         // Insert uses the 'playerId' column in the database.
+          console.log([tournamentId, fixtureId, id, cardColor, team])
         const insertId = await insert(
           `INSERT INTO cards (tournamentId, fixtureId, playerId, cardColor, team) VALUES (?, ?, ?, ?, ?)`,
           [tournamentId, fixtureId, id, cardColor, team] // Use the 'id' variable (player's ID) here for the playerId column
