@@ -3,8 +3,6 @@ const dbHelper = require('../../lib/db-helper');
 const { calculateRankings, sqlGroupStandings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
 
-
-
 module.exports = (db) => {
   const { select, insert, update, transaction, query } = dbHelper(db);
   const winAward = 3;
@@ -153,13 +151,13 @@ module.exports = (db) => {
       return { started: timestamp };
     },
 
-    updateScore: async (fixtureId, team1, team2, tournamentId) => {
+    updateScore: async (tournamentId, fixtureId, team1, team2, outcome) => {
       const timestamp = mysqlCurrentTime();
       await update(
         `UPDATE fixtures 
-         SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, ended = ? 
+         SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, outcome = ?, ended = ?  
          WHERE id = ?`,
-        [team1.goals, team1.points, team2.goals, team2.points, timestamp, fixtureId]
+        [team1.goals, team1.points, team2.goals, team2.points, outcome, timestamp, fixtureId]
       );
 
       // Retrieve fixture details to get the category used for updates.
