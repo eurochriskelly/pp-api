@@ -139,22 +139,17 @@ module.exports = (db) => {
             team: validatedCardData.team
             // Include other fields from validatedCardData if the service needs them
         };
-        const result = await dbSvc.addCard(tournamentId, fixtureId, cardInput); // Changed service call
+        // Call the original service method name
+        const result = await dbSvc.cardPlayers(tournamentId, fixtureId, cardInput);
         res.json({ data: result });
       } catch (err) {
          // Log the error for server-side inspection
         console.error(`Error in cardPlayers controller for fixture [${fixtureId}]:`, err);
 
-        // Check for the specific player not found error
-        if (err.code === 'PLAYER_NOT_FOUND') {
-          return res.status(404).json({ // 404 Not Found is appropriate here
-            message: "Cannot add card: Player not found.",
-            error: err.message
-          });
-        }
-
-        // Handle other potential errors (like DB connection issues, other constraints)
+        // Reverted: Handle potential errors (like DB connection issues, constraints)
         // Send a generic 500 error to the client
+        // The foreign key constraint error will now result in a 500 again,
+        // which might be acceptable if the client ensures valid player IDs.
         res.status(500).json({ error: "Internal server error while processing card." });
       }
     },
