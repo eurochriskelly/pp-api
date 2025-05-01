@@ -184,36 +184,28 @@ module.exports = (db) => {
       return { updated: true };
     },
 
-    // This function handles adding or updating a card (upsert)
+    // This function handles adding (if id is null) or updating (if id exists) a card record.
     cardPlayers: async (tournamentId, fixtureId, cardData) => {
-      // cardData contains: id (player's ID), cardColor, team
-      const { id, cardColor, team } = cardData; // Use 'id' for the player's identifier internally
-      DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], player ID [${id}]`);
+      // cardData contains: id (card primary key, nullable), cardColor, team
+      const { id, cardColor, team } = cardData;
+      DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], card ID [${id || 'NEW'}]`);
 
-      // 1. Check if a card already exists for this player (using the 'id' variable) in this fixture
-      //    Query uses the 'playerId' column in the database.
-      const [existingCard] = await select(
-        `SELECT id FROM cards WHERE tournamentId = ? AND fixtureId = ? AND playerId = ? LIMIT 1`,
-        [tournamentId, fixtureId, id] // Use the 'id' variable (player's ID) here
-      );
-
-      if (existingCard) {
-        // 2a. Update existing card using its primary key (existingCard.id)
-        DD(`Existing card found (Card Record ID: ${existingCard.id}). Updating card color to [${cardColor}] and team to [${team}].`);
+      if (id) {
+        // UPDATE existing card record based on its primary key 'id'
+        DD(`Updating existing card record with ID [${id}]`);
+        // Update only relevant fields like cardColor and team. Ignore playerId.
         await update(
-          `UPDATE cards SET cardColor = ?, team = ? WHERE id = ?`, // Update based on the card's primary key
-          [cardColor, team, existingCard.id]
+          `UPDATE cards SET cardColor = ?, team = ? WHERE id = ?`,
+          [cardColor, team, id]
         );
-        return { cardUpdated: true, cardId: existingCard.id };
+        return { cardUpdated: true, cardId: id };
       } else {
-        // 2b. Insert new card
-        DD(`No existing card found for player ID [${id}] in fixture [${fixtureId}]. Inserting new card.`);
-        // Assuming 'cards' table columns: tournamentId, fixtureId, playerId, cardColor, team
-        // Insert uses the 'playerId' column in the database.
-          console.log([tournamentId, fixtureId, id, cardColor, team])
+        // INSERT new card record. Ignore playerId column.
+        DD(`Inserting new card record for fixture [${fixtureId}]`);
+        // Ensure your 'cards' table allows INSERT without playerId or has a default.
         const insertId = await insert(
-          `INSERT INTO cards (tournamentId, fixtureId, playerId, cardColor, team) VALUES (?, ?, ?, ?, ?)`,
-          [tournamentId, fixtureId, id, cardColor, team] // Use the 'id' variable (player's ID) here for the playerId column
+          `INSERT INTO cards (tournamentId, fixtureId, cardColor, team) VALUES (?, ?, ?, ?)`,
+          [tournamentId, fixtureId, cardColor, team]
         );
         return { cardAdded: true, cardId: insertId };
       }
