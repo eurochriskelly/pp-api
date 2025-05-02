@@ -18,6 +18,7 @@ module.exports = (db) => {
   router.post("/:id/start", ctrl.startFixture);
   router.post("/:id/reschedule", ctrl.reschedule);
   router.post("/:id/score", ctrl.updateScore);
+  router.post("/:id/end", ctrl.endFixture);
   router.post("/:id/carded", ctrl.cardPlayers);
   // Add the new DELETE route
   router.delete("/:id/carded/:cardId", ctrl.deleteCard);
