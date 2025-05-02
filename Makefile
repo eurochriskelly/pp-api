@@ -1,4 +1,4 @@
-.PHONY: help start logs
+.PHONY: help start logs backup
 
 DEFAULT_GOAL := help
 
@@ -25,6 +25,9 @@ start:  ## Start server with auto-restart (usage: make start [env=production|acc
 		echo "Invalid environment. Use 'production' or 'acceptance'"; \
 		exit 1; \
 	fi
+
+backup:  ## Create a database backup
+	npm run backup
 
 logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 	@if [ -z "$(env)" ]; then \
