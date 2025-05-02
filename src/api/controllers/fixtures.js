@@ -9,7 +9,7 @@ const cardPlayerSchema = z.object({
   team: z.string({ required_error: "Team is required" }).min(1, { message: "Team cannot be empty" }),
   cardColor: z.enum(['yellow', 'red', 'black'], { required_error: "Card color is required", invalid_type_error: "Invalid card color" }),
   // Add playerNumber and playerName - assuming they are strings and can be empty
-  playerNumber: z.string({ required_error: "playerNumber is required" }),
+  playerNumber: z.number({ required_error: "playerNumber is required" }),
   playerName: z.string({ required_error: "playerName is required" }),
 }).passthrough(); // Allow other fields like confirmed
 
@@ -75,6 +75,16 @@ module.exports = (db) => {
       const { tournamentId, id } = req.params;
       try {
         const result = await dbSvc.startFixture(id);
+        res.json({ data: result });
+      } catch (err) {
+        res.status(500).json({ error: "Internal server error" });
+      }
+    },
+
+    endFixture: async (req, res) => {
+      const { tournamentId, id } = req.params;
+      try {
+        const result = await dbSvc.endixture(id);
         res.json({ data: result });
       } catch (err) {
         res.status(500).json({ error: "Internal server error" });
