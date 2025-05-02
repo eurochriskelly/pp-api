@@ -39,7 +39,6 @@ module.exports = (db) => {
     },
 
     getFixture: async (req, res) => {
-      II(`in endpong getFixture`);
       const tournamentId = req.params.tournamentId;
       const fixtureId = req.params.fixtureId;
       try {
@@ -84,7 +83,7 @@ module.exports = (db) => {
     endFixture: async (req, res) => {
       const { tournamentId, id } = req.params;
       try {
-        const result = await dbSvc.endixture(id);
+        const result = await dbSvc.endFixture(id);
         res.json({ data: result });
       } catch (err) {
         res.status(500).json({ error: "Internal server error" });

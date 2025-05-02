@@ -32,7 +32,7 @@ module.exports = (db) => {
         ? `${fixture.started.toISOString()}`?.split('T').pop().substring(0, 5)
         : null,
       isResult: !!(fixture.goals1 === 0 || fixture.goals1),
-      played: fixture.outcome != 'not played'
+      played: fixture.outcome != 'not played' && fixture.ended
     };
 
     if (options.cardedPlayers && fixture.id && fixture.tournamentId) {
@@ -79,7 +79,9 @@ module.exports = (db) => {
         WITH RankedFixtures AS (
             SELECT 
                 vfi.tournamentId, vfi.category, vfi.pitch,
-                vfi.scheduledTime, vfi.startedTime,
+                vfi.scheduledTime, 
+                vfi.started,
+                vfi.ended,
                 vfi.groupNumber AS grp, vfi.team1, vfi.team2, vfi.umpireTeam, 
                 vfi.goals1, vfi.points1, vfi.goals2, vfi.points2, 
                 vfi.id AS matchId,
@@ -94,7 +96,9 @@ module.exports = (db) => {
         RecentPlayedFixtures AS (
             SELECT 
                 vfi.tournamentId, vfi.category, vfi.pitch,
-                vfi.scheduledTime, vfi.startedTime,
+                vfi.scheduledTime,
+                vfi.started,
+                vfi.ended,
                 vfi.groupNumber AS grp, vfi.team1, vfi.team2, vfi.umpireTeam, 
                 vfi.goals1, vfi.points1, vfi.goals2, vfi.points2, 
                 vfi.id AS matchId,
@@ -142,6 +146,7 @@ module.exports = (db) => {
     },
 
     endFixture: async (fixtureId) => {
+      console.log('ok')
       const timestamp = mysqlCurrentTime();
       await update(
         `UPDATE fixtures SET ended = ? WHERE id = ?`,
