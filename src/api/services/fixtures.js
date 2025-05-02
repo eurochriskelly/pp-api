@@ -19,13 +19,20 @@ module.exports = (db) => {
   // Define embellishFixture inside the factory to access 'select'
   async function embellishFixture(fixture, options = {}) {
     if (!fixture) return null; // Handle null fixture input
-
     const embellished = {
       ...fixture,
       // todo: get rid v_fixture_information. Centralize abstractions in the code.
       team1: fixture.team1Id || fixture.team1,
       team2: fixture.team2Id || fixture.team2,
-      isResult: !!(fixture.goals1 === 0 || fixture.goals1) // Use fixture directly
+      umpireTeam: fixture.umpireTeamId|| fixture.umpireTeam,
+      scheduledTime: fixture.scheduled
+        ? `${fixture.scheduled.toISOString()}`?.split('T').pop().substring(0, 5)
+        : null,
+      startedTime: fixture.started 
+        ? `${fixture.started.toISOString()}`?.split('T').pop().substring(0, 5)
+        : null,
+      isResult: !!(fixture.goals1 === 0 || fixture.goals1),
+      played: fixture.outcome != 'not played'
     };
 
     if (options.cardedPlayers && fixture.id && fixture.tournamentId) {
@@ -60,7 +67,7 @@ module.exports = (db) => {
         ? `WHERE tournamentId = ? AND pitch = ?`
         : `WHERE tournamentId = ?`;
       const fixtures = await select( // Assign result to 'fixtures'
-        `SELECT * FROM v_fixture_information ${where}`,
+        `SELECT * FROM fixtures ${where}`,
         pitch ? [tournamentId, pitch] : [tournamentId]
       ); // Removed semicolon
       // Embellish each fixture; use Promise.all for async mapping
@@ -134,13 +141,21 @@ module.exports = (db) => {
       return { started: timestamp };
     },
 
-    updateScore: async (tournamentId, fixtureId, team1, team2, outcome) => {
+    endFixture: async (fixtureId) => {
       const timestamp = mysqlCurrentTime();
       await update(
+        `UPDATE fixtures SET ended = ? WHERE id = ?`,
+        [timestamp, fixtureId]
+      );
+      return { started: timestamp };
+    },
+
+    updateScore: async (tournamentId, fixtureId, team1, team2, outcome) => {
+      await update(
         `UPDATE fixtures 
-         SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, outcome = ?, ended = ?  
+         SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, outcome = ?
          WHERE id = ?`,
-        [team1.goals, team1.points, team2.goals, team2.points, outcome, timestamp, fixtureId]
+        [team1.goals, team1.points, team2.goals, team2.points, outcome, fixtureId]
       );
 
       // Retrieve fixture details to get the category used for updates.
