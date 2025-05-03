@@ -13,7 +13,7 @@ module.exports = (db) => {
   // Pass dbDelete to dbHelpers if stageCompletion needs it, otherwise it's available in this scope
   const dbHelpers = { select, insert, update, transaction, query };
   // Assuming sqlGroupStandings is needed and imported/available
-  const { sqlGroupStandings } = require('../../lib/queries'); // Make sure this is imported if not already
+  const { sqlGroupStandings, sqlGroupRankings } = require('../../lib/queries'); // Make sure this is imported if not already
   const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings });
 
   // Define embellishFixture inside the factory to access 'select'
@@ -26,10 +26,10 @@ module.exports = (db) => {
       team2: fixture.team2Id || fixture.team2,
       umpireTeam: fixture.umpireTeamId|| fixture.umpireTeam,
       scheduledTime: fixture.scheduled
-        ? `${fixture.scheduled.toISOString()}`?.split('T').pop().substring(0, 5)
+        ? `${fixture.scheduled.toTimeString()}`?.substring(0, 5)
         : null,
       startedTime: fixture.started 
-        ? `${fixture.started.toISOString()}`?.split('T').pop().substring(0, 5)
+        ? `${fixture.started.toTimeString()}`?.substring(0, 5)
         : null,
       isResult: !!(fixture.goals1 === 0 || fixture.goals1),
       played: fixture.outcome != 'not played' && fixture.ended

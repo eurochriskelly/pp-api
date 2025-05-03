@@ -4,9 +4,9 @@ const { promisify } = require("util");
 module.exports = (db) => {
   const execute = (type, query, params = []) => {
     return new Promise((resolve, reject) => {
-      DD(`Executing [${type}]`);
-      DD(`- query: ${query.split('\n').join(' ').replace(/ /g, ' ')}`);
-      DD(`- params: ${params}`);
+      // DD(`Executing [${type}]`);
+      // DD(`- query: ${query.split('\n').join(' ').replace(/ /g, ' ')}`);
+      //DD(`- params: ${params}`);
       db.query(query, params, (err, results) => {
         if (err) {
           EE(`Query failed: ${err.message}`);
