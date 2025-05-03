@@ -1,4 +1,5 @@
 module.exports = {
+
   calculateRankings: async (tournamentId, category, select)  => {
     const groupData = {};
     let rankings = [];
@@ -118,6 +119,54 @@ module.exports = {
           PointsFrom DESC) vgs
       `
     return query 
-  }
+  },
+  sqlGroupRankings: (
+    rank = 1,
+    winAward = 2,
+    drawAward = 1,
+    lossAward = 0,
+    goalsPoints = 3,
+    pointsPoints = 1
+  ) => {
+    const standingsQuery = sqlGroupStandings(winAward, drawAward, lossAward, goalsPoints, pointsPoints);
+    const query = `
+      WITH RankedTeams AS (
+        SELECT 
+          category,
+          grp,
+          team,
+          tournamentId,
+          MatchesPlayed,
+          Wins,
+          Draws,
+          Losses,
+          PointsFrom,
+          PointsDifference,
+          TotalPoints,
+          ROW_NUMBER() OVER (
+            PARTITION BY category, grp, tournamentId 
+            ORDER BY TotalPoints DESC, PointsDifference DESC, PointsFrom DESC
+          ) AS Rank
+        FROM (${standingsQuery}) AS standings
+      )
+      SELECT 
+        category,
+        grp,
+        team,
+        tournamentId,
+        MatchesPlayed,
+        Wins,
+        Draws,
+        Losses,
+        PointsFrom,
+        PointsDifference,
+        TotalPoints
+      FROM RankedTeams
+      WHERE Rank = ${rank}
+      ORDER BY category DESC, grp, TotalPoints DESC
+    `;
+    
+    return query;
+  },
 }
 
