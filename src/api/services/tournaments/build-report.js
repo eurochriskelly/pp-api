@@ -18,19 +18,31 @@ async function buildReport(
 }
 
 async function getCategoriesInfo(tournamentId, select) {
-  let res = await select(`select distinct category from fixtures where tournamentId=${tournamentId}`);
-  return res.map(async category => {
+  // Fetch distinct category names first
+  let categoryRows = await select(`select distinct category from fixtures where tournamentId=?`, [tournamentId]);
+  
+  // Map over category names and fetch teams for each, returning promises
+  const categoryPromises = categoryRows.map(async (catRow) => {
+    const category = catRow.category; // Extract category name
     const teams = await select(`
-      (
-        select distinct team1Id as team from fixtures 
-        where tournamentId=${tournamentId} and team1Id is not like '~%' and category='${category}'
-      ) UNION (
-        select distinc team2Id as team from fixtures 
-        where tournamentId=${tournamentId} and team1Id is not like '~%' and category='${category}'
-      )
-    `)
-    console.log('teams', teams)
-  })
+      SELECT DISTINCT team FROM (
+        SELECT team1Id as team FROM fixtures 
+        WHERE tournamentId=? AND category=? AND team1Id IS NOT NULL AND team1Id NOT LIKE '~%'
+        UNION 
+        SELECT team2Id as team FROM fixtures 
+        WHERE tournamentId=? AND category=? AND team2Id IS NOT NULL AND team2Id NOT LIKE '~%'
+      ) AS combined_teams
+    `, [tournamentId, category, tournamentId, category]);
+    
+    // Return an object containing the category and its teams
+    return {
+      category: category,
+      teams: teams.map(t => t.team) // Extract just the team names/IDs
+    };
+  });
+
+  // Wait for all promises to resolve
+  return Promise.all(categoryPromises);
 }
 
 async function getPitchInfo(tournamentId, select) {
