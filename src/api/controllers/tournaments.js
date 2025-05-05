@@ -21,7 +21,8 @@ module.exports = (db) => {
     }),
 
     getTournamentReport: handleRoute(async (req) => {
-      const report = await dbSvc.getTournamentReport();
+      const { id } = req.params;
+      const report = await dbSvc.buildTournamentReport(id);
       return { data: report };
     }),
     
