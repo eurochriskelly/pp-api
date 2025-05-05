@@ -20,6 +20,17 @@ module.exports = (db) => {
       return { data: tournaments };
     }),
 
+    getTournamentReport: handleRoute(async (req) => {
+      const report = await dbSvc.getTournamentReport();
+      return { data: report };
+    }),
+    
+    buildTournamentReport: handleRoute(async (req) => {
+      const { id } = req.params;
+      const report = await dbSvc.buildTournamentReport(id);
+      return { data: report };
+    }),
+
     getTournament: async (req, res) => {
       const { id, uuid = null } = req.params;
       try {

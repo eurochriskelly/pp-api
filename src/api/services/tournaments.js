@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const { promisify } = require("util");
 const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
+const { buildReport } = require('./tournaments/build-report');
 const { sqlGroupStandings } = require('../../lib/queries');
 
 module.exports = (db) => {
@@ -9,6 +10,17 @@ module.exports = (db) => {
   const winAward = 3;
 
   return {
+    getTournamentReport: (tournamentId) => {
+      return {
+        tournamentId,
+        abc: '123'
+      }
+    },
+    buildTournamentReport: async (tournamentId) => {
+      console.log(`This is and ${tournamentId}`)
+      const res = await buildReport(tournamentId, select);
+      return res
+    },
  // Create multiple fixtures for a tournament
     createFixtures: async (tournamentId, fixtures) => {
       console.log(JSON.stringify(fixtures[0], null, 2))
