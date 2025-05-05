@@ -8,40 +8,75 @@ async function buildReport(
 ) {
   const tournament = await getTournamentInfo(tournamentId, select);
   const pitches = await getPitchInfo(tournamentId, select);
-  const categories = await getCategoriesInfo(tournamentId, select);
+  const categoryTeams = await getCategoriesInfo(tournamentId, select);
   return {
     tournamentId,
-    // tournament,
-    // pitches,
-    categories,
+    tournament,
+    pitches,
+    categories: {
+      teams: categoryTeams,
+      fixtures: []
+    },
   }
 }
 
 async function getCategoriesInfo(tournamentId, select) {
   // Fetch distinct category names first
-  let categoryRows = await select(`select distinct category from fixtures where tournamentId=?`, [tournamentId]);
-  
-  // Map over category names and fetch teams for each, returning promises
+  const categoryRows = await select(`SELECT DISTINCT category FROM fixtures WHERE tournamentId=? ORDER BY category`, [tournamentId]);
+
+  // Process each category to get the desired structure
   const categoryPromises = categoryRows.map(async (catRow) => {
-    const category = catRow.category; // Extract category name
-    const teams = await select(`
+    const category = catRow.category;
+
+    // 1. Get all unique teams for the category
+    const allTeamsResult = await select(`
       SELECT DISTINCT team FROM (
         SELECT team1Id as team FROM fixtures 
         WHERE tournamentId=? AND category=? AND team1Id IS NOT NULL AND team1Id NOT LIKE '~%'
         UNION 
         SELECT team2Id as team FROM fixtures 
         WHERE tournamentId=? AND category=? AND team2Id IS NOT NULL AND team2Id NOT LIKE '~%'
-      ) AS combined_teams
+      ) AS combined_teams ORDER BY team
     `, [tournamentId, category, tournamentId, category]);
-    
-    // Return an object containing the category and its teams
+    const allTeams = allTeamsResult.map(t => t.team);
+
+    // 2. Get distinct group numbers for the category where stage is 'group'
+    const groupNumberRows = await select(`
+      SELECT DISTINCT groupNumber FROM fixtures 
+      WHERE tournamentId=? AND category=? AND stage='group' AND groupNumber IS NOT NULL 
+      ORDER BY groupNumber
+    `, [tournamentId, category]);
+
+    // 3. For each group number, get the teams in that specific group
+    const groupPromises = groupNumberRows.map(async (groupRow) => {
+      const groupNumber = groupRow.groupNumber;
+      const groupTeamsResult = await select(`
+        SELECT DISTINCT team FROM (
+          SELECT team1Id as team FROM fixtures 
+          WHERE tournamentId=? AND category=? AND stage='group' AND groupNumber=? AND team1Id IS NOT NULL AND team1Id NOT LIKE '~%'
+          UNION 
+          SELECT team2Id as team FROM fixtures 
+          WHERE tournamentId=? AND category=? AND stage='group' AND groupNumber=? AND team2Id IS NOT NULL AND team2Id NOT LIKE '~%'
+        ) AS group_teams ORDER BY team
+      `, [tournamentId, category, groupNumber, tournamentId, category, groupNumber]);
+      
+      return {
+        group: groupNumber,
+        teams: groupTeamsResult.map(t => t.team)
+      };
+    });
+
+    const byGroup = await Promise.all(groupPromises);
+
+    // 4. Assemble the final object for the category
     return {
       category: category,
-      teams: teams.map(t => t.team) // Extract just the team names/IDs
+      allTeams: allTeams,
+      byGroup: byGroup
     };
   });
 
-  // Wait for all promises to resolve
+  // Wait for all category processing promises to resolve
   return Promise.all(categoryPromises);
 }
 
