@@ -14,7 +14,7 @@ module.exports = (db) => {
   const dbHelpers = { select, insert, update, transaction, query };
   // Assuming sqlGroupStandings is needed and imported/available
   const { sqlGroupStandings, sqlGroupRankings } = require('../../lib/queries'); // Make sure this is imported if not already
-  const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings });
+  const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings });
 
   // Define embellishFixture inside the factory to access 'select'
   async function embellishFixture(fixture, options = {}) {
@@ -71,7 +71,11 @@ module.exports = (db) => {
         pitch ? [tournamentId, pitch] : [tournamentId]
       ); // Removed semicolon
       // Embellish each fixture; use Promise.all for async mapping
-      return await Promise.all(fixtures.map(f => embellishFixture(f))); // Defaulting to no cards
+      return await Promise.all(
+        fixtures
+          .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled)) // Order by 'scheduled' field
+          .map(f => embellishFixture(f))
+      );
     },
 
     getNextFixtures: async (tournamentId) => {
@@ -156,24 +160,29 @@ module.exports = (db) => {
     },
 
     updateScore: async (tournamentId, fixtureId, team1, team2, outcome) => {
+      console.log('us1')
       await update(
         `UPDATE fixtures 
          SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, outcome = ?
          WHERE id = ?`,
         [team1.goals, team1.points, team2.goals, team2.points, outcome, fixtureId]
       );
+      console.log('us2')
 
       // Retrieve fixture details to get the category used for updates.
       const [fixture] = await select(
         `SELECT tournamentId, category FROM fixtures WHERE id = ?`,
         [fixtureId]
       );
+      console.log('us3')
       if (fixture) {
+        console.log('us4')
         const { category } = fixture;
         // Decide winner and loser based on goals (adjust logic for draws as needed).
         const winner = team1.goals > team2.goals ? team1.name : team2.name;
         const loser  = team1.goals > team2.goals ? team2.name : team1.name;
     
+        console.log('us5')
         // Update all references for the winning team.
         await update(
           `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
@@ -187,7 +196,7 @@ module.exports = (db) => {
           `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId`,
           [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
         );
-    
+   console.log('us6') 
         // Update all references for the losing team.
         await update(
           `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
@@ -202,7 +211,9 @@ module.exports = (db) => {
           [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
         );
      }
+     console.log('us7')
       await stageCompletionProcessor.processStageCompletion(fixtureId);
+      console.log('us8')
       return { updated: true };
     },
 

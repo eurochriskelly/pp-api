@@ -7,7 +7,7 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
   const winAward = 3;
 
   async function processStageCompletion(fixtureId) {
-    II(`LLLL Processing stage completion check for fixture [${fixtureId}]...`);
+    II(`Processing stage completion check for fixture [${fixtureId}]...`);
 
     const fixture = await _getFixtureDetails(fixtureId);
     if (!fixture) {
@@ -16,16 +16,14 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
     }
     const { tournamentId, stage, groupNumber, category } = fixture;
     const remainingCount = await _getRemainingFixtureCount(fixture);
-    console.log("LLLL remainingCount", remainingCount)
     if (remainingCount === 0) {
-      II(`LLL Stage [${stage}/${groupNumber}/${category}] for tournament [${tournamentId}] is complete.`);
+      II(`Stage [${stage}/${groupNumber}/${category}] for tournament [${tournamentId}] is complete.`);
 
       const standings = await _getGroupStandings(fixture);
       if (!standings || standings.length === 0) {
         II(`No standings found for completed stage [${stage}/${groupNumber}/${category}]. Cannot update dependent fixtures.`);
         return false;
       }
-      console.log('LLLL ------ stadings are', standings);
 
       const { groupPositions, bestPositions } = await _getNumPositionsToUpdate(fixture);
       if (groupPositions === 0 && bestPositions === 0) {
@@ -156,10 +154,12 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
     for (let pos = 1; pos <= bestPositions; pos++) {
       if (!bestRankCache[pos]) {
         const query = sqlGroupRankings(pos);
-        bestRankCache[pos] = await select(query, []);
+        bestRankCache[pos] = 0 // await select(query, []);
+
       }
 
       const rankedTeams = bestRankCache[pos];
+
       for (let x = 1; x <= rankedTeams.length; x++) {
         const placeHolder = `~best:${x}/p:${pos}`;
         const teamId = rankedTeams[x - 1]?.team ?? null;
