@@ -1,5 +1,18 @@
 const { II } = require("../../lib/logging");
-const fixturesService = require("../services/fixtures.service");
+const fixturesService = require("../services/fixtures");
+const { z } = require('zod'); // Import Zod
+
+// Define Zod schema for a single card object in the request body
+const cardPlayerSchema = z.object({
+  // 'id' is the primary key of the card record itself. Nullable/optional for inserts.
+  id: z.number().int().positive().nullable().optional(),
+  team: z.string({ required_error: "Team is required" }).min(1, { message: "Team cannot be empty" }),
+  cardColor: z.enum(['yellow', 'red', 'black'], { required_error: "Card color is required", invalid_type_error: "Invalid card color" }),
+  // Add playerNumber and playerName - assuming they are strings and can be empty
+  playerNumber: z.number({ required_error: "playerNumber is required" }),
+  playerName: z.string({ required_error: "playerName is required" }),
+}).passthrough(); // Allow other fields like confirmed
+
 
 module.exports = (db) => {
   const dbSvc = fixturesService(db);
@@ -67,6 +80,16 @@ module.exports = (db) => {
       }
     },
 
+    endFixture: async (req, res) => {
+      const { tournamentId, id } = req.params;
+      try {
+        const result = await dbSvc.endFixture(id);
+        res.json({ data: result });
+      } catch (err) {
+        res.status(500).json({ error: "Internal server error" });
+      }
+    },
+
     reschedule: async (req, res) => {
       const { tournamentId, id } = req.params;
       const { fixtureId, placement, targetPitch } = req.body;
@@ -89,9 +112,10 @@ module.exports = (db) => {
 
     updateScore: async (req, res) => {
       const { tournamentId, id } = req.params;
-      const { team1, team2 } = req.body;
+      const { scores, outcome } = req.body;
+      const { team1, team2 } = scores;
       try {
-        await dbSvc.updateScore(id, team1, team2, tournamentId);
+        await dbSvc.updateScore(tournamentId, id, team1, team2, outcome);
         res.json({ message: "Score updated successfully" });
       } catch (err) {
         throw err;
@@ -99,16 +123,40 @@ module.exports = (db) => {
     },
 
     cardPlayers: async (req, res) => {
-      const { tournamentId, id } = req.params;
+      const { tournamentId, id: fixtureId } = req.params; // Renamed id to fixtureId for clarity
+
+      // Validate request body
+      console.log('card', req.body)
+      const validationResult = cardPlayerSchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        console.error("CardPlayers validation error:", validationResult.error.flatten());
+        // Return a 400 Bad Request with validation errors
+        return res.status(400).json({
+          message: "Invalid request body for carding players.",
+          errors: validationResult.error.flatten().fieldErrors,
+        });
+      }
+
+      // Use validated data
+      const validatedCardData = validationResult.data;
+
       try {
-        const cards = req.body.map(p => ({
-          playerId: p.playerId,  // Expect client to send playerId
-          cardColor: p.cardColor,
-        }));
-        const result = await dbSvc.cardPlayers(tournamentId, id, cards);
+        II(`Processing cardPlayers request for tournament [${tournamentId}], fixture [${fixtureId}]`);
+        // Call the service method with the validated data directly.
+        // The service expects an object with an 'id' field (player's ID), cardColor, and team.
+        // validatedCardData already has this structure.
+        const result = await dbSvc.cardPlayers(tournamentId, fixtureId, validatedCardData);
         res.json({ data: result });
       } catch (err) {
-        throw err;
+         // Log the error for server-side inspection
+        console.error(`Error in cardPlayers controller for fixture [${fixtureId}]:`, err);
+
+        // Reverted: Handle potential errors (like DB connection issues, constraints)
+        // Send a generic 500 error to the client
+        // The foreign key constraint error will now result in a 500 again,
+        // which might be acceptable if the client ensures valid player IDs.
+        res.status(500).json({ error: "Internal server error while processing card." });
       }
     },
 
@@ -123,6 +171,32 @@ module.exports = (db) => {
       } catch (err) {
         console.error("Error in getCardedPlayers:", err);
         res.status(500).json({ error: "Internal server error" });
+      }
+    },
+
+    deleteCard: async (req, res) => {
+      // Note: The route uses ':id' for fixtureId
+      const { tournamentId, id: fixtureId, cardId } = req.params;
+
+      // Basic validation for cardId
+      const cardIdNum = parseInt(cardId, 10);
+      if (isNaN(cardIdNum) || cardIdNum <= 0) {
+          return res.status(400).json({ error: "Invalid Card ID format." });
+      }
+
+      try {
+        II(`Processing deleteCard request for tournament [${tournamentId}], fixture [${fixtureId}], card [${cardIdNum}]`);
+        const result = await dbSvc.deleteCard(tournamentId, fixtureId, cardIdNum);
+
+        if (result.cardDeleted) {
+          res.status(200).json({ message: `Card with ID ${cardIdNum} deleted successfully.` });
+        } else {
+          // If the service returns cardDeleted: false, it means the card wasn't found
+          res.status(404).json({ error: `Card with ID ${cardIdNum} not found for the specified tournament/fixture.` });
+        }
+      } catch (err) {
+        console.error(`Error in deleteCard controller for card [${cardIdNum}]:`, err);
+        res.status(500).json({ error: "Internal server error while deleting card." });
       }
     },
 

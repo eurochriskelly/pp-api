@@ -1,6 +1,6 @@
 const { II } = require("../../lib/logging");
 const { jsonToCsv, sendXsls } = require("../../lib/utils");
-const tournamentsService = require("../services/tournaments.service");
+const tournamentsService = require("../services/tournaments");
 
 module.exports = (db) => {
   const dbSvc = tournamentsService(db);
@@ -18,6 +18,18 @@ module.exports = (db) => {
       const status = req.query.status || 'all';
       const tournaments = await dbSvc.getTournaments(status);
       return { data: tournaments };
+    }),
+
+    getTournamentReport: handleRoute(async (req) => {
+      const { id } = req.params;
+      const report = await dbSvc.buildTournamentReport(id);
+      return { data: report };
+    }),
+    
+    buildTournamentReport: handleRoute(async (req) => {
+      const { id } = req.params;
+      const report = await dbSvc.buildTournamentReport(id);
+      return { data: report };
     }),
 
     getTournament: async (req, res) => {
