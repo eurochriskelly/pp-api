@@ -1,6 +1,6 @@
 const { II } = require("../../lib/logging");
 const { jsonToCsv, sendXsls } = require("../../lib/utils");
-const generalService = require("../services/general.service");
+const generalService = require("../services/general");
 
 module.exports = (db) => {
   const dbSvc = generalService(db);
