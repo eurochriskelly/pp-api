@@ -7,6 +7,7 @@ module.exports = (db) => {
 
   router.post("/", ctrl.createTournament);
   router.get("/", ctrl.getTournaments);
+  router.get("/:id", ctrl.getTournament);
   router.get("/:id/report", ctrl.getTournamentReport);
   router.put("/:id/report", ctrl.buildTournamentReport);
   router.put("/:id", ctrl.updateTournament);
