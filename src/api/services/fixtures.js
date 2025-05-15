@@ -19,11 +19,28 @@ module.exports = (db) => {
   // Define embellishFixture inside the factory to access 'select'
   async function embellishFixture(fixture, options = {}) {
     if (!fixture) return null; // Handle null fixture input
+    const getCurrentLane = () => {
+      // if started is null, then late.current = 'planned',
+      if (!fixture?.started) return 'planned';
+      // if started is not null but ended is null, lane.current = 'ongoing'
+      if (fixture?.started && !fixture?.ended) return 'started';
+      // if started is not null and ended is true, lane.current = 'finished'
+      if (fixture?.started && fixture?.ended) return 'finished';
+      console.error(`Invalid fixture state: ${JSON.stringify(fixture, null, 2)}`);
+      throw new Error(`Invalid fixture state:`);
+    }
+    const getAllowedLanes = () => {
+      return ['planned', 'ongoing', 'finished'];
+    }
     const embellished = {
       ...fixture,
       // todo: get rid v_fixture_information. Centralize abstractions in the code.
       team1: fixture.team1Id || fixture.team1,
       team2: fixture.team2Id || fixture.team2,
+      lane: {
+        current: getCurrentLane(),
+        allowedLanes: getAllowedLanes(),
+      },
       umpireTeam: fixture.umpireTeamId|| fixture.umpireTeam,
       scheduledTime: fixture.scheduled
         ? `${fixture.scheduled.toTimeString()}`?.substring(0, 5)
@@ -50,7 +67,6 @@ module.exports = (db) => {
     return embellished;
   }
 
-
   return {
     getFixture: async (tournamentId, fixtureId) => {
       const [fixture] = await select(
@@ -63,7 +79,7 @@ module.exports = (db) => {
     },
 
     getFixturesByPitch: async (tournamentId, pitch) => {
-      const where = pitch
+      const where = (pitch && pitch !== '*')
         ? `WHERE tournamentId = ? AND pitch = ?`
         : `WHERE tournamentId = ?`;
       const fixtures = await select( // Assign result to 'fixtures'

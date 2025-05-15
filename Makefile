@@ -26,6 +26,11 @@ start:  ## Start server with auto-restart (usage: make start [env=production|acc
 		exit 1; \
 	fi
 
+.PHONY: home
+
+home:  ## Serve the home directory on port 5175
+	httpster -p 5175 src/home
+
 backup:  ## Create a database backup
 	npm run backup
 
