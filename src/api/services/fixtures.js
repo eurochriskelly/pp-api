@@ -16,30 +16,74 @@ module.exports = (db) => {
   const { sqlGroupStandings, sqlGroupRankings } = require('../../lib/queries'); // Make sure this is imported if not already
   const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings });
 
-  // Define embellishFixture inside the factory to access 'select'
+  // Define embellishFixture inside the factory to access 'select' and 'DD'
   async function embellishFixture(fixture, options = {}) {
     if (!fixture) return null; // Handle null fixture input
-    const getCurrentLane = () => {
+
+    const getCurrentLane = () => { // Uses 'fixture' from embellishFixture's scope
       // if started is null, then late.current = 'planned',
       if (!fixture?.started) return 'planned';
-      // if started is not null but ended is null, lane.current = 'ongoing'
+      // if started is not null but ended is null, lane.current = 'started' (was 'ongoing' in prompt)
       if (fixture?.started && !fixture?.ended) return 'started';
       // if started is not null and ended is true, lane.current = 'finished'
       if (fixture?.started && fixture?.ended) return 'finished';
       console.error(`Invalid fixture state: ${JSON.stringify(fixture, null, 2)}`);
       throw new Error(`Invalid fixture state:`);
     }
-    const getAllowedLanes = () => {
-      return ['planned', 'ongoing', 'finished'];
-    }
+
+    // getAllowedLanes is now async and uses 'fixture', 'select', 'DD' from its closure
+    const getAllowedLanes = async (currentLaneValue) => {
+      let defaultAllowed = ['planned', 'started', 'finished']; // 'started' for 'ongoing'
+
+      // Rule 2: If team1Id or team2Id (or their fallbacks team1/team2) starts with "~", allowedLanes is ['planned']
+      const team1Identifier = String(fixture.team1Id || fixture.team1 || '');
+      const team2Identifier = String(fixture.team2Id || fixture.team2 || '');
+
+      if (team1Identifier.startsWith('~') || team2Identifier.startsWith('~')) {
+        DD(`Fixture [${fixture.id}] (Tournament: ${fixture.tournamentId}): Team identifier (${team1Identifier} or ${team2Identifier}) starts with '~'. Allowed lanes restricted to ['planned'].`);
+        return ['planned'];
+      }
+
+      // Rule 1: If current lane is 'planned' and another match on the same pitch is 'started' (ongoing),
+      // then remove 'started' from allowed lanes.
+      let finalAllowedLanes = [...defaultAllowed];
+
+      if (currentLaneValue === 'planned') {
+        // Ensure fixture.pitch, fixture.tournamentId, and fixture.id are present for the query
+        if (fixture.pitch && fixture.tournamentId && typeof fixture.id !== 'undefined') {
+          const ongoingFixturesOnPitch = await select(
+            `SELECT 1 FROM fixtures 
+             WHERE tournamentId = ? AND pitch = ? AND started IS NOT NULL AND ended IS NULL AND id != ? 
+             LIMIT 1`,
+            [fixture.tournamentId, fixture.pitch, fixture.id]
+          );
+
+          if (ongoingFixturesOnPitch.length > 0) {
+            DD(`Fixture [${fixture.id}] (Tournament: ${fixture.tournamentId}, Pitch: ${fixture.pitch}): Current lane is 'planned'. Another match on the same pitch is 'started'. Removing 'started' from allowed lanes.`);
+            finalAllowedLanes = finalAllowedLanes.filter(lane => lane !== 'started');
+          }
+        } else {
+          let missingFields = [];
+          if (!fixture.pitch) missingFields.push("pitch");
+          if (!fixture.tournamentId) missingFields.push("tournamentId");
+          if (typeof fixture.id === 'undefined') missingFields.push("id");
+          DD(`Fixture (ID: ${fixture.id}, Tournament: ${fixture.tournamentId}, Pitch: ${fixture.pitch}): Skipping Rule 1 for allowedLanes due to missing field(s): ${missingFields.join(', ')}.`);
+        }
+      }
+      return finalAllowedLanes;
+    };
+
+    const currentLane = getCurrentLane();
+    const resolvedAllowedLanes = await getAllowedLanes(currentLane); // Call the async function
+
     const embellished = {
       ...fixture,
       // todo: get rid v_fixture_information. Centralize abstractions in the code.
       team1: fixture.team1Id || fixture.team1,
       team2: fixture.team2Id || fixture.team2,
       lane: {
-        current: getCurrentLane(),
-        allowedLanes: getAllowedLanes(),
+        current: currentLane,
+        allowedLanes: resolvedAllowedLanes, // Use the dynamically calculated allowedLanes
       },
       umpireTeam: fixture.umpireTeamId|| fixture.umpireTeam,
       scheduledTime: fixture.scheduled
