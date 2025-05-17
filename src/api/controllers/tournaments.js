@@ -45,9 +45,60 @@ module.exports = (db) => {
     stageCompletion: async (req, res) => {
       const { id } = req.params;
       try {
-        const groupStandings = await dbSvc.getGroupStandings(id);
-        res.json();
+        // Pass 'internal_completion_calc' to ensure completion fields are calculated
+        const groupStandingsMap = await dbSvc.getGroupStandings(id, undefined, undefined, 'internal_completion_calc');
+        const output = [];
+        const categoryCompletionData = {}; // Stores { categoryName: { completed: boolean } }
+
+        for (const categoryName in groupStandingsMap) {
+          const groups = groupStandingsMap[categoryName];
+          let firstTeamInCategoryProcessed = false;
+
+          for (const groupNumberStr in groups) {
+            const teamsInGroup = groups[groupNumberStr];
+            if (teamsInGroup.length > 0) {
+              const representativeTeam = teamsInGroup[0]; // All teams in group share completedGroup
+                                                        // All teams in category share completedCategory
+
+              // Add group completion status
+              output.push({
+                category: categoryName,
+                level: 'group',
+                number: parseInt(groupNumberStr),
+                completed: !!representativeTeam.completedGroup
+              });
+
+              // Store category completion status once per category
+              if (!firstTeamInCategoryProcessed) {
+                categoryCompletionData[categoryName] = {
+                  completed: !!representativeTeam.completedCategory
+                };
+                firstTeamInCategoryProcessed = true;
+              }
+            }
+          }
+        }
+
+        // Add category completion statuses to the main output array
+        for (const categoryName in categoryCompletionData) {
+          output.push({
+            category: categoryName,
+            level: 'category',
+            completed: categoryCompletionData[categoryName].completed
+          });
+        }
+
+        // Sort output: by category, then by level ('category' before 'group'), then by group number
+        output.sort((a, b) => {
+          if (a.category !== b.category) return a.category.localeCompare(b.category);
+          if (a.level !== b.level) return a.level === 'category' ? -1 : (b.level === 'category' ? 1 : 0);
+          if (a.level === 'group' && b.level === 'group') return a.number - b.number;
+          return 0;
+        });
+
+        res.json({ data: output });
       } catch (err) {
+        console.error("Error in stageCompletion:", err);
         res.status(500).json({ error: err.message || 'Internal server error' });
       }
     },
