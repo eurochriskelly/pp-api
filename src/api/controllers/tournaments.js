@@ -42,6 +42,16 @@ module.exports = (db) => {
       }
     },
 
+    stageCompletion: async (req, res) => {
+      const { id } = req.params;
+      try {
+        const groupStandings = await dbSvc.getGroupStandings(id);
+        res.json();
+      } catch (err) {
+        res.status(500).json({ error: err.message || 'Internal server error' });
+      }
+    },
+
     updateTournament: async (req, res) => {
       const { id } = req.params;
       const { title, date, location, lat, lon } = req.body;
@@ -112,8 +122,9 @@ module.exports = (db) => {
 
     getGroupStandings: async (req, res) => {
       const { id } = req.params;
+      const { category, groupNumber, format } = req.query;
       try {
-        const standings = await dbSvc.getGroupStandings(id);
+        const standings = await dbSvc.getGroupStandings(id, category, groupNumber, format);
         res.json(standings);
       } catch (err) {
         throw err;

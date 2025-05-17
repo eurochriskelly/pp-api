@@ -18,11 +18,13 @@ module.exports = (db) => {
   router.get("/:id/categories", ctrl.getTournamentCategories);
   router.get("/:id/group-fixtures", ctrl.getGroupFixtures);
   router.get("/:id/group-standings", ctrl.getGroupStandings);
+  router.post("/:id/stage-update/:stage", ctrl.updateStage);
   router.get("/:id/knockout-fixtures", ctrl.getKnockoutFixtures);
   router.get("/:id/finals-results", ctrl.getFinalsResults);
   router.get("/:id/all-matches", ctrl.getAllMatches);
 
   router.get("/:tournamentId/matches-by-pitch", ctrl.getMatchesByPitch);
+  router.get("/:tournamentId/stage-completion", ctrl.stageCompletion);
   router.get("/:tournamentId/carded-players", ctrl.getCardedPlayers);
 
   // Squads sub-resource (replaces teams)
