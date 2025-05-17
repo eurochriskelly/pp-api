@@ -463,8 +463,20 @@ module.exports = (db) => {
 
         // Calculate category completion status
         sortedTeams.forEach(team => {
-          const categoryGroupsComplete = Object.values(categoryGroupCompletion[team.category] || {}).every(status => status === 1);
-          team.completedCategory = categoryGroupsComplete ? 1 : 0;
+          const groupsDefinedForThisCategory = categoryGroups[team.category]; // Set of group numbers for this team's category
+          let allActualGroupsAreComplete = false; // Default to false
+
+          if (groupsDefinedForThisCategory && groupsDefinedForThisCategory.size > 0) {
+            allActualGroupsAreComplete = true; // Assume true, try to disprove
+            for (const grpNum of groupsDefinedForThisCategory) {
+              // Check if this specific group (grpNum) in this category (team.category) is marked as complete (status === 1)
+              if (!categoryGroupCompletion[team.category] || categoryGroupCompletion[team.category][grpNum] !== 1) {
+                allActualGroupsAreComplete = false; // Found a group not complete or status not recorded
+                break;
+              }
+            }
+          }
+          team.completedCategory = allActualGroupsAreComplete ? 1 : 0;
         });
 
         // Define CSV columns with all fields
