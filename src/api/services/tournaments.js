@@ -402,9 +402,11 @@ module.exports = (db) => {
       });
 
       // If CSV format is requested, output to console
-      if (format === 'csv' && allTeams.length > 0) {
+      // Also, run this logic if 'internal_completion_calc' format is used to populate completion fields
+      if ((format === 'csv' || format === 'internal_completion_calc') && allTeams.length > 0) {
         // Sort teams by rankCategory in descending order
-        const sortedTeams = [...allTeams].sort((a, b) => a.rankCategory - b.rankCategory);
+        // For 'internal_completion_calc', sorting isn't strictly needed here but doesn't harm
+        const sortedTeams = (format === 'csv') ? [...allTeams].sort((a, b) => a.rankCategory - b.rankCategory) : [...allTeams];
 
         // Group teams by category and group for calculating completion status
         const groupSizes = {};
@@ -486,12 +488,15 @@ module.exports = (db) => {
           }).join(',');
         });
 
-        // Output the CSV
-        console.log(header);
-        rows.forEach(row => console.log(row));
+        // Output the CSV only if format is 'csv'
+        if (format === 'csv') {
+          console.log(header);
+          rows.forEach(row => console.log(row));
+        }
       }
 
       // Return in the original structured format
+      // If 'internal_completion_calc' was used, team objects in groupStandingsMap now have completion fields.
       return groupStandingsMap;
     },
 
