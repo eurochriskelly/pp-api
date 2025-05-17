@@ -305,25 +305,196 @@ module.exports = (db) => {
       );
     },
 
-    getGroupStandings: async (id) => {
-      const groups = await select(
-        `SELECT DISTINCT grp as gnum, category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`,
-        [id]
-      );
-      const standings = {};
-      for (const { gnum, category } of groups) {
+    getGroupStandings: async (id, category, groupNumber, format) => {
+      let groupsQuery = `SELECT DISTINCT grp as gnum, category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`;
+      let queryParams = [id];
+
+      // Add filters if category and/or groupNumber are provided
+      if (category) {
+        groupsQuery += " AND category = ?";
+        queryParams.push(category);
+      }
+
+      if (groupNumber) {
+        groupsQuery += " AND grp = ?";
+        queryParams.push(groupNumber);
+      }
+
+      const groups = await select(groupsQuery, queryParams);
+
+      // Collect all rows first to calculate overall rankings
+      const allTeams = [];
+      const groupStandingsMap = {};
+
+      // First pass: Collect data and add group rankings
+      for (const { gnum, category: groupCategory } of groups) {
         const rows = await select(
           `SELECT category, grp, team, tournamentId, MatchesPlayed, Wins, Draws, Losses, PointsFrom, PointsDifference, TotalPoints 
            FROM ${sqlGroupStandings(winAward)} 
-           WHERE tournamentId = ? AND category = ? AND grp LIKE ? 
+           WHERE tournamentId = ? AND category = ? AND grp = ? 
            ORDER BY TotalPoints DESC, PointsDifference DESC, PointsFrom DESC`,
-          [id, category, gnum]
+          [id, groupCategory, gnum]
         );
-        standings[category] = standings[category] || {};
-        standings[category][gnum] = rows;
+
+        // Add group ranking to each team
+        rows.forEach((team, index) => {
+          team.rankGroup = index + 1;
+
+          // Store reference for later grouping
+          if (!groupStandingsMap[groupCategory]) {
+            groupStandingsMap[groupCategory] = {};
+          }
+          if (!groupStandingsMap[groupCategory][gnum]) {
+            groupStandingsMap[groupCategory][gnum] = [];
+          }
+          groupStandingsMap[groupCategory][gnum].push(team);
+
+          // Add to flat list for category ranking calculation
+          allTeams.push(team);
+        });
       }
-      return standings;
+
+      // Second pass: Calculate category rankings
+      // Group teams by category
+      const teamsByCategory = {};
+      allTeams.forEach(team => {
+        if (!teamsByCategory[team.category]) {
+          teamsByCategory[team.category] = [];
+        }
+        teamsByCategory[team.category].push(team);
+      });
+
+      // Sort and assign category rankings
+      Object.keys(teamsByCategory).forEach(cat => {
+        teamsByCategory[cat].sort((a, b) => {
+          if (a.TotalPoints !== b.TotalPoints) return b.TotalPoints - a.TotalPoints;
+          if (a.PointsDifference !== b.PointsDifference) return b.PointsDifference - a.PointsDifference;
+          return b.PointsFrom - a.PointsFrom;
+        });
+
+        teamsByCategory[cat].forEach((team, index) => {
+          team.rankCategory = index + 1;
+        });
+      });
+
+      // Third pass: Calculate "best of" rankings
+      // Group teams by category and group ranking
+      const teamsByCategoryAndRank = {};
+      allTeams.forEach(team => {
+        const key = `${team.category}_${team.rankGroup}`;
+        if (!teamsByCategoryAndRank[key]) {
+          teamsByCategoryAndRank[key] = [];
+        }
+        teamsByCategoryAndRank[key].push(team);
+      });
+
+      // Sort and assign "best of" rankings
+      Object.keys(teamsByCategoryAndRank).forEach(key => {
+        teamsByCategoryAndRank[key].sort((a, b) => {
+          if (a.TotalPoints !== b.TotalPoints) return b.TotalPoints - a.TotalPoints;
+          if (a.PointsDifference !== b.PointsDifference) return b.PointsDifference - a.PointsDifference;
+          return b.PointsFrom - a.PointsFrom;
+        });
+
+        teamsByCategoryAndRank[key].forEach((team, index) => {
+          team.rankBestOf = index + 1;
+        });
+      });
+
+      // If CSV format is requested, output to console
+      if (format === 'csv' && allTeams.length > 0) {
+        // Sort teams by rankCategory in descending order
+        const sortedTeams = [...allTeams].sort((a, b) => a.rankCategory - b.rankCategory);
+
+        // Group teams by category and group for calculating completion status
+        const groupSizes = {};
+        const groupPlayedMatches = {};
+        const categoryGroups = {}; // Track groups in each category
+        const categoryGroupCompletion = {}; // Track completion status for each category
+
+        // Calculate group sizes first
+        sortedTeams.forEach(team => {
+          const key = `${team.category}_${team.grp}`;
+          groupSizes[key] = (groupSizes[key] || 0) + 1;
+          // Initialize the played matches counter
+          if (!groupPlayedMatches[key]) groupPlayedMatches[key] = 0;
+
+          // Track which groups belong to which category
+          if (!categoryGroups[team.category]) {
+            categoryGroups[team.category] = new Set();
+          }
+          categoryGroups[team.category].add(team.grp);
+        });
+
+        // Add the calculated fields before generating CSV
+        sortedTeams.forEach(team => {
+          team.MatchesTotal = team.MatchesPlayed; // Store the original value with new name
+          team.MatchesPlayed = team.Wins + team.Draws + team.Losses; // Calculate new field
+
+          const key = `${team.category}_${team.grp}`;
+          const expectedMatchesPerTeam = groupSizes[key] - 1;
+
+          // Determine if team has completed all its matches
+          team.completedTeam = team.MatchesPlayed >= expectedMatchesPerTeam ? 1 : 0;
+
+          // Add team's matches to group total
+          groupPlayedMatches[key] += team.MatchesPlayed;
+        });
+
+        // Calculate group completion status
+        sortedTeams.forEach(team => {
+          const key = `${team.category}_${team.grp}`;
+          const groupSize = groupSizes[key];
+          const totalExpectedMatches = (groupSize * (groupSize - 1)) / 2; // Formula for total matches in round robin
+          // Each match is counted twice (once for each team) in our data
+          const actualGroupMatches = groupPlayedMatches[key] / 2;
+
+          // Determine if group has completed all matches
+          team.completedGroup = actualGroupMatches >= totalExpectedMatches ? 1 : 0;
+
+          // Track group completion for category calculation
+          if (!categoryGroupCompletion[team.category]) {
+            categoryGroupCompletion[team.category] = {};
+          }
+          categoryGroupCompletion[team.category][team.grp] = team.completedGroup;
+        });
+
+        // Calculate category completion status
+        sortedTeams.forEach(team => {
+          const categoryGroupsComplete = Object.values(categoryGroupCompletion[team.category] || {}).every(status => status === 1);
+          team.completedCategory = categoryGroupsComplete ? 1 : 0;
+        });
+
+        // Define CSV columns with all fields
+        const columns = [
+          'category', 'grp', 'team', 'rankGroup', 'rankCategory', 'rankBestOf',
+          'MatchesPlayed', 'MatchesTotal', 'Wins', 'Draws', 'Losses',
+          'PointsFrom', 'PointsDifference', 'TotalPoints',
+          'completedTeam', 'completedGroup', 'completedCategory'
+        ];
+
+        // Create header row
+        const header = columns.join(',');
+
+        // Create data rows
+        const rows = sortedTeams.map(team => {
+          return columns.map(col => {
+            // Handle any special formatting or missing values
+            const value = team[col] !== undefined ? team[col] : '';
+            // Escape any commas or quotes in string values
+            return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+          }).join(',');
+        });
+
+        // Output the CSV
+        console.log(header);
+        rows.forEach(row => console.log(row));
+      }
+
+      // Return in the original structured format
+      return groupStandingsMap;
     },
+
     getKnockoutFixtures: async (id) => {
       return await select(
         `SELECT id, category, stage, pitch, scheduledTime, team1, goals1, points1, team2, goals2, points2, umpireTeam, outcome,
