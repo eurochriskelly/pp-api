@@ -42,11 +42,21 @@ module.exports = (db) => {
       }
     },
 
+    updateStage: async (req, res) => {
+      const { id, uuid = null } = req.params;
+      try {
+        const tournament = await dbSvc.getTournament(id, uuid);
+        res.json({ data: tournament });
+      } catch (err) {
+        throw err;
+      }
+    },
     stageCompletion: async (req, res) => {
       const { id } = req.params;
       try {
         // Pass 'internal_completion_calc' to ensure completion fields are calculated
-        const groupStandingsMap = await dbSvc.getGroupStandings(id, undefined, undefined, 'internal_completion_calc');
+        const groupStandingsMap = await dbSvc.getGroupStandings(id);
+        console.log("groupStandingsMap", groupStandingsMap);
         const output = [];
         const categoryCompletionData = {}; // Stores { categoryName: { completed: boolean } }
 
