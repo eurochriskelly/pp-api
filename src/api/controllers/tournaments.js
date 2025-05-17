@@ -55,7 +55,7 @@ module.exports = (db) => {
       const { id } = req.params;
       try {
         // Pass 'internal_completion_calc' to ensure completion fields are calculated
-        const groupStandingsMap = await dbSvc.getGroupStandings(id);
+        const groupStandingsMap = await dbSvc.getGroupStandings(id, undefined, undefined, 'internal_completion_calc');
         console.log("groupStandingsMap", groupStandingsMap);
         const output = [];
         const categoryCompletionData = {}; // Stores { categoryName: { completed: boolean } }
