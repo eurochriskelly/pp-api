@@ -22,7 +22,10 @@ module.exports = (db) => {
 
     const getCurrentLane = () => { // Uses 'fixture' from embellishFixture's scope
       // if started is null, then late.current = 'planned',
-      if (!fixture?.started) return 'planned';
+      if (!fixture?.started) {
+        // Either it's next unstarted game on it's own pitch ("queued"), or it's "started
+        // IMPLEMENT ME!
+      } 
       // if started is not null but ended is null, lane.current = 'started' (was 'ongoing' in prompt)
       if (fixture?.started && !fixture?.ended) return 'started';
       // if started is not null and ended is true, lane.current = 'finished'
@@ -33,7 +36,7 @@ module.exports = (db) => {
 
     // getAllowedLanes is now async and uses 'fixture', 'select', 'DD' from its closure
     const getAllowedLanes = async (currentLaneValue) => {
-      let defaultAllowed = ['planned', 'started', 'finished']; // 'started' for 'ongoing'
+      let defaultAllowed = ['planned', 'queued', 'started', 'finished']; // 'started' for 'ongoing'
 
       // Rule 2: If team1Id or team2Id (or their fallbacks team1/team2) starts with "~", allowedLanes is ['planned']
       const team1Identifier = String(fixture.team1Id || fixture.team1 || '');
