@@ -20,18 +20,39 @@ module.exports = (db) => {
   async function embellishFixture(fixture, options = {}) {
     if (!fixture) return null; // Handle null fixture input
 
-    const getCurrentLane = () => { // Uses 'fixture' from embellishFixture's scope
-      // if started is null, then late.current = 'planned',
+    // getCurrentLane is now async and uses 'fixture', 'select', 'DD' from its closure
+    const getCurrentLane = async () => { 
+      // if started is null, determine if 'queued' or 'planned'
       if (!fixture?.started) {
-        // Either it's next unstarted game on it's own pitch ("queued"), or it's "started
-        // IMPLEMENT ME!
+        if (fixture.pitch && fixture.tournamentId && typeof fixture.id !== 'undefined') {
+          const nextUnstartedOnPitch = await select(
+            `SELECT id FROM fixtures 
+             WHERE tournamentId = ? AND pitch = ? AND started IS NULL 
+             ORDER BY scheduled ASC, id ASC 
+             LIMIT 1`,
+            [fixture.tournamentId, fixture.pitch]
+          );
+
+          if (nextUnstartedOnPitch.length > 0 && nextUnstartedOnPitch[0].id === fixture.id) {
+            DD(`Fixture [${fixture.id}] is the next unstarted on pitch [${fixture.pitch}]. Lane: 'queued'.`);
+            return 'queued';
+          }
+          DD(`Fixture [${fixture.id}] is planned but not the next on pitch [${fixture.pitch}]. Lane: 'planned'.`);
+          return 'planned';
+        }
+        // If essential fields are missing for the query, default to 'planned'
+        DD(`Fixture [${fixture.id}] missing pitch, tournamentId, or id for 'queued' check. Defaulting to 'planned'.`);
+        return 'planned';
       } 
-      // if started is not null but ended is null, lane.current = 'started' (was 'ongoing' in prompt)
+      // if started is not null but ended is null, lane.current = 'started'
       if (fixture?.started && !fixture?.ended) return 'started';
       // if started is not null and ended is true, lane.current = 'finished'
       if (fixture?.started && fixture?.ended) return 'finished';
-      console.error(`Invalid fixture state: ${JSON.stringify(fixture, null, 2)}`);
-      throw new Error(`Invalid fixture state:`);
+      
+      // This state should ideally not be reached if fixture states are consistent
+      console.error(`Invalid fixture state for lane determination: ${JSON.stringify(fixture, null, 2)}`);
+      // Fallback or throw error, 'planned' might be a safer default if an unexpected state occurs
+      return 'planned'; 
     }
 
     // getAllowedLanes is now async and uses 'fixture', 'select', 'DD' from its closure
@@ -76,7 +97,7 @@ module.exports = (db) => {
       return finalAllowedLanes;
     };
 
-    const currentLane = getCurrentLane();
+    const currentLane = await getCurrentLane(); // Await the async function
     const resolvedAllowedLanes = await getAllowedLanes(currentLane); // Call the async function
 
     const embellished = {
