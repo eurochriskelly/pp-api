@@ -1,5 +1,4 @@
 const { v4: uuidv4 } = require('uuid');
-const { promisify } = require("util");
 const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { buildReport } = require('./tournaments/build-report');
