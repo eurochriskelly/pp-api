@@ -30,12 +30,14 @@ PORT=${1:-4000}
 APP=${2:-mobile}
 USE_MOCK=${3:-false}
 DATABASE=${4:-${PP_DBN}}
+ENVNAME=${5:-test}
 
 # Log startup info
 echo "=== Starting ${SCRIPT_NAME} at $(date) ==="
 echo "Database: ${PP_DBN}"
 echo "Port: ${PORT}"
 echo "App: ${APP}"
+echo "Env: ${ENVNAME}"
 echo "Use Mock: ${USE_MOCK}"
 echo "Log File: ${LOG_FILE}"
 
@@ -57,6 +59,7 @@ while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
   echo "PP_DBN: ${PP_DBN}"
   echo "PORT: ${PORT}"
   echo "APP: ${APP}"
+  echo "ENV: ${ENVNAME}"
   echo "USE_MOCK: ${USE_MOCK}"
   echo "DATABASE: ${DATABASE}"
   echo "-----------------------------------------"
@@ -66,7 +69,8 @@ while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
     --port="$PORT" \
     --app="$APP" \
     --use-mock="$USE_MOCK" \
-    --database="$DATABASE"
+    --database="$DATABASE" \
+    --environment="$ENVNAME"
   then
     echo "Server exited cleanly"
     break
