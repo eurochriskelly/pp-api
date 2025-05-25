@@ -199,6 +199,14 @@ module.exports = ({ dbHelpers, loggers }) => {
         if (typeof fixture.id === 'undefined') missingFields.push("id");
         DD(`Fixture (ID: ${fixture.id}, Tournament: ${fixture.tournamentId}, Pitch: ${fixture.pitch}): Skipping Pitch Occupancy check for allowedLanes due to missing field(s): ${missingFields.join(', ')}.`);
       }
+
+      // New Rule: If current lane is 'planned', it cannot go directly to 'started'.
+      // It must first be 'queued'.
+      if (currentLaneValue === 'planned') {
+        DD(`Fixture [${fixture.id}] (Tournament: ${fixture.tournamentId}): Current lane is 'planned'. Removing 'started' from allowed lanes as it must be 'queued' first.`);
+        finalAllowedLanes = finalAllowedLanes.filter(lane => lane !== 'started');
+      }
+
       return finalAllowedLanes;
     };
 
