@@ -239,16 +239,24 @@ module.exports = ({ dbHelpers, loggers }) => {
       played: fixture.outcome != 'not played' && fixture.ended
     };
 
-    if (options.cardedPlayers && fixture.id && fixture.tournamentId) {
-      DD(`Embellishing fixture [${fixture.id}] with card data.`);
-      embellished.cardedPlayers = await select(
+    let fetchedCards = [];
+    if (fixture.id && fixture.tournamentId) {
+      DD(`Fetching card data for fixture [${fixture.id}], tournament [${fixture.tournamentId}].`);
+      fetchedCards = await select(
         `SELECT * FROM cards WHERE tournamentId = ? AND fixtureId = ?`,
         [fixture.tournamentId, fixture.id]
       );
-      DD(`Found ${embellished.cardedPlayers.length} cards for fixture [${fixture.id}].`);
-    } else if (options.cardedPlayers) {
-      DD(`Card embellishment requested but fixture ID or tournament ID missing for fixture: ${JSON.stringify(fixture)}`);
-      embellished.cardedPlayers = []; // Add empty array if requested but IDs missing
+      DD(`Found ${fetchedCards.length} cards for fixture [${fixture.id}].`);
+    } else {
+      DD(`Fixture ID or tournament ID missing for fixture (ID: ${fixture.id}, TID: ${fixture.tournamentId}), card data will be an empty array.`);
+      // fetchedCards is already initialized to []
+    }
+
+    embellished.cards = fetchedCards; // Add the new 'cards' property
+
+    if (options.cardedPlayers) {
+      DD(`Option 'cardedPlayers' is true. Populating 'cardedPlayers' property for fixture [${fixture.id || 'N/A'}].`);
+      embellished.cardedPlayers = fetchedCards; // Use the fetched data
     }
 
     return embellished;
