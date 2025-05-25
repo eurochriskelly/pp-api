@@ -174,31 +174,30 @@ module.exports = ({ dbHelpers, loggers }) => {
         return ['planned'];
       }
 
-      // Rule 1: If current lane is 'planned' and another match on the same pitch is 'started' (ongoing),
-      // then remove 'started' from allowed lanes.
+      // Pitch Occupancy Check: If another fixture is 'started' on the same pitch, this fixture cannot be 'started'.
+      // This check is performed if Rule 2 (tilde identifier check) did not cause an early return.
       let finalAllowedLanes = [...defaultAllowed];
 
-      if (currentLaneValue === 'planned') {
-        // Ensure fixture.pitch, fixture.tournamentId, and fixture.id are present for the query
-        if (fixture.pitch && fixture.tournamentId && typeof fixture.id !== 'undefined') {
-          const ongoingFixturesOnPitch = await select(
-            `SELECT 1 FROM fixtures 
-               WHERE tournamentId = ? AND pitch = ? AND started IS NOT NULL AND ended IS NULL AND id != ?
-               LIMIT 1`,
-            [fixture.tournamentId, fixture.pitch, fixture.id]
-          );
+      // Ensure fixture.pitch, fixture.tournamentId, and fixture.id are present for the query
+      if (fixture.pitch && fixture.tournamentId && typeof fixture.id !== 'undefined') {
+        const ongoingFixturesOnPitch = await select(
+          `SELECT 1 FROM fixtures 
+             WHERE tournamentId = ? AND pitch = ? AND started IS NOT NULL AND ended IS NULL AND id != ? 
+             LIMIT 1`,
+          [fixture.tournamentId, fixture.pitch, fixture.id]
+        );
 
-          if (ongoingFixturesOnPitch.length > 0) {
-            DD(`Fixture [${fixture.id}] (Tournament: ${fixture.tournamentId}, Pitch: ${fixture.pitch}): Current lane is 'planned'. Another match on the same pitch is 'started'. Removing 'started' from allowed lanes.`);
-            finalAllowedLanes = finalAllowedLanes.filter(lane => lane !== 'started');
-          }
-        } else {
-          let missingFields = [];
-          if (!fixture.pitch) missingFields.push("pitch");
-          if (!fixture.tournamentId) missingFields.push("tournamentId");
-          if (typeof fixture.id === 'undefined') missingFields.push("id");
-          DD(`Fixture (ID: ${fixture.id}, Tournament: ${fixture.tournamentId}, Pitch: ${fixture.pitch}): Skipping Rule 1 for allowedLanes due to missing field(s): ${missingFields.join(', ')}.`);
+        if (ongoingFixturesOnPitch.length > 0) {
+          DD(`Fixture [${fixture.id}] (Tournament: ${fixture.tournamentId}, Pitch: ${fixture.pitch}): Another match on the same pitch is 'started'. Removing 'started' from allowed lanes for this fixture.`);
+          finalAllowedLanes = finalAllowedLanes.filter(lane => lane !== 'started');
         }
+      } else {
+        // Log if essential fields are missing for this check
+        let missingFields = [];
+        if (!fixture.pitch) missingFields.push("pitch");
+        if (!fixture.tournamentId) missingFields.push("tournamentId");
+        if (typeof fixture.id === 'undefined') missingFields.push("id");
+        DD(`Fixture (ID: ${fixture.id}, Tournament: ${fixture.tournamentId}, Pitch: ${fixture.pitch}): Skipping Pitch Occupancy check for allowedLanes due to missing field(s): ${missingFields.join(', ')}.`);
       }
       return finalAllowedLanes;
     };
