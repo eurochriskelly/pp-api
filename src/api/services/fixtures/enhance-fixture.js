@@ -266,13 +266,17 @@ module.exports = ({ dbHelpers, loggers }) => {
     const isPlaceholderTeam = (name) => typeof name === 'string' && (name.startsWith('~') || name.toLowerCase() === 'bye');
 
     const processTeamInfringements = async (teamName, teamInfringementArray) => {
+      if (!currentFixtureScheduled) {
+        DD(`Skipping infringement calculation for team [${teamName}] in fixture [${fixture.id}] because current fixture scheduled time is null.`);
+        return;
+      }
       if (!teamName || isPlaceholderTeam(teamName)) {
-        DD(`Skipping infringement calculation for placeholder or invalid team: ${teamName}`);
+        DD(`Skipping infringement calculation for placeholder or invalid team: ${teamName} in fixture [${fixture.id}]`);
         return;
       }
 
       // Expulsions
-      DD(`Calculating expulsions for team [${teamName}] for fixture scheduled at [${currentFixtureScheduled}]`);
+      DD(`Calculating expulsions for team [${teamName}] for fixture [${fixture.id}] scheduled at [${currentFixtureScheduled}]`);
       const expelledPlayers = await select(
         `SELECT DISTINCT c.playerNumber, c.playerName
          FROM cards c
