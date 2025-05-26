@@ -259,6 +259,89 @@ module.exports = ({ dbHelpers, loggers }) => {
       embellished.cardedPlayers = fetchedCards; // Use the fetched data
     }
 
+    // --- Infringements ---
+    embellished.infringements = { team1: [], team2: [] };
+    const { tournamentId, scheduled: currentFixtureScheduled, team1: team1Name, team2: team2Name } = embellished;
+
+    const isPlaceholderTeam = (name) => typeof name === 'string' && (name.startsWith('~') || name.toLowerCase() === 'bye');
+
+    const processTeamInfringements = async (teamName, teamInfringementArray) => {
+      if (!teamName || isPlaceholderTeam(teamName)) {
+        DD(`Skipping infringement calculation for placeholder or invalid team: ${teamName}`);
+        return;
+      }
+
+      // Expulsions
+      DD(`Calculating expulsions for team [${teamName}] for fixture scheduled at [${currentFixtureScheduled}]`);
+      const expelledPlayers = await select(
+        `SELECT DISTINCT c.playerNumber, c.playerName
+         FROM cards c
+         JOIN fixtures f ON c.fixtureId = f.id
+         WHERE c.tournamentId = ? AND c.team = ? AND c.cardColor = 'red'
+           AND f.scheduled < ?`,
+        [tournamentId, teamName, currentFixtureScheduled]
+      );
+      expelledPlayers.forEach(p => {
+        DD(`Player [${p.playerName}, ${p.playerNumber}] from team [${teamName}] marked as expelled.`);
+        teamInfringementArray.push({ playerNumber: p.playerNumber, playerName: p.playerName, penalty: "expulsion" });
+      });
+
+      // Suspensions (if currentLane is 'queued' or 'started')
+      if (['queued', 'started'].includes(currentLane)) {
+        DD(`Calculating suspensions for team [${teamName}] (current lane: ${currentLane})`);
+        const lastTwoPlayedFixtures = await select(
+          `SELECT f_hist.id FROM fixtures f_hist
+           WHERE f_hist.tournamentId = ? 
+             AND (f_hist.team1Id = ? OR f_hist.team2Id = ?)
+             AND f_hist.outcome = 'played' AND f_hist.ended IS NOT NULL
+             AND f_hist.scheduled < ?
+           ORDER BY f_hist.scheduled DESC LIMIT 2`,
+          [tournamentId, teamName, teamName, currentFixtureScheduled]
+        );
+
+        if (lastTwoPlayedFixtures.length > 0) {
+          const prevFixtureIds = lastTwoPlayedFixtures.map(f => f.id);
+          DD(`Found ${prevFixtureIds.length} previous played fixtures for team [${teamName}]: ${prevFixtureIds.join(', ')}`);
+          
+          const cardsInPrevFixtures = await select(
+            `SELECT c.playerNumber, c.playerName, c.cardColor FROM cards c
+             WHERE c.tournamentId = ? AND c.team = ? AND c.fixtureId IN (${prevFixtureIds.map(() => '?').join(',')})
+               AND (c.cardColor = 'yellow' OR c.cardColor = 'black')`,
+            [tournamentId, teamName, ...prevFixtureIds]
+          );
+
+          const playerCardCounts = cardsInPrevFixtures.reduce((acc, card) => {
+            const key = `${card.playerNumber}-${card.playerName}`; // Use playerNumber and playerName as a composite key
+            if (!acc[key]) {
+              acc[key] = { playerNumber: card.playerNumber, playerName: card.playerName, count: 0 };
+            }
+            acc[key].count++;
+            return acc;
+          }, {});
+
+          Object.values(playerCardCounts).forEach(p => {
+            if (p.count >= 2) {
+              const isAlreadyExpelled = teamInfringementArray.some(
+                exp => exp.playerNumber === p.playerNumber && exp.playerName === p.playerName && exp.penalty === "expulsion"
+              );
+              if (!isAlreadyExpelled) {
+                DD(`Player [${p.playerName}, ${p.playerNumber}] from team [${teamName}] marked as suspended (card count: ${p.count}).`);
+                teamInfringementArray.push({ playerNumber: p.playerNumber, playerName: p.playerName, penalty: "suspension" });
+              } else {
+                DD(`Player [${p.playerName}, ${p.playerNumber}] from team [${teamName}] meets suspension criteria but is already expelled.`);
+              }
+            }
+          });
+        } else {
+          DD(`No previous played fixtures found for team [${teamName}] to calculate suspensions.`);
+        }
+      }
+    };
+
+    await processTeamInfringements(team1Name, embellished.infringements.team1);
+    await processTeamInfringements(team2Name, embellished.infringements.team2);
+    // --- End Infringements ---
+
     return embellished;
   }
 
