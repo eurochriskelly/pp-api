@@ -243,7 +243,7 @@ module.exports = ({ dbHelpers, loggers }) => {
     if (fixture.id && fixture.tournamentId) {
       DD(`Fetching card data for fixture [${fixture.id}], tournament [${fixture.tournamentId}].`);
       fetchedCards = await select(
-        `SELECT * FROM cards WHERE tournamentId = ? AND fixtureId = ?`,
+        `SELECT id, playerNumber, playerName, cardColor, team FROM cards WHERE tournamentId = ? AND fixtureId = ?`,
         [fixture.tournamentId, fixture.id]
       );
       DD(`Found ${fetchedCards.length} cards for fixture [${fixture.id}].`);
