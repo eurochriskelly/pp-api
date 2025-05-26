@@ -261,7 +261,8 @@ module.exports = ({ dbHelpers, loggers }) => {
 
     // --- Infringements ---
     embellished.infringements = { team1: [], team2: [] };
-    const { tournamentId, scheduled: currentFixtureScheduled, team1: team1Name, team2: team2Name } = embellished;
+    // Destructure id as currentFixtureId to use in queries
+    const { tournamentId, scheduled: currentFixtureScheduled, team1: team1Name, team2: team2Name, id: currentFixtureId } = embellished;
 
     const isPlaceholderTeam = (name) => typeof name === 'string' && (name.startsWith('~') || name.toLowerCase() === 'bye');
 
@@ -282,8 +283,8 @@ module.exports = ({ dbHelpers, loggers }) => {
          FROM cards c
          JOIN fixtures f ON c.fixtureId = f.id
          WHERE c.tournamentId = ? AND c.team = ? AND c.cardColor = 'red'
-           AND f.scheduled < ?`,
-        [tournamentId, teamName, currentFixtureScheduled]
+           AND ( (f.scheduled < ?) OR (f.scheduled = ? AND f.id < ?) )`,
+        [tournamentId, teamName, currentFixtureScheduled, currentFixtureScheduled, currentFixtureId]
       );
       expelledPlayers.forEach(p => {
         DD(`Player [${p.playerName}, ${p.playerNumber}] from team [${teamName}] marked as expelled.`);
@@ -298,9 +299,9 @@ module.exports = ({ dbHelpers, loggers }) => {
            WHERE f_hist.tournamentId = ? 
              AND (f_hist.team1Id = ? OR f_hist.team2Id = ?)
              AND f_hist.outcome = 'played' AND f_hist.ended IS NOT NULL
-             AND f_hist.scheduled < ?
+             AND ( (f_hist.scheduled < ?) OR (f_hist.scheduled = ? AND f_hist.id < ?) )
            ORDER BY f_hist.ended DESC LIMIT 2`,
-          [tournamentId, teamName, teamName, currentFixtureScheduled]
+          [tournamentId, teamName, teamName, currentFixtureScheduled, currentFixtureScheduled, currentFixtureId]
         );
 
         if (lastTwoPlayedFixtures.length > 0) {
