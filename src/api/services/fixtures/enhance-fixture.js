@@ -299,7 +299,7 @@ module.exports = ({ dbHelpers, loggers }) => {
              AND (f_hist.team1Id = ? OR f_hist.team2Id = ?)
              AND f_hist.outcome = 'played' AND f_hist.ended IS NOT NULL
              AND f_hist.scheduled < ?
-           ORDER BY f_hist.scheduled DESC LIMIT 2`,
+           ORDER BY f_hist.ended DESC LIMIT 2`,
           [tournamentId, teamName, teamName, currentFixtureScheduled]
         );
 
