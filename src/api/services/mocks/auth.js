@@ -3,9 +3,9 @@ const { II, DD } = require('../../../lib/logging');
 
 // In-memory store for users and mock tokens
 let users = {
-  "player@pp.com": { id: "player1", email: "player@pp.com", password: "player", role: "player" },
-  "organizer@pp.com": { id: "organizer1", email: "organizer@pp.com", password: "organizer", role: "organizer" },
-  "referee@pp.com": { id: "referee1", email: "referee@pp.com", password: "referee", role: "referee" },
+  "p@pp.com": { id: "player1", email: "p@pp.com", password: "p", role: "player" },
+  "o@pp.com": { id: "organizer1", email: "o@pp.com", password: "o", role: "organizer" },
+  "r@pp.com": { id: "referee1", email: "r@pp.com", password: "r", role: "referee" },
 };
 let activeTokens = {}; // Store active mock tokens: { token: email }
 
