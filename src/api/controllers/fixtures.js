@@ -18,10 +18,8 @@ const cardPlayerSchema = z.object({
   playerName: z.string({ required_error: "playerName is required" }),
 }).passthrough(); // Allow other fields like confirmed
 
-
-module.exports = (db) => {
-  const dbSvc = fixturesService(db);
-
+  // The dbSvc from serviceFactory(db) (defined above) will be used by the controller methods.
+  // The cardPlayerSchema (defined above) is also in scope for methods that need it.
   return {
     updateCalculatedFixtures: async (req, res) => {
       const { tournamentId, fixtureId } = req.params;
