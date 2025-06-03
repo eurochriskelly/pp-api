@@ -39,7 +39,7 @@ module.exports = (db) => {
       const { region: reg, subregion } = splitRegion(regionString);
 
       // Constraints for fetching team data from v_club_teams
-      // Assumes v_club_teams has columns: region, subregion, club_status, team_status, category
+      // Assumes v_club_teams has columns: region, subregion, status, team_status, category
       let teamSelectionConstraints = [`region = ?`];
       const teamSelectionParams = [reg];
 
@@ -49,8 +49,8 @@ module.exports = (db) => {
       } else {
         teamSelectionConstraints.push(`(subregion IS NULL OR subregion = '')`);
       }
-      teamSelectionConstraints.push(`club_status = 'active'`); // Filter for active clubs associated with teams
-      teamSelectionConstraints.push(`team_status = 'active'`); // Filter for active teams
+      teamSelectionConstraints.push(`clubStatus = 'active'`); // Filter for active clubs associated with teams
+      teamSelectionConstraints.push(`teamStatus = 'active'`); // Filter for active teams
 
       if (sex) teamSelectionConstraints.push(sex === "male" ? `category IN ('gaa', 'hurling')` : `category IN ('lgfa', 'camogie')`);
       if (sport) {
@@ -70,8 +70,8 @@ module.exports = (db) => {
       );
 
       // Constraints for counting active clubs in the specified region/subregion
-      // Assuming 'clubs' table has 'club_status' and 'clubId'
-      let clubCountConstraints = [`region = ?`, `club_status = 'active'`];
+      // Assuming 'clubs' table has 'status' and 'clubId'
+      let clubCountConstraints = [`region = ?`, `status = 'active'`];
       const clubCountParams = [reg];
       if (subregion) {
         clubCountConstraints.push(`subregion = ?`);
