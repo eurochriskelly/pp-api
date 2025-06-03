@@ -24,8 +24,35 @@ module.exports = (db) => {
       });
     },
 
-    listRegionInfo: async (region, { sex, sport, level }) => {
-      const { region: reg, subregion } = splitRegion(region);
+    listRegionInfo: async (regionIdentifier, { sex, sport, level }) => {
+      let regionName = regionIdentifier;
+
+      // Check if regionIdentifier is likely an ID (32-char hex string)
+      const isLikelyId = /^[a-f0-9]{32}$/i.test(regionIdentifier);
+
+      if (isLikelyId) {
+        II(`Region identifier [${regionIdentifier}] looks like an ID. Attempting to resolve.`);
+        const allRegions = await this.listRegions(); // `this` refers to the object being returned
+        const foundRegion = allRegions.find(r => r.id === regionIdentifier);
+        if (foundRegion) {
+          regionName = foundRegion.name;
+          DD(`Resolved ID [${regionIdentifier}] to name [${regionName}].`);
+        } else {
+          II(`Region ID [${regionIdentifier}] not found.`);
+          const error = new Error(`Region with ID ${regionIdentifier} not found`);
+          error.status = 404; // Standard way to suggest a status code for error middleware
+          throw error;
+        }
+      }
+
+      const { region: reg, subregion } = splitRegion(regionName);
+      // If regionName (from a non-ID identifier, or resolved from ID) is invalid,
+      // the subsequent DB query might return no results. This is fine and should result
+      // in an empty list of clubs/teams, not necessarily a 404 unless the name itself is considered non-existent.
+      // The 404 is specifically for when an ID is given and that ID does not map to any known region.
+      // If a name is given that doesn't exist, splitRegion will still process it, and the DB query
+      // will likely return empty results, leading to a 200 OK with empty data.
+
       let constraints = [`region = ?`];
       const params = [reg];
       if (subregion) {

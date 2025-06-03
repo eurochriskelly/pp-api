@@ -34,7 +34,7 @@
         required: true
         schema:
           type: string
-        description: Region name
+        description: Region name or Region ID (MD5 hash).
     responses:
       "200":
         description: Region information
