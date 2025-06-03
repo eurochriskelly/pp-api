@@ -6,7 +6,7 @@ const ARGS = processArgs(process.argv);
 
 const run = async () => {
   let db = null;
-  if (!ARGS.mock) {
+  if (!ARGS.useMock) {
     db = mysql.createConnection(dbConf);
     db.connect((err) => {
       if (err) {
