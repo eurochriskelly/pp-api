@@ -4,14 +4,20 @@ const { II, DD } = require('../../../lib/logging');
 module.exports = (db) => { // db parameter is kept for consistency, not used by mocks
   II("Regions mock service initialized");
 
-  const mockRegions = ["MockRegion1", "MockRegion1%SubMock1", "MockRegion2"];
+  const mockRegions = [
+    "Pan-Euro",
+    "Benelux",
+    "North/West",
+    "Central/East",
+    "Iberia"
+  ];
   const mockRegionInfoData = {
-    "MockRegion1": {
-      clubs: [{ id: 1, name: "Mock Club A" }],
+    "Pan-Euro": {
+      clubs: [{ id: 1, name: "Mock Club Pan-Euro A" }],
       stats: { count: 1 }
     },
-    "MockRegion1%SubMock1": {
-      clubs: [{ id: 2, name: "Mock Club B - Sub" }],
+    "Benelux": {
+      clubs: [{ id: 2, name: "Mock Club Benelux B" }],
       stats: { count: 1 }
     }
   };
