@@ -16,10 +16,10 @@ module.exports = (db) => {
         `SELECT
            c.region,
            c.subregion,
-           COUNT(DISTINCT CASE WHEN c.status = 'active' THEN c.id END) as activeClubsCount,
-           COUNT(DISTINCT t.id) as activeTeamsCount
+           COUNT(DISTINCT CASE WHEN c.status = 'active' THEN c.clubId END) as activeClubsCount,
+           COUNT(DISTINCT t.teamId) as activeTeamsCount
          FROM clubs c
-         LEFT JOIN teams t ON t.clubId = c.id AND t.status = 'active'
+         LEFT JOIN clubTeams t ON t.clubId = c.clubId AND t.status = 'active'
          GROUP BY c.region, c.subregion
          ORDER BY c.region, c.subregion`
       );
