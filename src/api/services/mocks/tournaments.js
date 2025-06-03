@@ -1,22 +1,103 @@
 const mockTournaments = [
+  // Pan-Euro
   {
-    id: 1,
-    title: "Mock Tournament 1",
-    date: "2023-06-15",
-    location: "Mock Location",
-    lat: 53.3498,
-    lon: -6.2603,
-    uuid: "550e8400-e29b-41d4-a716-446655440000"
+    id: 'pe-hurl-1',
+    title: 'Hurling Round 3',
+    region: 'Pan-Euro',
+    sport: 'hurling',
+    location: 'Zurich, Switzerland',
+    startDate: '2025-06-07',
+    status: 'upcoming',
   },
   {
-    id: 2,
-    title: "Mock Tournament 2",
-    date: "2023-07-20",
-    location: "Another Mock Location",
-    lat: 51.5074,
-    lon: -0.1278,
-    uuid: "550e8400-e29b-41d4-a716-446655440001"
-  }
+    id: 'pe-hurl-2',
+    title: 'Hurling Round 4',
+    region: 'Pan-Euro',
+    sport: 'hurling',
+    location: 'Vienna, Austria',
+    startDate: '2025-07-03',
+    status: 'upcoming',
+  },
+  {
+    id: 'pe-hurl-3',
+    title: 'PanEuro Championships',
+    region: 'Pan-Euro',
+    sport: 'hurling',
+    location: 'Dresden, Germany',
+    startDate: '2025-09-20',
+    endDate: '2025-09-21',
+    status: 'upcoming',
+  },
+  {
+    id: 'pe-hurl-4',
+    title: 'Old PanEuro Tournament',
+    region: 'Pan-Euro',
+    sport: 'hurling',
+    location: 'Copenhagen, Denmark',
+    startDate: '2024-05-10',
+    status: 'past',
+  },
+  // Benelux
+  {
+    id: 'bene-1',
+    title: 'Benelux Round 3',
+    region: 'Benelux',
+    sport: 'gaelic-football',
+    location: 'Luxembourg City, Luxembourg',
+    startDate: '2025-07-08',
+    status: 'upcoming',
+  },
+  {
+    id: 'bene-2',
+    title: 'Amsterdam Ladies Football Blitz',
+    region: 'Benelux',
+    sport: 'gaelic-football',
+    location: 'Amsterdam, Netherlands',
+    startDate: '2025-08-15',
+    status: 'upcoming',
+  },
+  // Central Europe
+  {
+    id: 'asia-1', // ID kept for consistency if it was referenced elsewhere, but content changed
+    title: 'Central European Gaelic Challenge',
+    region: 'Central Europe',
+    sport: 'gaelic-football',
+    location: 'Prague, Czech Republic',
+    startDate: new Date().toISOString().split('T')[0], 
+    endDate: new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0],
+    status: 'active',
+    description: 'An exciting ongoing tournament in Central Europe.'
+  },
+  {
+    id: 'asia-2',
+    title: 'Berlin Gaelic Masters',
+    region: 'Central Europe',
+    sport: 'gaelic-football',
+    location: 'Berlin, Germany',
+    startDate: '2025-10-05',
+    status: 'upcoming',
+  },
+  {
+    id: 'asia-3',
+    title: 'Warsaw Gaelic Games',
+    region: 'Central Europe',
+    sport: 'gaelic-football',
+    location: 'Warsaw, Poland',
+    startDate: '2024-04-20',
+    status: 'past',
+  },
+  // Another active tournament
+  {
+    id: 'active-generic-1',
+    title: 'Ongoing European Shield',
+    region: 'Pan-Euro', 
+    sport: 'hurling',
+    location: 'Various Cities',
+    startDate: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0], 
+    endDate: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString().split('T')[0], 
+    status: 'active',
+    description: 'A multi-day tournament currently active.'
+  },
 ];
 
 module.exports = () => {
