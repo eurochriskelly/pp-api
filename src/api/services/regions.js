@@ -70,7 +70,8 @@ module.exports = (db) => {
       );
 
       // Constraints for counting active clubs in the specified region/subregion
-      let clubCountConstraints = [`region = ?`, `status = 'active'`];
+      // Assuming 'clubs' table has 'club_status' and 'clubId'
+      let clubCountConstraints = [`region = ?`, `club_status = 'active'`];
       const clubCountParams = [reg];
       if (subregion) {
         clubCountConstraints.push(`subregion = ?`);
@@ -80,7 +81,7 @@ module.exports = (db) => {
       }
       
       const [activeClubsStats] = await select(
-        `SELECT COUNT(DISTINCT id) as count FROM clubs WHERE ${clubCountConstraints.join(" AND ")}`,
+        `SELECT COUNT(DISTINCT clubId) as count FROM clubs WHERE ${clubCountConstraints.join(" AND ")}`,
         clubCountParams
       );
       
