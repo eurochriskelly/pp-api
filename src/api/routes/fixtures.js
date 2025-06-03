@@ -2,9 +2,9 @@ const express = require("express");
 const { II } = require("../../lib/logging");
 const fixtureController = require("../controllers/fixtures");
 
-module.exports = (db) => {
+module.exports = (db, useMock) => {
   const router = express.Router({mergeParams: true});
-  const ctrl = fixtureController(db);
+  const ctrl = fixtureController(db, useMock);
 
   router.get("/", ctrl.fixturesByPitch);
   router.get("/nextup", ctrl.nextFixtures);

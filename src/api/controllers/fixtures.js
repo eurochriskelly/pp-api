@@ -1,6 +1,11 @@
 const { II } = require("../../lib/logging");
-const fixturesService = require("../services/fixtures");
 const { z } = require('zod'); // Import Zod
+
+module.exports = (db, useMock) => {
+  const serviceFactory = useMock
+    ? require("../services/mocks/fixtures")
+    : require("../services/fixtures");
+  const dbSvc = serviceFactory(db);
 
 // Define Zod schema for a single card object in the request body
 const cardPlayerSchema = z.object({
