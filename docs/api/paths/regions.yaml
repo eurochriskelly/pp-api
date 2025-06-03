@@ -9,7 +9,16 @@
             schema:
               type: array
               items:
-                type: string
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: MD5 hash of the region name.
+                    example: "098f6bcd4621d373cade4e832627b4f6"
+                  name:
+                    type: string
+                    description: The name of the region.
+                    example: "Pan-Euro"
       "500":
         description: Internal server error
         content:
