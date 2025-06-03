@@ -3,51 +3,51 @@ const { II, DD } = require('../../../lib/logging');
 
 // In-memory store for users and mock tokens
 let users = {
-  "player": { id: "player1", username: "player", password: "player", role: "player" },
-  "organizer": { id: "organizer1", username: "organizer", password: "organizer", role: "organizer" },
-  "referee": { id: "referee1", username: "referee", password: "referee", role: "referee" },
+  "player@pp.com": { id: "player1", email: "player@pp.com", password: "player", role: "player" },
+  "organizer@pp.com": { id: "organizer1", email: "organizer@pp.com", password: "organizer", role: "organizer" },
+  "referee@pp.com": { id: "referee1", email: "referee@pp.com", password: "referee", role: "referee" },
 };
-let activeTokens = {}; // Store active mock tokens: { token: username }
+let activeTokens = {}; // Store active mock tokens: { token: email }
 
 module.exports = (db) => { // db parameter is kept for consistency, not used by mocks
-  II("Auth mock service initialized with in-memory user store");
+  II("Auth mock service initialized with in-memory user store (using emails)");
 
   return {
-    signup: async (username, password, role = 'player') => {
-      II(`Mock: signup attempt for username [${username}] with role [${role}]`);
-      if (users[username]) {
-        DD(`Mock: Signup failed - username [${username}] already exists.`);
-        throw new Error("Username already exists");
+    signup: async (email, password, role = 'player') => {
+      II(`Mock: signup attempt for email [${email}] with role [${role}]`);
+      if (users[email]) {
+        DD(`Mock: Signup failed - email [${email}] already exists.`);
+        throw new Error("Email already exists");
       }
       // For mocks, we store passwords as-is. No real hashing.
-      const newUser = { id: `mock-id-${Object.keys(users).length + 1}`, username, password, role };
-      users[username] = newUser;
-      DD(`Mock: User [${username}] created:`, newUser);
+      const newUser = { id: `mock-id-${Object.keys(users).length + 1}`, email, password, role };
+      users[email] = newUser;
+      DD(`Mock: User with email [${email}] created:`, newUser);
       // Automatically log in the user and return a token
-      const token = `mock-token-for-${username}-${Date.now()}`;
-      activeTokens[token] = username;
+      const token = `mock-token-for-${email}-${Date.now()}`;
+      activeTokens[token] = email;
       return { 
         message: "Signup successful", 
-        user: { id: newUser.id, username: newUser.username, role: newUser.role },
+        user: { id: newUser.id, email: newUser.email, role: newUser.role },
         token 
       };
     },
 
-    login: async (username, password) => {
-      II(`Mock: login attempt for username [${username}]`);
-      const user = users[username];
+    login: async (email, password) => {
+      II(`Mock: login attempt for email [${email}]`);
+      const user = users[email];
       if (user && user.password === password) {
-        const token = `mock-token-for-${username}-${Date.now()}`;
-        activeTokens[token] = username; // Store the token as active
-        DD(`Mock: Login successful for [${username}]. Token: ${token}`);
+        const token = `mock-token-for-${email}-${Date.now()}`;
+        activeTokens[token] = email; // Store the token as active
+        DD(`Mock: Login successful for [${email}]. Token: ${token}`);
         return { 
           message: "Login successful", 
-          user: { id: user.id, username: user.username, role: user.role },
+          user: { id: user.id, email: user.email, role: user.role },
           token 
         };
       }
-      DD(`Mock: Login failed for [${username}] - invalid credentials.`);
-      throw new Error("Invalid username or password");
+      DD(`Mock: Login failed for [${email}] - invalid credentials.`);
+      throw new Error("Invalid email or password");
     },
 
     logout: async (token) => {
@@ -64,11 +64,11 @@ module.exports = (db) => { // db parameter is kept for consistency, not used by 
 
     verifyToken: async (token) => {
       II(`Mock: verifyToken attempt for token [${token}]`);
-      const username = activeTokens[token];
-      if (username && users[username]) {
-        const user = users[username];
-        DD(`Mock: Token [${token}] is valid for user [${username}].`);
-        return { id: user.id, username: user.username, role: user.role };
+      const email = activeTokens[token];
+      if (email && users[email]) {
+        const user = users[email];
+        DD(`Mock: Token [${token}] is valid for user [${email}].`);
+        return { id: user.id, email: user.email, role: user.role };
       }
       DD(`Mock: Token [${token}] is invalid or expired.`);
       throw new Error("Invalid or expired token");

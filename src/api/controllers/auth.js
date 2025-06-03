@@ -8,30 +8,27 @@ module.exports = (db, useMock) => {
 
   return {
     signup: async (req, res) => {
-      // In mock mode, service expects username, password, role
-      // In real mode, service might expect email, password, etc.
-      // For this mock, we'll assume username is passed as 'email' for simplicity if adapting existing forms.
-      const { email: username, password, role } = req.body; 
+      // Service now expects email, password, role
+      const { email, password, role } = req.body; 
       try {
-        if (!username || !password) {
-          return res.status(400).json({ error: "Username and password are required" });
+        if (!email || !password) {
+          return res.status(400).json({ error: "Email and password are required" });
         }
-        const result = await dbSvc.signup(username, password, role);
+        const result = await dbSvc.signup(email, password, role);
         res.status(201).json(result);
       } catch (err) {
-        res.status(400).json({ error: err.message }); // e.g., username exists
+        res.status(400).json({ error: err.message }); // e.g., email exists
       }
     },
 
     login: async (req, res) => {
-      // In mock mode, service expects username, password
-      // In real mode, service might expect email, password
-      const { email: username, password } = req.body;
+      // Service now expects email, password
+      const { email, password } = req.body;
       try {
-        if (!username || !password) {
-          return res.status(400).json({ error: "Username and password are required" });
+        if (!email || !password) {
+          return res.status(400).json({ error: "Email and password are required" });
         }
-        const result = await dbSvc.login(username, password);
+        const result = await dbSvc.login(email, password);
         res.json(result);
       } catch (err) {
         res.status(401).json({ error: err.message });
