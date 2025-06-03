@@ -1,6 +1,11 @@
 const { II } = require("../../lib/logging");
-const fixturesService = require("../services/fixtures");
 const { z } = require('zod'); // Import Zod
+
+module.exports = (db, useMock) => {
+  const serviceFactory = useMock
+    ? require("../services/mocks/fixtures")
+    : require("../services/fixtures");
+  const dbSvc = serviceFactory(db);
 
 // Define Zod schema for a single card object in the request body
 const cardPlayerSchema = z.object({
@@ -13,10 +18,8 @@ const cardPlayerSchema = z.object({
   playerName: z.string({ required_error: "playerName is required" }),
 }).passthrough(); // Allow other fields like confirmed
 
-
-module.exports = (db) => {
-  const dbSvc = fixturesService(db);
-
+  // The dbSvc from serviceFactory(db) (defined above) will be used by the controller methods.
+  // The cardPlayerSchema (defined above) is also in scope for methods that need it.
   return {
     updateCalculatedFixtures: async (req, res) => {
       const { tournamentId, fixtureId } = req.params;

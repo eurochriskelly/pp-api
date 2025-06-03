@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 
@@ -16,7 +17,11 @@ module.exports = (db) => {
          THEN CONCAT(region, '%', subregion) ELSE region END AS formatted_region 
          FROM clubs`
       );
-      return rows.map(x => x.formatted_region);
+      return rows.map(row => {
+        const regionName = row.formatted_region;
+        const hash = crypto.createHash('md5').update(regionName).digest('hex');
+        return { id: hash, name: regionName };
+      });
     },
 
     listRegionInfo: async (region, { sex, sport, level }) => {

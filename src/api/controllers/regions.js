@@ -1,8 +1,10 @@
 const { II } = require("../../lib/logging");
-const regionsService = require("../services/regions");
 
-module.exports = (db) => {
-  const dbSvc = regionsService(db);
+module.exports = (db, useMock) => {
+  const serviceFactory = useMock
+    ? require("../services/mocks/regions")
+    : require("../services/regions");
+  const dbSvc = serviceFactory(db);
 
   return {
     listRegions: async (req, res) => {

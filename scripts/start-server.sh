@@ -13,9 +13,17 @@ if [ -z "${PP_DBN:-}" ]; then
   exit 1
 fi
 
-if [ ! -f "pp_env.sh" ]; then
-  echo "ERROR: Required file pp_env.sh not found in current directory"
-  exit 1
+# Parse arguments first to determine USE_MOCK
+PORT=${1:-4000}
+APP=${2:-mobile}
+USE_MOCK=${3:-false}
+DATABASE=${4:-${PP_DBN}}
+
+if [ "$USE_MOCK" = "false" ]; then
+  if [ ! -f "pp_env.sh" ]; then
+    echo "ERROR: Required file pp_env.sh not found in current directory (and not in mock mode)"
+    exit 1
+  fi
 fi
 
 # Setup logging
@@ -24,12 +32,6 @@ mkdir -p "$LOG_DIR"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_FILE="${LOG_DIR}/${TIMESTAMP}.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
-
-# Parse arguments
-PORT=${1:-4000}
-APP=${2:-mobile}
-USE_MOCK=${3:-false}
-DATABASE=${4:-${PP_DBN}}
 
 # Log startup info
 echo "=== Starting ${SCRIPT_NAME} at $(date) ==="
@@ -44,15 +46,19 @@ RESTART_COUNT=0
 while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
   echo "--- Starting server (attempt $((RESTART_COUNT+1)) ---"
   
-  # Source environment variables first
-  echo "Sourcing pp_env.sh..."
-  OLD_DB=$PP_DBN
-  source pp_env.sh
-  if [ -n "$OLD_DB" ];then
-    PP_DBN=$OLD_DB
+  # Source environment variables first, if not in mock mode
+  if [ "$USE_MOCK" = "false" ]; then
+    echo "Sourcing pp_env.sh..."
+    OLD_DB=$PP_DBN
+    source pp_env.sh
+    if [ -n "$OLD_DB" ];then
+      PP_DBN=$OLD_DB
+    fi
+  else
+    echo "Skipping pp_env.sh sourcing (mock mode)"
   fi
   
-  # Print variables *after* sourcing and *before* starting node
+  # Print variables *after* sourcing (if applicable) and *before* starting node
   echo "--- Variables before starting Node.js ---"
   echo "PP_DBN: ${PP_DBN}"
   echo "PORT: ${PORT}"

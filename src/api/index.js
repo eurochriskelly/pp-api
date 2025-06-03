@@ -8,12 +8,13 @@ const fixtureRoutes = require("./routes/fixtures");
 const regionRoutes = require("./routes/regions");
 const generalRoutes = require("./routes/general");
 const authRoutes = require("./routes/auth");
+const { II } = require("../lib/logging"); // Import the logger
 
 const app = express();
 app.use(bodyParser.json());
 
 module.exports = (db, ARGS) => {
-  console.log("Setting up API endpoints ...");
+  II(`Setting up API endpoints. Mock mode: ${ARGS.useMock}`);
   app.use(morgan('dev'));
   app.use(express.static(ARGS.staticPath));
 
@@ -31,11 +32,12 @@ module.exports = (db, ARGS) => {
     });
   });
 
-  app.use("/api/tournaments", tournamentRoutes(db));
-  app.use("/api/tournaments/:tournamentId/fixtures", fixtureRoutes(db));
-  app.use("/api/regions", regionRoutes(db));
-  app.use("/api", generalRoutes(db));
-  app.use("/api/auth", authRoutes(db));
+  app.use("/api/tournaments", tournamentRoutes(db, ARGS.useMock));
+  app.use("/api/tournaments/:tournamentId/fixtures", fixtureRoutes(db, ARGS.useMock));
+  app.use("/api/regions", regionRoutes(db, ARGS.useMock));
+  app.use("/api", generalRoutes(db, ARGS.useMock));
+  app.use("/api/auth", authRoutes(db, ARGS.useMock));
+  app.use("/auth", authRoutes(db, ARGS.useMock)); // Add this line to also mount auth routes at /auth
 
   app.get("*", (req, res) => {
     console.log(`Catch-all triggered: Requested path -> ${req.path}`);

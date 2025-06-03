@@ -1,9 +1,11 @@
 const { II } = require("../../lib/logging");
 const { jsonToCsv, sendXsls } = require("../../lib/utils");
-const tournamentsService = require("../services/tournaments");
 
-module.exports = (db) => {
-  const dbSvc = tournamentsService(db);
+module.exports = (db, useMock) => {
+  const serviceFactory = useMock
+    ? require("../services/mocks/tournaments")
+    : require("../services/tournaments");
+  const dbSvc = serviceFactory(db);
 
   return {
     // Tournament CRUD
