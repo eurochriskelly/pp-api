@@ -1,9 +1,11 @@
 const { II } = require("../../lib/logging");
 const { jsonToCsv, sendXsls } = require("../../lib/utils");
-const generalService = require("../services/general");
 
-module.exports = (db) => {
-  const dbSvc = generalService(db);
+module.exports = (db, useMock) => {
+  const serviceFactory = useMock
+    ? require("../services/mocks/general")
+    : require("../services/general");
+  const dbSvc = serviceFactory(db);
 
   return {
 

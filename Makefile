@@ -1,4 +1,4 @@
-.PHONY: help start logs backup
+.PHONY: help start mocks logs backup
 
 DEFAULT_GOAL := help
 
@@ -6,6 +6,10 @@ help:  ## Show this help menu
 	@echo "Available commands:"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+start:  ## Start server with auto-restart (usage: make start [env=production|acceptance])
+mocks:  ## Start server in mock mode (usage: make mocks)
+	PP_DBN=MockTourno ./scripts/start-server.sh 4000 mobile true MockTourno
 
 start:  ## Start server with auto-restart (usage: make start [env=production|acceptance])
 	@if [ -z "$(env)" ]; then \
