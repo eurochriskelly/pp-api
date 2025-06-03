@@ -37,6 +37,7 @@ module.exports = (db, ARGS) => {
   app.use("/api/regions", regionRoutes(db, ARGS.useMock));
   app.use("/api", generalRoutes(db, ARGS.useMock));
   app.use("/api/auth", authRoutes(db, ARGS.useMock));
+  app.use("/auth", authRoutes(db, ARGS.useMock)); // Add this line to also mount auth routes at /auth
 
   app.get("*", (req, res) => {
     console.log(`Catch-all triggered: Requested path -> ${req.path}`);
