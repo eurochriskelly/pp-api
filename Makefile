@@ -11,18 +11,19 @@ start:  ## Start server with auto-restart (usage: make start [env=production|acc
 mocks:  ## Start server in mock mode (usage: make mocks)
 	PP_DBN=MockTourno ./scripts/start-server.sh 4000 mobile true MockTourno
 
-start:  ## Start server with auto-restart (usage: make start [env=production|acceptance])
+start:  ## Start server with auto-restart (usage: make start [env=production|acceptance] [port=NUMBER])
 	@if [ -z "$(env)" ]; then \
 		read -p "Which environment? [production/acceptance]: " env; \
 	fi; \
+	port=$${port:-4000}; \
 	if [ "$(env)" = "production" ]; then \
 		while true; do \
-			PP_DBN=EuroTourno ./scripts/start-server.sh 4000 mobile false EuroTourno || \
+			PP_DBN=EuroTourno ./scripts/start-server.sh $$port mobile false EuroTourno || \
 			(echo "Server crashed, restarting in 5 seconds..." && sleep 5); \
 		done; \
 	elif [ "$(env)" = "acceptance" ]; then \
 		while true; do \
-			PP_DBN=AccTourno ./scripts/start-server.sh 4010 mobile false AccTourno || \
+			PP_DBN=AccTourno ./scripts/start-server.sh $$port mobile false AccTourno || \
 			(echo "Server crashed, restarting in 5 seconds..." && sleep 5); \
 		done; \
 	else \
