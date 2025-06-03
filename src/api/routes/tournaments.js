@@ -1,9 +1,9 @@
 const express = require("express");
 const tournamentController = require("../controllers/tournaments");
 
-module.exports = (db) => {
+module.exports = (db, useMock) => {
   const router = express.Router({mergeParams: true});
-  const ctrl = tournamentController(db);
+  const ctrl = tournamentController(db, useMock);
 
   router.post("/", ctrl.createTournament);
   router.get("/", ctrl.getTournaments);

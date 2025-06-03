@@ -1,8 +1,10 @@
 const { II } = require("../../lib/logging");
-const authService = require("../services/auth");
 
-module.exports = (db) => {
-  const dbSvc = authService(db);
+module.exports = (db, useMock) => {
+  const serviceFactory = useMock
+    ? require("../services/mocks/auth")
+    : require("../services/auth");
+  const dbSvc = serviceFactory(db);
 
   return {
     login: async (req, res) => {
