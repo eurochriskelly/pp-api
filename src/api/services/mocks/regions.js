@@ -43,12 +43,33 @@ module.exports = (db) => { // db parameter is kept for consistency, not used by 
       return Promise.resolve(mockRegions);
     },
 
-    listRegionInfo: async (region, { sex, sport, level }) => {
-      II(`Mock: listRegionInfo called for region [${region}] with filters:`, { sex, sport, level });
-      // Basic mock: return pre-defined data or a default if not found
-      const data = mockRegionInfoData[region] || { clubs: [], stats: { count: 0, message: `No mock data for ${region}` }};
-      DD("Mock: Returning region info:", data);
-      return Promise.resolve(data);
+    listRegionInfo: async (regionIdentifier, { sex, sport, level }) => {
+      II(`Mock: listRegionInfo called for region/ID [${regionIdentifier}] with filters:`, { sex, sport, level });
+      let regionKeyForDataLookup = null;
+
+      // Try to find by ID first
+      const regionById = mockRegions.find(r => r.id === regionIdentifier);
+      if (regionById) {
+        regionKeyForDataLookup = regionById.id; // Use the ID for lookup
+        DD(`Mock: Matched [${regionIdentifier}] as an ID. Using key [${regionKeyForDataLookup}].`);
+      } else {
+        // If not found by ID, try to find by name
+        DD(`Mock: [${regionIdentifier}] not found as an ID. Trying as a name.`);
+        const regionByName = mockRegions.find(r => r.name === regionIdentifier);
+        if (regionByName) {
+          regionKeyForDataLookup = regionByName.id; // Use the ID corresponding to the name for lookup
+          DD(`Mock: Matched [${regionIdentifier}] as a name. Using key [${regionKeyForDataLookup}].`);
+        }
+      }
+
+      if (regionKeyForDataLookup && mockRegionInfoData[regionKeyForDataLookup]) {
+        const data = mockRegionInfoData[regionKeyForDataLookup];
+        DD("Mock: Returning region info:", data);
+        return Promise.resolve(data);
+      } else {
+        DD(`Mock: No data found for region/ID [${regionIdentifier}] (resolved key: [${regionKeyForDataLookup}]).`);
+        return Promise.resolve({ clubs: [], stats: { count: 0, message: `No mock data for ${regionIdentifier}` }});
+      }
     },
   };
 };
