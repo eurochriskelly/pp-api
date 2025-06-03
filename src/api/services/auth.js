@@ -1,7 +1,7 @@
 const dbHelper = require('../../lib/db-helper');
 
 module.exports = (db) => {
-  const { select } = dbHelper(db);
+  const { select, update } = dbHelper(db);
 
   return {
     login: async (email, password) => {

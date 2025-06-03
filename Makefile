@@ -8,8 +8,9 @@ help:  ## Show this help menu
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 start:  ## Start server with auto-restart (usage: make start [env=production|acceptance])
-mocks:  ## Start server in mock mode (usage: make mocks)
-	PP_DBN=MockTourno ./scripts/start-server.sh 4000 mobile true MockTourno
+mocks:  ## Start server in mock mode (usage: make mocks [port=NUMBER])
+	port=$${port:-4000}; \
+	PP_DBN=MockTourno ./scripts/start-server.sh $$port mobile true MockTourno
 
 start:  ## Start server with auto-restart (usage: make start [env=production|acceptance] [port=NUMBER])
 	@if [ -z "$(env)" ]; then \
