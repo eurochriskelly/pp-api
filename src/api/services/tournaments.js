@@ -133,19 +133,34 @@ module.exports = (db) => {
       return result;
     },
 
-    getTournaments: async (status) => {
-      DD('Getting tournaments with status = [' || status || ']');
-      let cond = '';
+    getTournaments: async (status, userId, role) => {
+      DD(`Getting tournaments with status=[${status}], userId=[${userId}], role=[${role}]`);
+      
+      let cond = [];
+      let params = [];
+      
       if (status.toLowerCase() != 'all') {
-        const statuses = status.split(',') || []
-        cond = `WHERE status IN (${statuses.map(v => `'${v}'`).join(', ')})`
+        const statuses = status.split(',') || [];
+        cond.push(`t.status IN (${statuses.map(() => '?').join(',')})`);
+        params.push(...statuses);
       }
+      
+      if (userId && role) {
+        cond.push(`sr.UserId = ? AND sr.RoleName = ?`);
+        params.push(userId, role);
+      }
+      
+      const whereClause = cond.length ? `WHERE ${cond.join(' AND ')}` : '';
+      
       const sql = `
-         SELECT 
-           Id, Date, Title, Location, region, season, eventUuid, status, code 
-         FROM tournaments
-         ${cond}`
-      return await select(sql);
+        SELECT DISTINCT 
+          t.Id, t.Date, t.Title, t.Location, t.region, t.season, t.eventUuid, t.status, t.code 
+        FROM tournaments t
+        ${userId && role ? 'JOIN sec_roles sr ON t.Id = sr.tournamentId' : ''}
+        ${whereClause}
+        ORDER BY t.Date DESC`;
+        
+      return await select(sql, params);
     },
 
     getTournament: async (id, uuid) => {
