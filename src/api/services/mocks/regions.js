@@ -22,22 +22,45 @@ module.exports = (db) => { // db parameter is kept for consistency, not used by 
     "paneuro": {
       header: { activeClubsCount: 1, activeTeamsCount: 2, region: "paneuro", subregion: null },
       data: [
-        { team_id: 1, team_name: "Mock Team Pan-Euro Alpha", club_status: 'active', team_status: 'active', category: 'gaa', region: 'paneuro', subregion: null },
-        { team_id: 2, team_name: "Mock Team Pan-Euro Beta", club_status: 'active', team_status: 'active', category: 'lgfa', region: 'paneuro', subregion: null }
+        { category: "gaa", city: "Paris", clubId: 101, clubName: "Paris Gaels", clubStatus: "A", country: "FR", domain: null, post_code: null, region: "paneuro", subregion: null, teamId: 201, teamName: null, teamStatus: "active" },
+        { category: "lgfa", city: "Paris", clubId: 101, clubName: "Paris Gaels", clubStatus: "A", country: "FR", domain: null, post_code: null, region: "paneuro", subregion: null, teamId: 202, teamName: null, teamStatus: "active" }
       ]
     },
     "benelux": {
-      header: { activeClubsCount: 1, activeTeamsCount: 1, region: "benelux", subregion: null },
+      header: { activeClubsCount: 5, activeTeamsCount: 19, region: "benelux", subregion: null },
       data: [
-        { team_id: 3, team_name: "Mock Team Benelux Charlie", club_status: 'active', team_status: 'active', category: 'hurling', region: 'benelux', subregion: null }
+        // Club 1 (Amsterdam) - 3 teams
+        { category: "hurling", city: "Amsterdam", clubId: 301, clubName: "Amsterdam GAC", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 401, teamName: null, teamStatus: "active" },
+        { category: "lgfa", city: "Amsterdam", clubId: 301, clubName: "Amsterdam GAC", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 402, teamName: null, teamStatus: "active" },
+        { category: "gaa", city: "Amsterdam", clubId: 301, clubName: "Amsterdam GAC", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 403, teamName: null, teamStatus: "active" },
+        // Club 2 (Brussels) - 4 teams
+        { category: "camogie", city: "Brussels", clubId: 302, clubName: "Belgium GAA", clubStatus: "A", country: "BE", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 404, teamName: null, teamStatus: "active" },
+        { category: "gaa", city: "Brussels", clubId: 302, clubName: "Belgium GAA", clubStatus: "A", country: "BE", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 405, teamName: null, teamStatus: "active" },
+        { category: "lgfa", city: "Brussels", clubId: 302, clubName: "Belgium GAA", clubStatus: "A", country: "BE", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 406, teamName: null, teamStatus: "active" },
+        { category: "hurling", city: "Brussels", clubId: 302, clubName: "Belgium GAA", clubStatus: "A", country: "BE", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 407, teamName: null, teamStatus: "active" },
+        // Club 3 (Luxembourg) - 5 teams
+        { category: "youthfootball", city: "Luxembourg", clubId: 303, clubName: "Luxembourg Irish Club", clubStatus: "A", country: "LU", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 408, teamName: null, teamStatus: "active" },
+        { category: "gaa", city: "Luxembourg", clubId: 303, clubName: "Luxembourg Irish Club", clubStatus: "A", country: "LU", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 409, teamName: null, teamStatus: "active" },
+        { category: "lgfa", city: "Luxembourg", clubId: 303, clubName: "Luxembourg Irish Club", clubStatus: "A", country: "LU", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 410, teamName: null, teamStatus: "active" },
+        { category: "hurling", city: "Luxembourg", clubId: 303, clubName: "Luxembourg Irish Club", clubStatus: "A", country: "LU", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 411, teamName: null, teamStatus: "active" },
+        { category: "camogie", city: "Luxembourg", clubId: 303, clubName: "Luxembourg Irish Club", clubStatus: "A", country: "LU", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 412, teamName: null, teamStatus: "active" },
+        // Club 4 (The Hague) - 3 teams
+        { category: "gaa", city: "The Hague", clubId: 304, clubName: "Den Haag GFC", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 413, teamName: null, teamStatus: "active" },
+        { category: "lgfa", city: "The Hague", clubId: 304, clubName: "Den Haag GFC", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 414, teamName: null, teamStatus: "active" },
+        { category: "youthhurling", city: "The Hague", clubId: 304, clubName: "Den Haag GFC", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 415, teamName: null, teamStatus: "active" },
+        // Club 5 (Eindhoven) - 4 teams
+        { category: "hurling", city: "Eindhoven", clubId: 305, clubName: "Eindhoven Shamrocks", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 416, teamName: null, teamStatus: "active" },
+        { category: "camogie", city: "Eindhoven", clubId: 305, clubName: "Eindhoven Shamrocks", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 417, teamName: null, teamStatus: "active" },
+        { category: "gaa", city: "Eindhoven", clubId: 305, clubName: "Eindhoven Shamrocks", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 418, teamName: null, teamStatus: "active" },
+        { category: "lgfa", city: "Eindhoven", clubId: 305, clubName: "Eindhoven Shamrocks", clubStatus: "A", country: "NL", domain: null, post_code: null, region: "benelux", subregion: null, teamId: 419, teamName: null, teamStatus: "active" },
       ]
     },
     "northwest": {
-      header: { activeClubsCount: 2, activeTeamsCount: 3, region: "northwest", subregion: null },
+      header: { activeClubsCount: 2, activeTeamsCount: 2, region: "northwest", subregion: null }, // activeTeamsCount is 2 because one team is inactive
       data: [
-        { team_id: 4, team_name: "Mock Team NW Delta", club_status: 'active', team_status: 'active', category: 'gaa', region: 'northwest', subregion: null },
-        { team_id: 5, team_name: "Mock Team NW Echo", club_status: 'active', team_status: 'active', category: 'camogie', region: 'northwest', subregion: null },
-        { team_id: 6, team_name: "Mock Team NW Foxtrot", club_status: 'active', team_status: 'inactive', category: 'gaa', region: 'northwest', subregion: null } // Example inactive team
+        { category: "gaa", city: "Brest", clubId: 501, clubName: "Brest GAA", clubStatus: "A", country: "FR", domain: null, post_code: null, region: "northwest", subregion: null, teamId: 601, teamName: null, teamStatus: "active" },
+        { category: "camogie", city: "Rennes", clubId: 502, clubName: "Rennes Ar Gwazi Gouez", clubStatus: "A", country: "FR", domain: null, post_code: null, region: "northwest", subregion: null, teamId: 602, teamName: null, teamStatus: "active" },
+        { category: "gaa", city: "Rennes", clubId: 502, clubName: "Rennes Ar Gwazi Gouez", clubStatus: "A", country: "FR", domain: null, post_code: null, region: "northwest", subregion: null, teamId: 603, teamName: null, teamStatus: "inactive" } // Example inactive team
       ]
     },
     "centraleast": {
@@ -47,7 +70,7 @@ module.exports = (db) => { // db parameter is kept for consistency, not used by 
     "iberia": {
       header: { activeClubsCount: 1, activeTeamsCount: 1, region: "iberia", subregion: null },
       data: [
-        { team_id: 7, team_name: "Mock Team Iberia Golf", club_status: 'active', team_status: 'active', category: 'hurling', region: 'iberia', subregion: null }
+        { category: "hurling", city: "Madrid", clubId: 701, clubName: "Madrid Harps", clubStatus: "A", country: "ES", domain: null, post_code: null, region: "iberia", subregion: null, teamId: 801, teamName: null, teamStatus: "active" }
       ]
     }
   };
