@@ -28,27 +28,21 @@ module.exports = (db) => {
         const hash = crypto.createHash('md5').update(regionName).digest('hex');
         return {
           id: hash,
-          name: regionName,
+          name: encodeURI(regionName),
           activeClubsCount: parseInt(row.activeClubsCount, 10) || 0,
           activeTeamsCount: parseInt(row.activeTeamsCount, 10) || 0
         };
       });
     },
-
+    
+    // FIXME: this should handle sub regions too
     listRegionInfo: async (regionString, { sex, sport, level }) => {
-      const { region: reg, subregion } = splitRegion(regionString);
 
       // Constraints for fetching team data from v_club_teams
       // Assumes v_club_teams has columns: region, subregion, status, team_status, category
       let teamSelectionConstraints = [`region = ?`];
-      const teamSelectionParams = [reg];
+      const teamSelectionParams = [regionString];
 
-      if (subregion) {
-        teamSelectionConstraints.push(`subregion = ?`);
-        teamSelectionParams.push(subregion);
-      } else {
-        teamSelectionConstraints.push(`(subregion IS NULL OR subregion = '')`);
-      }
       teamSelectionConstraints.push(`clubStatus = 'active'`); // Filter for active clubs associated with teams
       teamSelectionConstraints.push(`teamStatus = 'active'`); // Filter for active teams
 
@@ -69,16 +63,9 @@ module.exports = (db) => {
         teamSelectionParams
       );
 
-      // Constraints for counting active clubs in the specified region/subregion
       // Assuming 'clubs' table has 'status' and 'clubId'
       let clubCountConstraints = [`region = ?`, `status = 'active'`];
-      const clubCountParams = [reg];
-      if (subregion) {
-        clubCountConstraints.push(`subregion = ?`);
-        clubCountParams.push(subregion);
-      } else {
-        clubCountConstraints.push(`(subregion IS NULL OR subregion = '')`);
-      }
+      const clubCountParams = [regionString];
       
       const [activeClubsStats] = await select(
         `SELECT COUNT(DISTINCT clubId) as count FROM clubs WHERE ${clubCountConstraints.join(" AND ")}`,
@@ -87,8 +74,7 @@ module.exports = (db) => {
       
       return { 
         header: { 
-          region: reg, 
-          subregion,
+          region: regionString, 
           activeClubsCount: parseInt(activeClubsStats.count, 10) || 0,
           activeTeamsCount: teamDataRows.length 
         }, 
