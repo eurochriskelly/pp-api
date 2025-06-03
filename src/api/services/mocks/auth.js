@@ -28,7 +28,7 @@ module.exports = (db) => { // db parameter is kept for consistency, not used by 
       activeTokens[token] = email;
       return { 
         message: "Signup successful", 
-        user: { id: newUser.id, email: newUser.email, role: newUser.role },
+        user: { username: newUser.email, role: newUser.role, email: newUser.email, id: newUser.id },
         token 
       };
     },
@@ -42,7 +42,7 @@ module.exports = (db) => { // db parameter is kept for consistency, not used by 
         DD(`Mock: Login successful for [${email}]. Token: ${token}`);
         return { 
           message: "Login successful", 
-          user: { id: user.id, email: user.email, role: user.role },
+          user: { username: user.email, role: user.role, email: user.email, id: user.id },
           token 
         };
       }
@@ -68,7 +68,7 @@ module.exports = (db) => { // db parameter is kept for consistency, not used by 
       if (email && users[email]) {
         const user = users[email];
         DD(`Mock: Token [${token}] is valid for user [${email}].`);
-        return { id: user.id, email: user.email, role: user.role };
+        return { username: user.email, role: user.role, email: user.email, id: user.id };
       }
       DD(`Mock: Token [${token}] is invalid or expired.`);
       throw new Error("Invalid or expired token");

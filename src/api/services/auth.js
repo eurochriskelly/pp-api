@@ -6,8 +6,8 @@ module.exports = (db) => {
   return {
     login: async (email, password) => {
       const users = await select(
-        `SELECT * FROM sec_users 
-         WHERE Email = ? AND Pass = ? AND IsActive = 1`,
+        `SELECT id, Email, Role FROM sec_users 
+         WHERE Email = ? AND Pass = ? AND IsActive = 1`, // Assuming 'Role' column exists
         [email, password]
       );
       
@@ -16,14 +16,23 @@ module.exports = (db) => {
       }
 
       const user = users[0];
-      await select(
+      await update( // Changed from select to update as it's an UPDATE statement
         `UPDATE sec_users SET LastAuthenticated = CURDATE() WHERE id = ?`,
         [user.id]
       );
       
+      // Placeholder for actual JWT generation
+      const token = `real-jwt-token-for-${user.Email}-${Date.now()}`;
+
       return { 
-        id: user.id, 
-        email: user.Email 
+        message: "Login successful",
+        user: {
+          username: user.Email,
+          role: user.Role || 'player', // Default role if not in DB, adjust as needed
+          email: user.Email,
+          id: user.id
+        },
+        token
       };
     }
   };
