@@ -8,6 +8,7 @@ const fixtureRoutes = require("./routes/fixtures");
 const regionRoutes = require("./routes/regions");
 const generalRoutes = require("./routes/general");
 const authRoutes = require("./routes/auth");
+const { II } = require("../lib/logging"); // Import the logger
 
 const app = express();
 app.use(bodyParser.json());
