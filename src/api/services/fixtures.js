@@ -4,6 +4,7 @@ const { calculateRankings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
 
 const stageCompletion = require('./fixtures/stage-completion');
+const enhanceFixtureFactory = require('./fixtures/enhance-fixture');
 
 module.exports = (db) => {
   // Destructure 'delete' from dbHelper as well
@@ -16,40 +17,8 @@ module.exports = (db) => {
   const { sqlGroupStandings, sqlGroupRankings } = require('../../lib/queries'); // Make sure this is imported if not already
   const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings });
 
-  // Define embellishFixture inside the factory to access 'select'
-  async function embellishFixture(fixture, options = {}) {
-    if (!fixture) return null; // Handle null fixture input
-    const embellished = {
-      ...fixture,
-      // todo: get rid v_fixture_information. Centralize abstractions in the code.
-      team1: fixture.team1Id || fixture.team1,
-      team2: fixture.team2Id || fixture.team2,
-      umpireTeam: fixture.umpireTeamId|| fixture.umpireTeam,
-      scheduledTime: fixture.scheduled
-        ? `${fixture.scheduled.toTimeString()}`?.substring(0, 5)
-        : null,
-      startedTime: fixture.started 
-        ? `${fixture.started.toTimeString()}`?.substring(0, 5)
-        : null,
-      isResult: !!(fixture.goals1 === 0 || fixture.goals1),
-      played: fixture.outcome != 'not played' && fixture.ended
-    };
-
-    if (options.cardedPlayers && fixture.id && fixture.tournamentId) {
-      DD(`Embellishing fixture [${fixture.id}] with card data.`);
-      embellished.cardedPlayers = await select(
-        `SELECT * FROM cards WHERE tournamentId = ? AND fixtureId = ?`,
-        [fixture.tournamentId, fixture.id]
-      );
-      DD(`Found ${embellished.cardedPlayers.length} cards for fixture [${fixture.id}].`);
-    } else if (options.cardedPlayers) {
-        DD(`Card embellishment requested but fixture ID or tournament ID missing for fixture: ${JSON.stringify(fixture)}`);
-        embellished.cardedPlayers = []; // Add empty array if requested but IDs missing
-    }
-
-    return embellished;
-  }
-
+  const fixtureEnhancer = enhanceFixtureFactory({ dbHelpers: { select }, loggers: { DD } });
+  const { embellishFixture, getOrCalculateTournamentCategoryCompositions } = fixtureEnhancer;
 
   return {
     getFixture: async (tournamentId, fixtureId) => {
@@ -57,13 +26,12 @@ module.exports = (db) => {
         `SELECT * FROM fixtures WHERE id = ? and tournamentId = ?`,
         [fixtureId, tournamentId]
       );
-      // Pass options if needed, e.g., embellishFixture(fixture, { cards: true })
-      // For now, defaulting to no cards
-      return await embellishFixture(fixture, {cardedPlayers: true});
+      const categoryCompositions = await getOrCalculateTournamentCategoryCompositions(tournamentId);
+      return await embellishFixture(fixture, {cardedPlayers: true}, categoryCompositions);
     },
 
     getFixturesByPitch: async (tournamentId, pitch) => {
-      const where = pitch
+      const where = (pitch && pitch !== '*')
         ? `WHERE tournamentId = ? AND pitch = ?`
         : `WHERE tournamentId = ?`;
       const fixtures = await select( // Assign result to 'fixtures'
@@ -71,10 +39,11 @@ module.exports = (db) => {
         pitch ? [tournamentId, pitch] : [tournamentId]
       ); // Removed semicolon
       // Embellish each fixture; use Promise.all for async mapping
+      const categoryCompositions = await getOrCalculateTournamentCategoryCompositions(tournamentId);
       return await Promise.all(
         fixtures
           .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled)) // Order by 'scheduled' field
-          .map(f => embellishFixture(f))
+          .map(f => embellishFixture(f, {}, categoryCompositions))
       );
     },
 
