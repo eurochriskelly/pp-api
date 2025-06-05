@@ -9,6 +9,17 @@ module.exports = (db, useMock) => {
 
   return {
     // Tournament CRUD
+    validateTsv: handleRoute((req, res) => {
+      const { tournamentId } = req.params;
+      const tsvEncoded  = req.body.key;
+      try {
+        const { rows, warnings }= dbSvc.validateTsv(tsvEncoded);
+        res.json({ data: { rows, warnings }});
+      } catch (err) {
+        throw err;
+      }
+    }, 201),
+
     createTournament: handleRoute(async (req) => {
       const { title, date, location, lat, lon, uuid } = req.body;
       const id = await dbSvc.createTournament({ title, date, location, lat, lon, uuid });
@@ -338,7 +349,6 @@ module.exports = (db, useMock) => {
 
   };
 };
-
 
 function handleRoute(logic, successStatus = 200) {
   return async (req, res, next) => {

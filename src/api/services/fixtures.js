@@ -2,9 +2,9 @@ const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { calculateRankings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
-
 const stageCompletion = require('./fixtures/stage-completion');
 const enhanceFixtureFactory = require('./fixtures/enhance-fixture');
+const TSVValidator = require('./fixtures/validate-tsv');
 
 module.exports = (db) => {
   // Destructure 'delete' from dbHelper as well
@@ -21,6 +21,8 @@ module.exports = (db) => {
   const { embellishFixture, getOrCalculateTournamentCategoryCompositions } = fixtureEnhancer;
 
   return {
+    validateTsv: (tsvEncoded) => new TSVValidator(b64, { restGapMultiplier: 1 }).validate(),
+
     getFixture: async (tournamentId, fixtureId) => {
       const [fixture] = await select(
         `SELECT * FROM fixtures WHERE id = ? and tournamentId = ?`,
@@ -30,23 +32,38 @@ module.exports = (db) => {
       return await embellishFixture(fixture, {cardedPlayers: true}, categoryCompositions);
     },
 
-    getFixturesByPitch: async (tournamentId, pitch) => {
-      const where = (pitch && pitch !== '*')
-        ? `WHERE tournamentId = ? AND pitch = ?`
-        : `WHERE tournamentId = ?`;
-      const fixtures = await select( // Assign result to 'fixtures'
-        `SELECT * FROM fixtures ${where}`,
-        pitch ? [tournamentId, pitch] : [tournamentId]
-      ); // Removed semicolon
-      // Embellish each fixture; use Promise.all for async mapping
+    getFixtures: async (tournamentId, { pitch, category, outcome, order = 'id' }) => {
+      const conditions = ['tournamentId = ?'];
+      const params = [tournamentId];
+
+      if (pitch && pitch !== '*') {
+        conditions.push('pitch = ?');
+        params.push(pitch);
+      }
+      if (category && category !== '*') {
+        conditions.push('category = ?');
+        params.push(category);
+      }
+      if (outcome && outcome !== '*') {
+        conditions.push('outcome = ?');
+        params.push(outcome);
+      }
+
+      const where = `WHERE ${conditions.join(' AND ')}`;
+      const fixtures = await select(
+        `SELECT * FROM fixtures ${where} ORDER BY ${order}`,
+        params
+      );
+
       const categoryCompositions = await getOrCalculateTournamentCategoryCompositions(tournamentId);
       return await Promise.all(
         fixtures
-          .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled)) // Order by 'scheduled' field
+          .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled))
           .map(f => embellishFixture(f, {}, categoryCompositions))
       );
     },
-
+ 
+    // Not called directly from route
     getNextFixtures: async (tournamentId) => {
       return await select(`
         WITH RankedFixtures AS (
@@ -129,29 +146,24 @@ module.exports = (db) => {
     },
 
     updateScore: async (tournamentId, fixtureId, team1, team2, outcome) => {
-      console.log('us1')
       await update(
         `UPDATE fixtures 
          SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, outcome = ?
          WHERE id = ?`,
         [team1.goals, team1.points, team2.goals, team2.points, outcome, fixtureId]
       );
-      console.log('us2')
 
       // Retrieve fixture details to get the category used for updates.
       const [fixture] = await select(
         `SELECT tournamentId, category FROM fixtures WHERE id = ?`,
         [fixtureId]
       );
-      console.log('us3')
       if (fixture) {
-        console.log('us4')
         const { category } = fixture;
         // Decide winner and loser based on goals (adjust logic for draws as needed).
         const winner = team1.goals > team2.goals ? team1.name : team2.name;
         const loser  = team1.goals > team2.goals ? team2.name : team1.name;
     
-        console.log('us5')
         // Update all references for the winning team.
         await update(
           `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
@@ -165,7 +177,6 @@ module.exports = (db) => {
           `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId`,
           [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
         );
-   console.log('us6') 
         // Update all references for the losing team.
         await update(
           `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
@@ -180,9 +191,7 @@ module.exports = (db) => {
           [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
         );
      }
-     console.log('us7')
       await stageCompletionProcessor.processStageCompletion(fixtureId);
-      console.log('us8')
       return { updated: true };
     },
 

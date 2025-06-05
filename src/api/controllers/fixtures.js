@@ -21,6 +21,32 @@ const cardPlayerSchema = z.object({
   // The dbSvc from serviceFactory(db) (defined above) will be used by the controller methods.
   // The cardPlayerSchema (defined above) is also in scope for methods that need it.
   return {
+    validateTsv: (req, res) => {
+      const { tournamentId, sample } = req.params;
+      let tsvEncoded;
+      if (sample) {
+        const fs = require('fs');
+        const sampleTsv = `TIME	MATCH	CATEGORY	PITCH	TEAM1	STAGE	TEAM2	UMPIRES	DURATION
+11:00	M1	MEN	Pitch 1	Team A	Gp.1	Team B	Team C	20
+11:30	M2	MEN	Pitch 1	Team C	Gp.1	Team B	Team A	20
+12:00	M3	MEN	Pitch 1	Team A	Gp.1	Team C	Team B	20
+12:30	M4	MEN	Pitch 4	Team D	Gp.2	Team E	Team D	20
+13:15	M5	MEN	Pitch 1	1st Gp1	CUP.SF1	1st Gp2	2nd Gp1	20
+14:15	M6	MEN	Pitch 2	2nd Gp2	CUP.SF2	2nd Gp1	3rd Gp1	20
+15:30	M7	MEN	Pitch 3	Winner Cup.Sf1	CUP.FIN	Winner Cup.Sf2	Loser M.6	30`
+        const b64 = Buffer.from(sampleTsv, 'utf8').toString('base64');
+      } else {
+        tsvEncoded  = req.body.tsvEncoded;
+        console.log('got this....', tsvEncoded)
+      }
+      try {
+        const { rows, warnings }= dbSvc.validateTsv();
+        res.json({ data: { rows, warnings }});
+      } catch (err) {
+        throw err;
+      }
+    },
+
     updateCalculatedFixtures: async (req, res) => {
       const { tournamentId, fixtureId } = req.params;
       try {
@@ -31,10 +57,10 @@ const cardPlayerSchema = z.object({
       }
     },
 
-    fixturesByPitch: async (req, res) => {
-      const { tournamentId, pitch } = req.params;
+    getFixtures: async (req, res) => {
+      const { tournamentId, pitch, category, outcome, order } = req.params;
       try {
-        const fixtures = await dbSvc.getFixturesByPitch(tournamentId, pitch);
+        const fixtures = await dbSvc.getFixtures(tournamentId, { pitch, category, outcome, order });
         res.json({ data: fixtures });
       } catch (err) {
         throw err;

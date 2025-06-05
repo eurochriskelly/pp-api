@@ -1,15 +1,85 @@
 const { v4: uuidv4 } = require('uuid');
-const { promisify } = require("util");
 const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { buildReport } = require('./tournaments/build-report');
 const { sqlGroupStandings } = require('../../lib/queries');
+const TSVValidator = require('./fixtures/validate-tsv');
+const { rowsToFixtures, buildFixturesInsertSQL } = require('./tournaments/import-fixtures.js');
+
+const createPitches = async (insert, tournamentId, pitches) => {
+  console.log('ss')
+  try {
+    const values = pitches.map(pitch => [
+      pitch.pitch,
+      pitch.location,
+      pitch.type,
+      tournamentId
+    ]);
+    console.log('----')
+    console.log(values)
+    const result = await insert(
+      `INSERT INTO pitches (pitch, location, type, tournamentId) VALUES ?`,
+      [values]
+    );
+    const insertedPitches = pitches.map((pitch, index) => ({
+      id: result.insertId + index, // Assuming auto-increment ID
+      pitch: pitch.pitch,
+      location: pitch.location,
+      type: pitch.type,
+      tournamentId
+    }));
+    return insertedPitches; // Return created pitch objects
+  } catch (err) {
+    throw new Error(`Failed to create pitches for tournament ${tournamentId}: ${err.message}`);
+  }
+}
+
+const deleteCards = async (dbDelete, tournamentId) => {
+  try {
+    const result = await dbDelete(
+      `DELETE FROM cards WHERE tournamentId = ?`,
+      [tournamentId]
+    );
+    console.log('res', result)
+    return { affectedRows: result.affectedRows };
+  } catch (err) {
+    throw new Error(`Failed to delete cards for tournament ${tournamentId}: ${err.message}`);
+  }
+}
+
+const deleteFixtures = async (dbDelete, tournamentId) => {
+  try {
+    await dbDelete(`SET FOREIGN_KEY_CHECKS = 0`);
+    await dbDelete(`DELETE FROM cards WHERE tournamentId = ?`, [tournamentId]);
+    await dbDelete(`SET FOREIGN_KEY_CHECKS = 1`);
+    const result = await dbDelete(
+      `DELETE FROM fixtures WHERE tournamentId = ?`,
+      [tournamentId]
+    );
+    return { affectedRows: result.affectedRows }; // Return count of deleted rows
+  } catch (err) {
+    throw new Error(`Failed to delete fixtures for tournament ${tournamentId}: ${err.message}`);
+  }
+}
+
+const deletePitches = async (dbDelete, tournamentId) => {
+  try {
+    const result = await dbDelete(
+      `DELETE FROM pitches WHERE tournamentId = ?`,
+      [tournamentId]
+    );
+    return { affectedRows: result.affectedRows };
+  } catch (err) {
+    throw new Error(`Failed to delete pitches for tournament ${tournamentId}: ${err.message}`);
+  }
+}
 
 module.exports = (db) => {
   const { select, insert, update, delete: dbDelete } = dbHelper(db);
   const winAward = 3;
-
   return {
+    validateTsv: (tsvEncoded) => new TSVValidator(tsvEncoded, { restGapMultiplier: 1 }).validate(),
+
     getTournamentReport: (tournamentId) => {
       return {
         tournamentId,
@@ -17,87 +87,34 @@ module.exports = (db) => {
       }
     },
     buildTournamentReport: async (tournamentId) => {
-      console.log(`This is and ${tournamentId}`)
       const res = await buildReport(tournamentId, select);
       return res
     },
- // Create multiple fixtures for a tournament
-    createFixtures: async (tournamentId, fixtures) => {
-      console.log(JSON.stringify(fixtures[0], null, 2))
+   // Create multiple fixtures for a tournament
+    createFixtures: async (tournamentId, fixtureRows) => {
       try {
-        const values = fixtures.map(fixture => {
-          let schedTimestamp;
-          try {
-            schedTimestamp = new Date(fixture.scheduled).toISOString().slice(0, 19).replace("T", " ");
-          } catch(e) {
-            schedTimestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
+        const pitches = fixtureRows.map(row => {
+          return {
+            pitch: row.PITCH, 
+            location: null,
+            type: 'grass',
+            tournamentId
           }
-          return [
-            fixture.id,
-            fixture.tournamentId,
-            fixture.category,
-            fixture.groupNumber,
-            fixture.stage,
-            fixture.pitch, fixture.pitch,   // planned / actual
-            schedTimestamp, schedTimestamp, // planned / actual
-            fixture.started,
-            fixture.team1Planned,
-            fixture.team1Id,
-            fixture.goals1,
-            fixture.points1,
-            fixture.team2Planned,
-            fixture.team2Id,
-            fixture.goals2,
-            fixture.points2,
-            fixture.umpireTeamPlanned,
-            fixture.umpireTeamId,
-            'not played'
-          ]
         });
-        const result = await insert(
-          `INSERT INTO fixtures (
-              id, tournamentId, category, groupNumber, 
-              stage, pitch, pitchPlanned, scheduled, scheduledPlanned, started, 
-              team1Planned, team1Id, goals1, points1, 
-              team2Planned, team2Id, goals2, points2, 
-              umpireTeamPlanned, umpireTeamId, outcome) VALUES ?`,
-          [values]
-        );
-        const insertedFixtures = fixtures.map((fixture, index) => ({
-          ...fixture,
-          id: fixture.id
-        }));
-        return insertedFixtures;
+        const sql = buildFixturesInsertSQL(fixtureRows, tournamentId, '2025-01-01');
+        await deletePitches(dbDelete, tournamentId);
+        await deleteFixtures(dbDelete, tournamentId);
+        await createPitches(insert, tournamentId, pitches)
+        await insert(sql);
+        return {}
       } catch (err) {
         console.log(err)
         throw new Error(`Failed to create fixtures for tournament ${tournamentId}: ${err.message}`);
       }
     },
-        // Create multiple pitches for a tournament
-    createPitches: async (tournamentId, pitches) => {
-      try {
-        const values = pitches.map(pitch => [
-          pitch.pitch,
-          pitch.location,
-          pitch.type,
-          tournamentId
-        ]);
-        const result = await insert(
-          `INSERT INTO pitches (pitch, location, type, tournamentId) VALUES ?`,
-          [values] // Bulk insert with array of arrays
-        );
-        const insertedPitches = pitches.map((pitch, index) => ({
-          id: result.insertId + index, // Assuming auto-increment ID
-          pitch: pitch.pitch,
-          location: pitch.location,
-          type: pitch.type,
-          tournamentId
-        }));
-        return insertedPitches; // Return created pitch objects
-      } catch (err) {
-        throw new Error(`Failed to create pitches for tournament ${tournamentId}: ${err.message}`);
-      }
-    },
+
+    // Create multiple pitches for a tournament
+    createPitches: createPitches.bind(insert),
 
     // Players CRUD (New)
     createPlayer: async (squadId, { firstName, secondName, dateOfBirth, foirreannId }) => {
@@ -216,48 +233,9 @@ module.exports = (db) => {
       return result.insertId;
     },
 
-    // Delete all cards for a tournament
-    deleteCards: async (tournamentId) => {
-      console.log('this is failing ...')
-      try {
-        const result = await dbDelete(
-          `DELETE FROM cards WHERE tournamentId = ?`,
-          [tournamentId]
-        );
-        console.log('res', result)
-        return { affectedRows: result.affectedRows };
-      } catch (err) {
-        throw new Error(`Failed to delete cards for tournament ${tournamentId}: ${err.message}`);
-      }
-    },
-
-    deleteFixtures: async (tournamentId) => {
-      try {
-        console.log('Deleting cards')
-        await dbDelete(`DELETE FROM cards WHERE tournamentId = ?`, [tournamentId]);
-        console.log('Deleting fixtures')
-        const result = await dbDelete(
-          `DELETE FROM fixtures WHERE tournamentId = ?`,
-          [tournamentId]
-        );
-        return { affectedRows: result.affectedRows }; // Return count of deleted rows
-      } catch (err) {
-        throw new Error(`Failed to delete fixtures for tournament ${tournamentId}: ${err.message}`);
-      }
-    },
-
-    // Delete all pitches for a tournament
-    deletePitches: async (tournamentId) => {
-      try {
-        const result = await dbDelete(
-          `DELETE FROM pitches WHERE tournamentId = ?`,
-          [tournamentId]
-        );
-        return { affectedRows: result.affectedRows };
-      } catch (err) {
-        throw new Error(`Failed to delete pitches for tournament ${tournamentId}: ${err.message}`);
-      }
-    },
+    deleteCards: deleteCards.bind(dbDelete),
+    deleteFixtures: deleteFixtures.bind(dbDelete),
+    deletePitches: deletePitches.bind(dbDelete),
 
     deletePlayer: async (id) => {
       await dbDelete(`DELETE FROM players WHERE id = ?`, [id]);
