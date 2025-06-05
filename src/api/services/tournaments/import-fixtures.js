@@ -74,11 +74,9 @@ function rowsToFixtures(rows, tournamentId, startDate) {
     const id      = tOffset + cOffset + matchNo(r.MATCH);
 
     // ─────────── stage / groupNumber conversion ───────────
-    let stageRaw = r.STAGE.trim();
+    let stageRaw = r.STAGE.trim().toUpperCase();
     let stage, groupNumber;
-
     if (stageRaw.startsWith('GP')) {
-      // pool play
       const [, g] = stageRaw.split('.');
       stage        = 'group';
       groupNumber  = +g;
@@ -88,7 +86,7 @@ function rowsToFixtures(rows, tournamentId, startDate) {
 
       const level = (() => {
         if (part === 'FIN') return 'finals';
-        if (part === 'P/O') return 'playoffs'; // Handle P/O
+        if (part === 'P/O') return 'playoffs';
         const m = part.match(/^(SF|QF|EF)(\d)$/);
         if (m) return { SF: 'semis', QF: 'quarters', EF: 'eights' }[m[1]];
         const pos = part.match(/^(\d+)\/(\d+)$/);
