@@ -55,11 +55,60 @@ class TSVValidator {
     this.catBrackets = new Map();
     this.catTeams = new Map();
     this.catMatches = new Map();
+
+    // For pre-scanning results
+    this.preScannedCatGroups = new Map();
+    this.preScannedCatBrackets = new Map();
+    this.preScannedCatMatches = new Map();
+  }
+
+  /* —— pre-scan all rows for context —— */
+  _preScanRows() {
+    for (let i = 1; i < this.lines.length; i++) {
+      const cols = this.lines[i].split('\t');
+      if (cols.every(c => !c.trim())) continue; // skip blank lines
+
+      const catVal = (cols[this.hdx.get('CATEGORY')] || '').trim().toUpperCase();
+      if (!catVal) continue; // Skip if category is empty
+
+      // Populate preScannedCatMatches
+      const matchVal = (cols[this.hdx.get('MATCH')] || '').trim().toUpperCase();
+      const matchParts = /^([A-Z]+).?([0-9]+)$/.exec(matchVal);
+      if (matchParts) {
+        const matchId = `${matchParts[1]}.${Number(matchParts[2])}`;
+        if (!this.preScannedCatMatches.has(catVal)) {
+            this.preScannedCatMatches.set(catVal, new Map());
+        }
+        const catMatchMap = this.preScannedCatMatches.get(catVal);
+        if (!catMatchMap.has(matchId)) { // Store first occurrence row index
+            catMatchMap.set(matchId, i); // i is 1-based line index from this.lines
+        }
+      }
+
+      // Populate preScannedCatGroups and preScannedCatBrackets
+      const stageVal = (cols[this.hdx.get('STAGE')] || '').trim().toUpperCase();
+      const stageParts = stageVal.split(/[ .]/).filter(Boolean);
+      if (stageParts.length === 2) {
+        const [partA, partB] = stageParts;
+        if (partA === 'GP' && /^\d+$/.test(partB)) {
+          if (!this.preScannedCatGroups.has(catVal)) {
+            this.preScannedCatGroups.set(catVal, new Set());
+          }
+          this.preScannedCatGroups.get(catVal).add(Number(partB));
+        } else if (TSVValidator.KO_CODES.has(partB)) {
+          if (!this.preScannedCatBrackets.has(catVal)) {
+            this.preScannedCatBrackets.set(catVal, new Set());
+          }
+          this.preScannedCatBrackets.get(catVal).add(partA);
+        }
+      }
+    }
   }
 
   /* public */
   validate() {
     if (!this._hdr()) return this._result();
+    this._preScanRows(); // Pre-scan for context
     for (let i = 1; i < this.lines.length; i++) {
       const cols = this.lines[i].split('\t');
       if (cols.every(c => !c.trim())) continue; // skip blank
@@ -167,12 +216,10 @@ class TSVValidator {
 
   _team(c, r, col, cat, stage, isUmp = false) {
     const raw = (c[this.hdx.get(col)] || '').trim();
-    console.log(`_team: col=${col}, row=${r}, raw="${raw}", stage=${stage}, isUmp=${isUmp}`); // Debug log
     if (!raw) return this._fw(col, r, 'Empty', '', false); // Return empty string for empty input
 
     /* group stage – validate teams and umpires */
     if (stage?.startsWith('GP.')) {
-      console.log(`Group stage detected for ${col}, cat=${cat}, raw="${raw}"`); // Debug log
       const group = parseInt(stage.split('.')[1], 10);
       const up = raw.toUpperCase();
 
@@ -196,17 +243,16 @@ class TSVValidator {
 
     /* knock-out tokens */
     const up = raw.toUpperCase();
-    console.log(`Knockout stage processing: up="${up}"`); // Debug log
     const tok = up.split(/\s+/);
 
     if (['WINNER', 'LOSER'].includes(tok[0])) {
-      console.log(`WINNER/LOSER detected: tokens=${tok}`); // Debug log
       if (tok.length < 2) return this._fw(col, r, 'WINNER/LOSER needs match id', up);
       const mid = tok[1];
       if (!/^[A-Z]+\.\d+$/.test(mid)) return this._fw(col, r, `Bad match id ${mid}`, up);
       if (!isUmp) {
-        const map = this.catMatches.get(cat) || new Map();
-        if (!map.has(mid)) {
+        // Use preScannedCatMatches for checking existence of referenced matches
+        const preScannedMap = this.preScannedCatMatches.get(cat) || new Map();
+        if (!preScannedMap.has(mid)) {
           this.warnings.push(warn('integrity', `Unknown match ${mid}`, r, col));
         }
       }
@@ -214,7 +260,6 @@ class TSVValidator {
     }
 
     if (tok.includes('BEST')) {
-      console.log(`BEST detected: tokens=${tok}`); // Debug log
       const i = tok.indexOf('BEST');
       const before = tok[i - 1] || '1ST';
       const after = tok[i + 1];
@@ -229,16 +274,15 @@ class TSVValidator {
 
     const gpm = /GP\.(\d+)/.exec(up);
     if (gpm) {
-      console.log(`GP reference detected: gpm=${gpm}`); // Debug log
       const g = parseInt(gpm[1], 10);
-      const set = this.catGroups.get(cat) || new Set();
-      if (!set.has(g)) {
+      // Use preScannedCatGroups for checking existence of referenced groups
+      const preScannedSet = this.preScannedCatGroups.get(cat) || new Set();
+      if (!preScannedSet.has(g)) {
         this.warnings.push(warn('integrity', `Unknown group GP.${g}`, r, col));
       }
       return { value: up, warnings: [] }; // Already uppercase
     }
 
-    console.log(`Falling to unrecognised token for ${col}: raw="${raw}"`); // Debug log
     return this._fw(col, r, 'Unrecognised token', up, false);
   }
 
