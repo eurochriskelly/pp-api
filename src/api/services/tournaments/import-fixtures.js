@@ -88,6 +88,7 @@ function rowsToFixtures(rows, tournamentId, startDate) {
 
       const level = (() => {
         if (part === 'FIN') return 'finals';
+        if (part === 'P/O') return 'playoffs'; // Handle P/O
         const m = part.match(/^(SF|QF|EF)(\d)$/);
         if (m) return { SF: 'semis', QF: 'quarters', EF: 'eights' }[m[1]];
         const pos = part.match(/^(\d+)\/(\d+)$/);
@@ -100,7 +101,7 @@ function rowsToFixtures(rows, tournamentId, startDate) {
       // groupNumber
       if (/^(SF|QF|EF)\d$/.test(part)) {
         groupNumber = +part.slice(-1);   // SF2 → 2, etc.
-      } else {
+      } else { // Covers FIN, P/O, and positional playoffs like 3/4
         groupNumber = 1;
       }
     }
