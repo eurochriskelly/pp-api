@@ -37,7 +37,11 @@ module.exports = ({ dbHelpers, loggers }) => {
       team1: fixture.team1Id || fixture.team1,
       team2: fixture.team2Id || fixture.team2,
       lane: { current: currentLane, allowedLanes },
-      competition: { offset: competitionData.offset, initials: competitionData.initial },
+      competition: { 
+        offset: competitionData.offset,
+        initials: competitionData.initial,
+        matchId: `${competitionData.initial}.${`${fixture.id}`.slice(-2)}`
+      },
       umpireTeam: fixture.umpireTeamId || fixture.umpireTeam,
       scheduledTime: fixture.scheduled ? fixture.scheduled.toTimeString().substring(0, 5) : null,
       startedTime: fixture.started ? fixture.started.toTimeString().substring(0, 5) : null,

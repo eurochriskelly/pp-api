@@ -19,6 +19,7 @@ module.exports = (db, useMock) => {
   router.get("/:id/group-standings", ctrl.getGroupStandings);
   router.get("/:id/knockout-fixtures", ctrl.getKnockoutFixtures);
   router.get("/:id/finals-results", ctrl.getFinalsResults);
+  router.post("/:id/validate-tsv", ctrl.validateTsv);
   router.get("/:id/all-matches", ctrl.getAllMatches);
 
   router.get("/:tournamentId/matches-by-pitch", ctrl.getMatchesByPitch);
