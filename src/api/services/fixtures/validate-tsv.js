@@ -57,6 +57,7 @@ class TSVValidator {
     this.catMatches = new Map();
 
     // For pre-scanning results
+    this.preScannedCatGroupTeams = new Map(); // Stores Map<category, Map<groupNumber, Set<teamName>>>
     this.preScannedCatGroups = new Map();
     this.preScannedCatBrackets = new Map();
     this.preScannedCatMatches = new Map();
@@ -64,15 +65,30 @@ class TSVValidator {
 
   /* —— pre-scan all rows for context —— */
   _preScanRows() {
+    const categoryHdrIdx = this.hdx.get('CATEGORY');
+    const stageHdrIdx = this.hdx.get('STAGE');
+    const matchHdrIdx = this.hdx.get('MATCH');
+    const team1HdrIdx = this.hdx.get('TEAM1');
+    const team2HdrIdx = this.hdx.get('TEAM2');
+
+    // If essential headers for pre-scan are missing, some validations might be incomplete.
+    // _hdr() would have already warned about missing REQ headers.
+    const essentialHeadersPresent = categoryHdrIdx !== undefined &&
+                                  stageHdrIdx !== undefined &&
+                                  matchHdrIdx !== undefined;
+                                  // TEAM1 & TEAM2 are needed for preScannedCatGroupTeams
+
     for (let i = 1; i < this.lines.length; i++) {
       const cols = this.lines[i].split('\t');
       if (cols.every(c => !c.trim())) continue; // skip blank lines
 
-      const catVal = (cols[this.hdx.get('CATEGORY')] || '').trim().toUpperCase();
+      if (!essentialHeadersPresent) continue; // Cannot reliably pre-scan without these headers
+
+      const catVal = (cols[categoryHdrIdx] || '').trim().toUpperCase();
       if (!catVal) continue; // Skip if category is empty
 
       // Populate preScannedCatMatches
-      const matchVal = (cols[this.hdx.get('MATCH')] || '').trim().toUpperCase();
+      const matchVal = (cols[matchHdrIdx] || '').trim().toUpperCase();
       const matchParts = /^([A-Z]+).?([0-9]+)$/.exec(matchVal);
       if (matchParts) {
         const matchId = `${matchParts[1]}.${Number(matchParts[2])}`;
@@ -85,16 +101,36 @@ class TSVValidator {
         }
       }
 
-      // Populate preScannedCatGroups and preScannedCatBrackets
-      const stageVal = (cols[this.hdx.get('STAGE')] || '').trim().toUpperCase();
+      // Populate preScannedCatGroups, preScannedCatBrackets, and preScannedCatGroupTeams
+      const stageVal = (cols[stageHdrIdx] || '').trim().toUpperCase();
       const stageParts = stageVal.split(/[ .]/).filter(Boolean);
+
       if (stageParts.length === 2) {
         const [partA, partB] = stageParts;
         if (partA === 'GP' && /^\d+$/.test(partB)) {
+          const groupNum = Number(partB);
           if (!this.preScannedCatGroups.has(catVal)) {
             this.preScannedCatGroups.set(catVal, new Set());
           }
-          this.preScannedCatGroups.get(catVal).add(Number(partB));
+          this.preScannedCatGroups.get(catVal).add(groupNum);
+
+          // Populate preScannedCatGroupTeams
+          if (team1HdrIdx !== undefined && team2HdrIdx !== undefined) {
+            const team1Val = (cols[team1HdrIdx] || '').trim().toUpperCase();
+            const team2Val = (cols[team2HdrIdx] || '').trim().toUpperCase();
+
+            if (!this.preScannedCatGroupTeams.has(catVal)) {
+              this.preScannedCatGroupTeams.set(catVal, new Map());
+            }
+            const categoryGroupTeams = this.preScannedCatGroupTeams.get(catVal);
+            if (!categoryGroupTeams.has(groupNum)) {
+              categoryGroupTeams.set(groupNum, new Set());
+            }
+            const teamsInGroupSet = categoryGroupTeams.get(groupNum);
+            if (team1Val && this._isRealTeam(team1Val)) teamsInGroupSet.add(team1Val);
+            if (team2Val && this._isRealTeam(team2Val)) teamsInGroupSet.add(team2Val);
+          }
+
         } else if (TSVValidator.KO_CODES.has(partB)) {
           if (!this.preScannedCatBrackets.has(catVal)) {
             this.preScannedCatBrackets.set(catVal, new Set());
@@ -243,25 +279,67 @@ class TSVValidator {
 
     /* knock-out tokens */
     const up = raw.toUpperCase();
-    const tok = up.split(/\s+/);
+    // Note: `tok` is used for WINNER/LOSER and BEST patterns.
+    // NTH GP.X and general GP.X patterns use regex on `up`.
 
+    // Check for WINNER/LOSER pattern
+    const tok = up.split(/\s+/);
     if (['WINNER', 'LOSER'].includes(tok[0])) {
       if (tok.length < 2) return this._fw(col, r, 'WINNER/LOSER needs match id', up);
       const mid = tok[1];
       if (!/^[A-Z]+\.\d+$/.test(mid)) return this._fw(col, r, `Bad match id ${mid}`, up);
       if (!isUmp) {
-        // Use preScannedCatMatches for checking existence of referenced matches
         const preScannedMap = this.preScannedCatMatches.get(cat) || new Map();
         if (!preScannedMap.has(mid)) {
-          this.warnings.push(warn('integrity', `Unknown match ${mid}`, r, col));
+          // This warning is added directly to global warnings.
+          // For cell-specific, it should be returned in the object.
+          const w = warn('integrity', `Unknown match ${mid} referenced in "${raw}"`, r, col);
+          this.warnings.push(w);
+          return { value: `${tok[0]} ${mid}`, warnings: [w] };
         }
       }
-      return { value: `${tok[0]} ${mid}`, warnings: [] }; // Already uppercase
+      return { value: `${tok[0]} ${mid}`, warnings: [] };
     }
 
+    // Check for "NTH GP.X" pattern (e.g., "1ST GP.1", "4TH GP.2")
+    const nthGpMatch = /^(\d+)(?:ST|ND|RD|TH)\s+GP\.(\d+)$/i.exec(up);
+    if (nthGpMatch) {
+      const pos = parseInt(nthGpMatch[1], 10);
+      const groupNum = parseInt(nthGpMatch[2], 10);
+      const cellSpecificWarnings = [];
+
+      const categoryDeclaredGroups = this.preScannedCatGroups.get(cat) || new Set();
+      const categoryScannedTeamsInGroups = this.preScannedCatGroupTeams.get(cat);
+
+      if (!categoryDeclaredGroups.has(groupNum)) {
+        const w = warn('field', `Referenced group GP.${groupNum} in "${raw}" does not exist in category ${cat}.`, r, col);
+        this.warnings.push(w);
+        cellSpecificWarnings.push(w);
+      } else {
+        const teamsInGroupSet = categoryScannedTeamsInGroups ? categoryScannedTeamsInGroups.get(groupNum) : undefined;
+        const numTeamsInGroup = teamsInGroupSet ? teamsInGroupSet.size : 0;
+
+        if (pos === 0) { // Positions like "0TH" are invalid
+            const w = warn('field', `Invalid position "0TH" in "${raw}". Positions must be 1st or higher.`, r, col);
+            this.warnings.push(w);
+            cellSpecificWarnings.push(w);
+        } else if (numTeamsInGroup === 0 && pos > 0) {
+            const w = warn('field', `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group is declared but has no teams.`, r, col);
+            this.warnings.push(w);
+            cellSpecificWarnings.push(w);
+        } else if (pos > numTeamsInGroup) {
+            const w = warn('field', `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group only has ${numTeamsInGroup} teams.`, r, col);
+            this.warnings.push(w);
+            cellSpecificWarnings.push(w);
+        }
+      }
+      return { value: up, warnings: cellSpecificWarnings.map(w => ({ ...w })) };
+    }
+
+    // Check for BEST pattern (e.g., "1ST BEST 3RD")
     if (tok.includes('BEST')) {
       const i = tok.indexOf('BEST');
-      const before = tok[i - 1] || '1ST';
+      const before = tok[i - 1] || '1ST'; // tok is from up.split(/\s+/)
       const after = tok[i + 1];
       if (!after || !/^(\d+)(ST|ND|RD|TH)$/.test(after)) {
         return this._fw(col, r, 'BEST needs following pos', up);
@@ -272,18 +350,21 @@ class TSVValidator {
       return { value: up.replace(/\s+/g, ' '), warnings: [] }; // Already uppercase
     }
 
-    const gpm = /GP\.(\d+)/.exec(up);
+    const gpm = /GP\.(\d+)/.exec(up); // General check for other GP.X references
     if (gpm) {
       const g = parseInt(gpm[1], 10);
-      // Use preScannedCatGroups for checking existence of referenced groups
+      const cellSpecificWarnings = [];
       const preScannedSet = this.preScannedCatGroups.get(cat) || new Set();
       if (!preScannedSet.has(g)) {
-        this.warnings.push(warn('integrity', `Unknown group GP.${g}`, r, col));
+        const w = warn('field', `Unknown group GP.${g} referenced in "${raw}" for category ${cat}.`, r, col);
+        this.warnings.push(w);
+        cellSpecificWarnings.push(w);
       }
-      return { value: up, warnings: [] }; // Already uppercase
+      // This path is taken if `up` contains GP.X but wasn't "NTH GP.X" or other specific patterns.
+      return { value: up, warnings: cellSpecificWarnings.map(w => ({ ...w })) };
     }
 
-    return this._fw(col, r, 'Unrecognised token', up, false);
+    return this._fw(col, r, 'Unrecognised token format for knock-out stage or umpire', up, false);
   }
 
   _dur(c, r) {
