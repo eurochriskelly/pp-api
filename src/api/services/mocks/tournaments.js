@@ -145,6 +145,67 @@ module.exports = () => {
           players: 120
         }
       };
-    }
+    },
+
+    getFilters: async (tournamentId, role, category) => {
+      II(`Mock: getFilters for tournament [${tournamentId}], role [${role}], category [${category || 'N/A'}]`);
+      
+      const competitionChoices = ['Mock Comp A', 'Mock Comp B', 'Mock Comp C'];
+      const pitchChoices = ['Mock Pitch 1', 'Mock Pitch 2'];
+      const teamChoices = category 
+        ? [`${category}/Mock Team X`, `${category}/Mock Team Y`] 
+        : ['Overall/Mock Team Alpha', 'Overall/Mock Team Beta', 'U12/Mock Team Gamma'];
+      const refereeChoices = ['Mock Ref Alpha', 'Mock Ref Beta']; // Mocking some refs
+
+      const allMockFilters = {
+        competition: {
+          icon: 'CompIcon',
+          category: 'Competition',
+          choices: competitionChoices,
+          allowMultiselect: true,
+          selected: null,
+          default: competitionChoices.length > 0 ? competitionChoices[0] : null
+        },
+        pitches: {
+          icon: 'PitchIcon',
+          category: 'Pitches',
+          choices: pitchChoices,
+          selected: [],
+          allowMultiselect: true,
+          default: null
+        },
+        teams: {
+          icon: 'TeamIcon',
+          category: 'Teams',
+          choices: teamChoices,
+          selected: [],
+          allowMultiselect: true,
+          default: null
+        },
+        referee: {
+          icon: 'RefIcon',
+          category: 'Referee',
+          choices: refereeChoices,
+          selected: null,
+          allowMultiselect: false,
+          default: null
+        }
+      };
+
+      const roleFilterKeysMap = {
+        organizer: ['competition', 'pitches', 'referee'],
+        referee: ['competition', 'pitches', 'referee'],
+        coach: ['competition', 'referee'],
+        coordinator: ['pitches']
+      };
+      
+      const roleFilterKeys = roleFilterKeysMap[role];
+
+      if (!roleFilterKeys) {
+        II(`Mock: Unknown role [${role}] for filters, returning empty array.`);
+        return [];
+      }
+      return roleFilterKeys.map(key => allMockFilters[key]);
+    },
   };
 };

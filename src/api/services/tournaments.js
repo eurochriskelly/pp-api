@@ -443,6 +443,110 @@ module.exports = (db) => {
       }));
     },
 
+    getFilters: async (tournamentId, queryRole, queryCategory) => {
+      II(`Fetching filters for tournament [${tournamentId}], role [${queryRole}], category [${queryCategory || 'N/A'}]`);
+
+      // 1. Fetch Competition choices
+      const compChoicesData = await select('SELECT DISTINCT(category) AS choice FROM fixtures WHERE tournamentId=? ORDER BY choice', [tournamentId]);
+      const competitionChoices = compChoicesData.map(r => r.choice);
+
+      // 2. Fetch Pitch choices
+      const pitchChoicesData = await select("SELECT DISTINCT(pitchPlanned) AS choice FROM fixtures WHERE tournamentId=? AND pitchPlanned IS NOT NULL AND TRIM(pitchPlanned) != '' ORDER BY choice", [tournamentId]);
+      const pitchChoices = pitchChoicesData.map(r => r.choice);
+
+      // 3. Fetch Team choices (depends on queryCategory)
+      let teamSQL = `
+        SELECT final_team_identifier AS choice FROM (
+            SELECT DISTINCT CONCAT(f.category, '/', f.team1Planned) AS final_team_identifier
+            FROM fixtures f
+            WHERE f.tournamentId = ? AND f.stage = 'group'
+              AND f.team1Planned IS NOT NULL AND TRIM(f.team1Planned) <> '' AND f.team1Planned NOT LIKE '~%'
+            UNION
+            SELECT DISTINCT CONCAT(f.category, '/', f.team2Planned) AS final_team_identifier
+            FROM fixtures f
+            WHERE f.tournamentId = ? AND f.stage = 'group'
+              AND f.team2Planned IS NOT NULL AND TRIM(f.team2Planned) <> '' AND f.team2Planned NOT LIKE '~%'
+        ) AS combined_teams
+        ORDER BY choice;
+      `;
+      const teamParamsInitial = [tournamentId, tournamentId];
+      let teamParams = [...teamParamsInitial];
+
+      if (queryCategory) {
+        teamSQL = `
+          SELECT final_team_identifier AS choice FROM (
+              SELECT DISTINCT CONCAT(f.category, '/', f.team1Planned) AS final_team_identifier
+              FROM fixtures f
+              WHERE f.tournamentId = ? AND f.category = ? AND f.stage = 'group'
+                AND f.team1Planned IS NOT NULL AND TRIM(f.team1Planned) <> '' AND f.team1Planned NOT LIKE '~%'
+              UNION
+              SELECT DISTINCT CONCAT(f.category, '/', f.team2Planned) AS final_team_identifier
+              FROM fixtures f
+              WHERE f.tournamentId = ? AND f.category = ? AND f.stage = 'group'
+                AND f.team2Planned IS NOT NULL AND TRIM(f.team2Planned) <> '' AND f.team2Planned NOT LIKE '~%'
+          ) AS combined_teams
+          ORDER BY choice;
+        `;
+        teamParams = [tournamentId, queryCategory, tournamentId, queryCategory];
+      }
+      const teamChoicesData = await select(teamSQL, teamParams);
+      const teamChoices = teamChoicesData.map(r => r.choice);
+
+      // 4. Referee choices (TODO: Define source for referee choices from DB)
+      const refereeChoices = [];
+
+      const allFilterDefinitions = {
+        competition: {
+          icon: 'CompIcon',
+          category: 'Competition',
+          choices: competitionChoices,
+          allowMultiselect: true,
+          selected: null,
+          default: competitionChoices.length > 0 ? competitionChoices[0] : null
+        },
+        pitches: {
+          icon: 'PitchIcon',
+          category: 'Pitches',
+          choices: pitchChoices,
+          selected: [],
+          allowMultiselect: true,
+          default: null
+        },
+        teams: {
+          icon: 'TeamIcon',
+          category: 'Teams',
+          choices: teamChoices,
+          selected: [],
+          allowMultiselect: true,
+          default: null
+        },
+        referee: {
+          icon: 'RefIcon',
+          category: 'Referee',
+          choices: refereeChoices,
+          selected: null,
+          allowMultiselect: false,
+          default: null
+        }
+      };
+
+      const roleFilterKeysMap = {
+        organizer: ['competition', 'pitches', 'referee'],
+        referee: ['competition', 'pitches', 'referee'],
+        coach: ['competition', 'referee'],
+        coordinator: ['pitches']
+      };
+
+      const roleFilterKeys = roleFilterKeysMap[queryRole];
+
+      if (!roleFilterKeys) {
+        II(`Unknown role [${queryRole}] for filters, returning empty array.`);
+        return [];
+      }
+      
+      return roleFilterKeys.map(key => allFilterDefinitions[key]);
+    },
+
     resetTournament: async (id) => {
       await update(
         `UPDATE fixtures SET 
