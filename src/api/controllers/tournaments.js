@@ -1,5 +1,4 @@
 const { II } = require("../../lib/logging");
-const { jsonToCsv, sendXsls } = require("../../lib/utils");
 
 module.exports = (db, useMock) => {
   const serviceFactory = useMock
@@ -346,6 +345,26 @@ module.exports = (db, useMock) => {
         res.status(500).json({ error: err.message || 'Internal server error' });
       }
     },
+
+    codeCheck: async (req, res) => {
+      const { id, code } = req.params;
+      const { role } = req.query;
+      try {
+        const result = await dbSvc.codeCheck(id, code.toUpperCase(), role);
+        res.status(200).json({
+          authorized: result,
+          data: { role, tournamentId: id }
+        });
+      } catch (err) {
+        // If the error has a warnings property, return it as well
+        res.status(400).json({
+          authorized: false,
+          data: { role, tournamentId: id },
+          error: err.message || 'Invalid code or internal server error while checking pin code',
+          warnings: err.warnings || undefined
+        });
+      }
+    }
 
   };
 };
