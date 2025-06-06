@@ -456,17 +456,18 @@ module.exports = (db) => {
 
       // 3. Fetch Team choices (depends on queryCategory)
       let teamSQL = `
-        SELECT final_team_identifier AS choice FROM (
-            SELECT DISTINCT CONCAT(f.category, '/', f.team1Planned) AS final_team_identifier
+        SELECT team_name AS choice FROM (
+            SELECT DISTINCT f.team1Planned AS team_name
             FROM fixtures f
             WHERE f.tournamentId = ? AND f.stage = 'group'
               AND f.team1Planned IS NOT NULL AND TRIM(f.team1Planned) <> '' AND f.team1Planned NOT LIKE '~%'
             UNION
-            SELECT DISTINCT CONCAT(f.category, '/', f.team2Planned) AS final_team_identifier
+            SELECT DISTINCT f.team2Planned AS team_name
             FROM fixtures f
             WHERE f.tournamentId = ? AND f.stage = 'group'
               AND f.team2Planned IS NOT NULL AND TRIM(f.team2Planned) <> '' AND f.team2Planned NOT LIKE '~%'
         ) AS combined_teams
+        WHERE team_name IS NOT NULL AND TRIM(team_name) <> ''
         ORDER BY choice;
       `;
       const teamParamsInitial = [tournamentId, tournamentId];
@@ -474,17 +475,18 @@ module.exports = (db) => {
 
       if (queryCategory) {
         teamSQL = `
-          SELECT final_team_identifier AS choice FROM (
-              SELECT DISTINCT CONCAT(f.category, '/', f.team1Planned) AS final_team_identifier
+          SELECT team_name AS choice FROM (
+              SELECT DISTINCT f.team1Planned AS team_name
               FROM fixtures f
               WHERE f.tournamentId = ? AND f.category = ? AND f.stage = 'group'
                 AND f.team1Planned IS NOT NULL AND TRIM(f.team1Planned) <> '' AND f.team1Planned NOT LIKE '~%'
               UNION
-              SELECT DISTINCT CONCAT(f.category, '/', f.team2Planned) AS final_team_identifier
+              SELECT DISTINCT f.team2Planned AS team_name
               FROM fixtures f
               WHERE f.tournamentId = ? AND f.category = ? AND f.stage = 'group'
                 AND f.team2Planned IS NOT NULL AND TRIM(f.team2Planned) <> '' AND f.team2Planned NOT LIKE '~%'
           ) AS combined_teams
+          WHERE team_name IS NOT NULL AND TRIM(team_name) <> ''
           ORDER BY choice;
         `;
         teamParams = [tournamentId, queryCategory, tournamentId, queryCategory];
