@@ -62,6 +62,54 @@ module.exports = (db) => {
           .map(f => embellishFixture(f, {}, categoryCompositions))
       );
     },
+
+    getFilteredFixtures: async (tournamentId, { 
+      pitch = [], 
+      category = [], 
+      referee,        // atomic string, optional 
+      team,           // atomic string, optional 
+      order = 'id' 
+    }) => {
+      const conditions = ['tournamentId = ?'];
+      const params = [tournamentId];
+
+      // array filters: OR within, AND between
+      if (Array.isArray(pitch) && pitch.length > 0) {
+        const ph = pitch.map(() => '?').join(',');
+        conditions.push(`LOWER(pitch) IN (${ph})`);
+        params.push(...pitch.map(p => p.toLowerCase()));
+      }
+
+      if (Array.isArray(category) && category.length > 0) {
+        const ph = category.map(() => '?').join(',');
+        conditions.push(`LOWER(category) IN (${ph})`);
+        params.push(...category.map(c => c.toLowerCase()));
+      }
+
+      // atomic filters: single value
+      if (typeof referee === 'string' && referee.trim() !== '' && referee !== '*') {
+        conditions.push(`LOWER(referee) = ?`);
+        params.push(referee.toLowerCase());
+      }
+
+      if (typeof team === 'string' && team.trim() !== '' && team !== '*') {
+        conditions.push(`LOWER(team) = ?`);
+        params.push(team.toLowerCase());
+      }
+
+      const where = `WHERE ${conditions.join(' AND ')}`;
+      const fixtures = await select(
+        `SELECT * FROM fixtures ${where} ORDER BY ${order}`,
+        params
+      );
+
+      const categoryCompositions = await getOrCalculateTournamentCategoryCompositions(tournamentId);
+      return await Promise.all(
+        fixtures
+          .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled))
+          .map(f => embellishFixture(f, {}, categoryCompositions))
+      );
+    },
  
     // Not called directly from route
     getNextFixtures: async (tournamentId) => {
