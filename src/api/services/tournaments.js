@@ -93,7 +93,7 @@ module.exports = (db) => {
       );
 
       DD(`Checking code for role ${role} in tournament ${tournamentId}: expected ${row?.roleCode}, got ${code}`);
-      if (!row || row.roleCode !== code) {
+      if (!row || (row.roleCode && code && row.roleCode.toLowerCase() !== code.toLowerCase())) {
         throw new Error('Invalid code for the specified role.');
       }
 
