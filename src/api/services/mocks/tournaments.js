@@ -152,9 +152,11 @@ module.exports = () => {
       
       const competitionChoices = ['Mock Comp A', 'Mock Comp B', 'Mock Comp C'];
       const pitchChoices = ['Mock Pitch 1', 'Mock Pitch 2'];
-      const teamChoices = category 
-        ? ['Mock Team X', 'Mock Team Y'] // Team names specific to category
-        : ['Mock Team Alpha', 'Mock Team Beta', 'Mock Team Gamma', 'Mock Team X', 'Mock Team Y'].filter((v, i, a) => a.indexOf(v) === i); // Distinct team names overall
+      let teamChoices = [];
+      if (category) {
+        teamChoices = ['Mock Team X', 'Mock Team Y']; // Team names specific to category
+      }
+      // If category is not provided, teamChoices remains an empty array.
       const refereeChoices = ['Mock Ref Alpha', 'Mock Ref Beta']; // Mocking some refs
 
       const allMockFilters = {
