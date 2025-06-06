@@ -454,27 +454,10 @@ module.exports = (db) => {
       const pitchChoicesData = await select("SELECT DISTINCT(pitchPlanned) AS choice FROM fixtures WHERE tournamentId=? AND pitchPlanned IS NOT NULL AND TRIM(pitchPlanned) != '' ORDER BY choice", [tournamentId]);
       const pitchChoices = pitchChoicesData.map(r => r.choice);
 
-      // 3. Fetch Team choices (depends on queryCategory)
-      let teamSQL = `
-        SELECT team_name AS choice FROM (
-            SELECT DISTINCT f.team1Planned AS team_name
-            FROM fixtures f
-            WHERE f.tournamentId = ? AND f.stage = 'group'
-              AND f.team1Planned IS NOT NULL AND TRIM(f.team1Planned) <> '' AND f.team1Planned NOT LIKE '~%'
-            UNION
-            SELECT DISTINCT f.team2Planned AS team_name
-            FROM fixtures f
-            WHERE f.tournamentId = ? AND f.stage = 'group'
-              AND f.team2Planned IS NOT NULL AND TRIM(f.team2Planned) <> '' AND f.team2Planned NOT LIKE '~%'
-        ) AS combined_teams
-        WHERE team_name IS NOT NULL AND TRIM(team_name) <> ''
-        ORDER BY choice;
-      `;
-      const teamParamsInitial = [tournamentId, tournamentId];
-      let teamParams = [...teamParamsInitial];
-
+      // 3. Fetch Team choices (only if queryCategory is provided)
+      let teamChoices = [];
       if (queryCategory) {
-        teamSQL = `
+        const teamSQL = `
           SELECT team_name AS choice FROM (
               SELECT DISTINCT f.team1Planned AS team_name
               FROM fixtures f
@@ -489,10 +472,10 @@ module.exports = (db) => {
           WHERE team_name IS NOT NULL AND TRIM(team_name) <> ''
           ORDER BY choice;
         `;
-        teamParams = [tournamentId, queryCategory, tournamentId, queryCategory];
+        const teamParams = [tournamentId, queryCategory, tournamentId, queryCategory];
+        const teamChoicesData = await select(teamSQL, teamParams);
+        teamChoices = teamChoicesData.map(r => r.choice);
       }
-      const teamChoicesData = await select(teamSQL, teamParams);
-      const teamChoices = teamChoicesData.map(r => r.choice);
 
       // 4. Referee choices (TODO: Define source for referee choices from DB)
       const refereeChoices = [];
