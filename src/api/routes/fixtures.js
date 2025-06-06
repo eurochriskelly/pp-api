@@ -6,13 +6,13 @@ module.exports = (db, useMock) => {
   const router = express.Router({mergeParams: true});
   const ctrl = fixtureController(db, useMock);
 
-
   router.get("/", ctrl.getFixtures);
   router.get("/nextup", ctrl.nextFixtures);
   router.get("/pitches/:pitch/fixtures", ctrl.getFixtures);
   router.get("/:fixtureId/rewind", ctrl.rewindFixture);
   router.get("/:fixtureId/carded-players", ctrl.getCardedPlayers);
   router.get("/:fixtureId", ctrl.getFixture);
+  router.post("/filtered", ctrl.getFilteredFixtures);
 
   // modify
   router.put("/update-calculated-fixtures", ctrl.updateCalculatedFixtures);

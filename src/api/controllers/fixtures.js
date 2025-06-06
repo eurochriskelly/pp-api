@@ -67,6 +67,24 @@ const cardPlayerSchema = z.object({
       }
     },
 
+    getFilteredFixtures: async (req, res) => {
+      const { Competitions, Pitches, Referee, Team } = req.body;
+      const { tournamentId, outcome, order } = req.params;
+      try {
+        const fixtures = await dbSvc.getFilteredFixtures(tournamentId, { 
+          pitch: Pitches, 
+          category: Competitions, 
+          referee: Referee, 
+          team: Team, 
+          outcome, 
+          order
+        });
+        res.json({ data: fixtures });
+      } catch (err) {
+        throw err;
+      }
+    },
+
     getFixture: async (req, res) => {
       const tournamentId = req.params.tournamentId;
       const fixtureId = req.params.fixtureId;
