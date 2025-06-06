@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 module.exports = (db, ARGS) => {
   II(`Setting up API endpoints. Mock mode: ${ARGS.useMock}`);
   app.use(morgan('dev'));
+  console.log('Serving static path: ' + ARGS.staticPath);
   app.use(express.static(ARGS.staticPath));
 
   // Direct endpoint (unchanged)
