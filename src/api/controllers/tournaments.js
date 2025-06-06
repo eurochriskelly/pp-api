@@ -46,6 +46,19 @@ module.exports = (db, useMock) => {
       return { data: report };
     }),
 
+    getFilters: handleRoute(async (req) => {
+      const { tournamentId } = req.params;
+      const { role, category } = req.query;
+      // Basic validation for role
+      if (!role) {
+        const err = new Error('Role query parameter is required.');
+        err.statusCode = 400; // Bad Request
+        throw err;
+      }
+      const filters = await dbSvc.getFilters(tournamentId, role, category);
+      return { data: filters };
+    }),
+
     getTournament: async (req, res) => {
       const { id, uuid = null } = req.params;
       try {
