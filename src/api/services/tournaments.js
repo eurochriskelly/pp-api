@@ -533,7 +533,7 @@ module.exports = (db) => {
       const roleFilterKeysMap = {
         organizer: ['competition', 'pitches', 'referee'],
         referee: ['competition', 'pitches', 'referee'],
-        coach: ['competition', 'referee'],
+        coach: ['competition', 'teams'],
         coordinator: ['pitches']
       };
 
