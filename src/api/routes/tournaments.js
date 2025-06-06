@@ -22,6 +22,8 @@ module.exports = (db, useMock) => {
   router.post("/:id/validate-tsv", ctrl.validateTsv);
   router.get("/:id/all-matches", ctrl.getAllMatches);
 
+  router.get("/:id/code-check/:code", ctrl.codeCheck);
+
   router.get("/:tournamentId/matches-by-pitch", ctrl.getMatchesByPitch);
   router.get("/:tournamentId/carded-players", ctrl.getCardedPlayers);
 

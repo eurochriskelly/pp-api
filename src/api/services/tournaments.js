@@ -4,10 +4,9 @@ const dbHelper = require('../../lib/db-helper');
 const { buildReport } = require('./tournaments/build-report');
 const { sqlGroupStandings } = require('../../lib/queries');
 const TSVValidator = require('./fixtures/validate-tsv');
-const { rowsToFixtures, buildFixturesInsertSQL } = require('./tournaments/import-fixtures.js');
+const { buildFixturesInsertSQL } = require('./tournaments/import-fixtures.js');
 
 const createPitches = async (insert, tournamentId, pitches) => {
-  console.log('ss')
   try {
     const values = pitches.map(pitch => [
       pitch.pitch,
@@ -15,8 +14,6 @@ const createPitches = async (insert, tournamentId, pitches) => {
       pitch.type,
       tournamentId
     ]);
-    console.log('----')
-    console.log(values)
     const result = await insert(
       `INSERT INTO pitches (pitch, location, type, tournamentId) VALUES ?`,
       [values]
@@ -78,6 +75,31 @@ module.exports = (db) => {
   const { select, insert, update, delete: dbDelete } = dbHelper(db);
   const winAward = 3;
   return {
+    codeCheck: async (tournamentId, code, role) => {
+      const roleCodeMap = {
+        organizer: 'code',
+        coordinator: 'codeCoordinator',
+        referee: 'codeReferee',
+        coach: 'codeTeam'
+      };
+
+      if (!roleCodeMap[role]) {
+        throw new Error(`Invalid role: ${role}`);
+      }
+
+      const [row] = await select(
+        `SELECT ${roleCodeMap[role]} AS roleCode FROM tournaments WHERE id = ?`,
+        [tournamentId]
+      );
+
+      DD(`Checking code for role ${role} in tournament ${tournamentId}: expected ${row?.roleCode}, got ${code}`);
+      if (!row || row.roleCode !== code) {
+        throw new Error('Invalid code for the specified role.');
+      }
+
+      return true;
+    },
+
     validateTsv: (tsvEncoded) => new TSVValidator(tsvEncoded, { restGapMultiplier: 1 }).validate(),
 
     getTournamentReport: (tournamentId) => {
