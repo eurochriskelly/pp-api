@@ -100,6 +100,54 @@ const mockTournaments = [
   },
 ];
 
+// Helper function for mocks, similar to the one in the actual service
+function calculateMockLifecycleStatus(mockStatus, startDateString, endDateString) {
+    const today = new Date(); 
+    today.setHours(0, 0, 0, 0);
+
+    if (!startDateString) return 'unknown';
+
+    const startDate = new Date(startDateString); 
+    startDate.setHours(0, 0, 0, 0);
+
+    let endDate = null;
+    if (endDateString) {
+        endDate = new Date(endDateString);
+        endDate.setHours(0, 0, 0, 0);
+    }
+
+    // Treat mockStatus as a simplified dbStatus for calculation
+    let dbEquivalentStatus = mockStatus;
+    if (mockStatus === 'past') dbEquivalentStatus = 'closed';
+    else if (mockStatus === 'upcoming') dbEquivalentStatus = 'published'; // or 'new'
+    else if (mockStatus === 'active') dbEquivalentStatus = 'started'; // or 'published'/'new' if dates match
+
+    if (dbEquivalentStatus === 'closed') {
+        const threeMonthsAgo = new Date(today);
+        threeMonthsAgo.setMonth(today.getMonth() - 3);
+        if (startDate < today && startDate >= threeMonthsAgo) return 'recent';
+        if (startDate < threeMonthsAgo) return 'archive';
+        return 'past';
+    }
+
+    if (dbEquivalentStatus === 'published' || dbEquivalentStatus === 'new') {
+        if (startDate >= today) return 'upcoming';
+        if (!endDate || endDate >= today) return 'active';
+        return 'past';
+    }
+
+    if (dbEquivalentStatus === 'started') {
+        if (!endDate || endDate >= today) return 'active';
+        return 'past';
+    }
+    
+    // Fallback based on dates if mockStatus is not one of the above
+    if (startDate >= today) return 'upcoming';
+    if (startDate < today && (!endDate || endDate >= today)) return 'active';
+    return 'past';
+}
+
+
 module.exports = () => {
   const { II } = require('../../../lib/logging'); // Ensure II is available if not already
 
@@ -114,13 +162,27 @@ module.exports = () => {
     },
 
     getTournament: async (id, uuid) => {
-      return mockTournaments.find(t => 
-        t.id === parseInt(id) || (uuid && t.uuid === uuid)
-      ) || null;
+      const tournament = mockTournaments.find(t => 
+        (id && t.id === id) || // mock IDs can be strings like 'pe-hurl-1'
+        (id && t.id === parseInt(id)) || // or numbers if we mix
+        (uuid && t.uuid === uuid)
+      );
+      if (tournament) {
+        return {
+          ...tournament,
+          lifecycleStatus: calculateMockLifecycleStatus(tournament.status, tournament.startDate, tournament.endDate)
+        };
+      }
+      return null;
     },
 
-    getTournaments: async (status) => {
-      return mockTournaments;
+    getTournaments: async (statusQuery) => { // statusQuery is the original DB status filter, not lifecycle
+      // The mock getTournaments doesn't currently filter by DB status, it returns all.
+      // We'll add lifecycleStatus to each.
+      return mockTournaments.map(t => ({
+        ...t,
+        lifecycleStatus: calculateMockLifecycleStatus(t.status, t.startDate, t.endDate)
+      }));
     },
 
     updateTournament: async (id, updates) => {
@@ -290,7 +352,8 @@ module.exports = () => {
           location: t.location,
           startDate: t.startDate, // Assuming YYYY-MM-DD
           endDate: t.endDate,   // Assuming YYYY-MM-DD or undefined
-          status: t.status, // Mock status is already 'upcoming', 'active', or 'past'
+          status: t.status, // This is the original status from the mock data item
+          lifecycleStatus: derivedStatus, // This was the calculated status
           season: t.season || String(new Date(t.startDate).getFullYear()), // Mock season or derive
           sport: t.sport, // 'hurling' | 'gaelic-football'
           uuid: t.uuid,

@@ -6,6 +6,58 @@ const { sqlGroupStandings } = require('../../lib/queries');
 const TSVValidator = require('./fixtures/validate-tsv');
 const { buildFixturesInsertSQL } = require('./tournaments/import-fixtures.js');
 
+// Helper function to calculate lifecycle status
+function calculateLifecycleStatus(dbStatus, startDateString, endDateString) {
+    const today = new Date(); 
+    today.setHours(0, 0, 0, 0);
+
+    if (!startDateString) return 'unknown'; // Should have a start date
+
+    const startDate = new Date(startDateString); 
+    startDate.setHours(0, 0, 0, 0);
+
+    let endDate = null;
+    if (endDateString) {
+        endDate = new Date(endDateString);
+        endDate.setHours(0, 0, 0, 0);
+    }
+
+    // Handle 'closed' status first
+    if (dbStatus === 'closed') {
+        const threeMonthsAgo = new Date(today);
+        threeMonthsAgo.setMonth(today.getMonth() - 3);
+        if (startDate < today && startDate >= threeMonthsAgo) return 'recent';
+        if (startDate < threeMonthsAgo) return 'archive';
+        return 'past'; // Default for closed if not recent or archive
+    }
+
+    // Handle 'new', 'published', 'in-design' (treat as pre-active states)
+    if (dbStatus === 'new' || dbStatus === 'published' || dbStatus === 'in-design') {
+        if (startDate >= today) return 'upcoming';
+        // startDate is in the past
+        if (!endDate || endDate >= today) return 'active'; // No end date or end date is in future/today
+        return 'past'; // Has an end date in the past
+    }
+
+    // Handle 'started' status
+    if (dbStatus === 'started') {
+        if (!endDate || endDate >= today) return 'active'; // No end date or end date is in future/today
+        return 'past'; // Has an end date in the past
+    }
+    
+    // Handle 'on-hold' status
+    if (dbStatus === 'on-hold') {
+        if (startDate >= today) return 'upcoming';
+        if (!endDate || endDate >= today) return 'active';
+        return 'past';
+    }
+
+    // Fallback for any other dbStatus or if none of the above conditions were met
+    if (startDate >= today) return 'upcoming';
+    if (startDate < today && (!endDate || endDate >= today)) return 'active';
+    return 'past';
+}
+
 const createPitches = async (insert, tournamentId, pitches) => {
   try {
     const values = pitches.map(pitch => [
@@ -193,13 +245,17 @@ module.exports = (db) => {
       
       const sql = `
         SELECT DISTINCT 
-          t.Id, t.Date, t.Title, t.Location, t.region, t.season, t.eventUuid, t.status, t.code 
+          t.Id, t.Date, t.endDate, t.Title, t.Location, t.region, t.season, t.eventUuid, t.status, t.code 
         FROM tournaments t
         ${userId && role ? 'JOIN sec_roles sr ON t.Id = sr.tournamentId' : ''}
         ${whereClause}
         ORDER BY t.Date DESC`;
         
-      return await select(sql, params);
+      const tournaments = await select(sql, params);
+      return tournaments.map(t => ({
+        ...t,
+        lifecycleStatus: calculateLifecycleStatus(t.status, t.Date, t.endDate)
+      }));
     },
 
     getTournament: async (id, uuid) => {
@@ -414,23 +470,25 @@ module.exports = (db) => {
     },
     getTournament: async (id, uuid) => {
       let tournamentRows;
+      const baseQueryFields = `id, Date, endDate, Title, Location, region, season, eventUuid, status, code, Lat, Lon`;
       if (uuid) {
-        console.log(`Getting tournaments by uuid [${uuid}]`);
-        tournamentRows = await select(`SELECT id, Date, Title, Location, eventUuid, code FROM tournaments WHERE eventUuid = ?`, [uuid]);
+        DD(`Getting tournament by uuid [${uuid}]`);
+        tournamentRows = await select(`SELECT ${baseQueryFields} FROM tournaments WHERE eventUuid = ?`, [uuid]);
       } else {
-        tournamentRows = await select(`SELECT id, Date, Title, Location, eventUuid, code FROM tournaments WHERE Id = ?`, [id]);
+        tournamentRows = await select(`SELECT ${baseQueryFields} FROM tournaments WHERE Id = ?`, [id]);
       }
-      if (!tournamentRows) return null
-      if (!tournamentRows?.length) return null;
+      if (!tournamentRows || tournamentRows.length === 0) return null;
+      
       const tournament = tournamentRows.shift();
-      const tId = id || tournament.id; // if we had to get the tournament from it's uuid, use this instead
-      const q = `SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`
-      const [groups, pitches] = await Promise.all([
+      tournament.lifecycleStatus = calculateLifecycleStatus(tournament.status, tournament.Date, tournament.endDate);
+      
+      const tId = tournament.id; 
+      const [groups, pitchesData] = await Promise.all([
         select(`SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`, [tId]),
         select(`SELECT id, pitch, location FROM pitches WHERE tournamentId = ?`, [tId]),
       ]);
       tournament.groups = groups;
-      tournament.pitches = pitches;
+      tournament.pitches = pitchesData; // Renamed to avoid conflict with existing tournament.pitches if any
       tournament.categories = [...new Set(groups.map(g => g.category))];
       return tournament;
     },
@@ -559,7 +617,8 @@ module.exports = (db) => {
           location: row.Location,
           startDate: row.Date ? new Date(row.Date).toISOString().split('T')[0] : null,
           endDate: row.endDate ? new Date(row.endDate).toISOString().split('T')[0] : null,
-          status: finalStatus,
+          status: row.db_status, // Original database status
+          lifecycleStatus: finalStatus, // Calculated lifecycle status
           season: row.season ? String(row.season) : null,
           sport: sportMapped,
           uuid: row.eventUuid,
