@@ -384,6 +384,11 @@ module.exports = (db, useMock) => {
       const { userId, region } = req.query; // Extract region
       const tournaments = await dbSvc.getTournamentsByStatus(status, userId, region); // Pass region
       return { data: tournaments };
+    }),
+
+    getTournamentsSummary: handleRoute(async () => {
+      const summary = await dbSvc.getTournamentsSummary();
+      return { data: summary };
     })
 
   };
