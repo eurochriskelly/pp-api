@@ -6,7 +6,8 @@ module.exports = (db, useMock) => {
   const ctrl = tournamentController(db, useMock);
   router.post("/", ctrl.createTournament);
   router.get("/", ctrl.getTournaments);
-  router.get("/by-status/:status", ctrl.getTournamentsByStatus); // New route
+  router.get("/summary", ctrl.getTournamentsSummary); // New route for summary
+  router.get("/by-status/:status", ctrl.getTournamentsByStatus);
   router.get("/:id", ctrl.getTournament);
   router.get("/:id/report", ctrl.getTournamentReport);
   router.put("/:id/report", ctrl.buildTournamentReport);

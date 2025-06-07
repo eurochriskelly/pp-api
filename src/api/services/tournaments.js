@@ -571,6 +571,43 @@ module.exports = (db) => {
       });
     },
 
+    getTournamentsSummary: async () => {
+      const query = `
+        SELECT
+            t.region,
+            SUM(CASE
+                WHEN (t.status = 'new' AND t.Date < CURDATE()) OR
+                     ( (t.status = 'published' OR t.status = 'started') AND
+                       t.Date <= CURDATE() AND (t.endDate IS NULL OR t.endDate >= CURDATE()) )
+                THEN 1 ELSE 0 END
+            ) AS active_count,
+            SUM(CASE
+                WHEN (t.status = 'new' OR t.status = 'published') AND t.Date >= CURDATE()
+                THEN 1 ELSE 0 END
+            ) AS upcoming_count,
+            SUM(CASE
+                WHEN t.status = 'closed' AND t.Date >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH) AND t.Date < CURDATE()
+                THEN 1 ELSE 0 END
+            ) AS recent_count,
+            SUM(CASE
+                WHEN t.status = 'closed' AND t.Date < DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+                THEN 1 ELSE 0 END
+            ) AS archive_count
+        FROM tournaments t
+        WHERE t.region IS NOT NULL AND t.region != ''
+        GROUP BY t.region
+        ORDER BY t.region;
+      `;
+      const dbRows = await select(query);
+      return dbRows.map(row => ({
+        region: row.region,
+        active: parseInt(row.active_count, 10),
+        upcoming: parseInt(row.upcoming_count, 10),
+        recent: parseInt(row.recent_count, 10),
+        archive: parseInt(row.archive_count, 10),
+      }));
+    },
+
     getFilters: async (tournamentId, queryRole, queryCategory) => {
       II(`Fetching filters for tournament [${tournamentId}], role [${queryRole}], category [${queryCategory || 'N/A'}]`);
 

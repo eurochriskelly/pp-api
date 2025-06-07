@@ -301,5 +301,55 @@ module.exports = () => {
         };
       });
     },
+
+    getTournamentsSummary: async () => {
+      II(`Mock: getTournamentsSummary`);
+      const summary = {};
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      mockTournaments.forEach(t => {
+        if (!t.region) return; // Skip tournaments without a region
+
+        if (!summary[t.region]) {
+          summary[t.region] = { region: t.region, active: 0, upcoming: 0, recent: 0, archive: 0 };
+        }
+
+        const tStartDate = new Date(t.startDate); tStartDate.setHours(0, 0, 0, 0);
+        // For mock, we rely on the pre-assigned status and dates.
+        // The real service uses DB status and dates.
+        // This mock logic tries to approximate the derivation.
+
+        let derivedStatus = null;
+        const dbStatus = t.status; // In mock, t.status is like 'upcoming', 'active', 'past'.
+                                   // We need to simulate derivation from a hypothetical DB-like status.
+                                   // For simplicity, let's assume mock 'status' field aligns with final derived status for non-closed.
+                                   // For 'closed' (which is 'past' in mock), we check dates.
+
+        if (dbStatus === 'past') { // Simulating 'closed'
+            const threeMonthsAgo = new Date(today);
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+            if (tStartDate >= threeMonthsAgo && tStartDate < today) {
+                derivedStatus = 'recent';
+            } else if (tStartDate < threeMonthsAgo) {
+                derivedStatus = 'archive';
+            }
+        } else if (dbStatus === 'upcoming' && tStartDate >= today) {
+            derivedStatus = 'upcoming';
+        } else if (dbStatus === 'active' && tStartDate <= today) {
+            // Simplified active check for mock, assuming endDate logic is implicitly handled by 'active' status
+            derivedStatus = 'active';
+        } else if (tStartDate >= today) { // Fallback if mock status is not perfectly set
+            derivedStatus = 'upcoming';
+        } else { // Fallback for older items not explicitly 'past' (closed)
+            derivedStatus = 'active'; // Or could be 'past' but we only count specific 'past' types
+        }
+
+
+        if (derivedStatus && summary[t.region][derivedStatus] !== undefined) {
+          summary[t.region][derivedStatus]++;
+        }
+      });
+      return Object.values(summary).sort((a, b) => a.region.localeCompare(b.region));
+    },
   };
 };
