@@ -443,6 +443,112 @@ module.exports = (db) => {
       }));
     },
 
+    getTournamentsByStatus: async (requestedStatusString, userId) => {
+      const requestedStatuses = requestedStatusString ? requestedStatusString.split(',') : [];
+      if (requestedStatuses.length === 0) {
+        return [];
+      }
+
+      const sqlParams = [];
+      const sqlFilterConditions = [];
+
+      requestedStatuses.forEach(status => {
+        switch (status.toLowerCase()) {
+          case 'upcoming':
+            sqlFilterConditions.push(`((t.status = 'new' OR t.status = 'published') AND t.Date >= CURDATE())`);
+            break;
+          case 'active':
+            sqlFilterConditions.push(`(
+              (t.status = 'new' AND t.Date < CURDATE()) OR
+              ( (t.status = 'published' OR t.status = 'started') AND
+                t.Date <= CURDATE() AND (t.endDate IS NULL OR t.endDate >= CURDATE()) )
+            )`);
+            break;
+          case 'past':
+            sqlFilterConditions.push(`(t.status = 'closed' OR (t.status = 'published' AND t.endDate IS NOT NULL AND t.endDate < CURDATE()))`);
+            break;
+          case 'recent':
+            sqlFilterConditions.push(`(t.status = 'closed' AND t.Date >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH) AND t.Date < CURDATE())`);
+            break;
+          case 'archive':
+            sqlFilterConditions.push(`(t.status = 'closed' AND t.Date < DATE_SUB(CURDATE(), INTERVAL 3 MONTH))`);
+            break;
+        }
+      });
+
+      if (sqlFilterConditions.length === 0) {
+        return []; // No valid statuses requested
+      }
+
+      let userAssociatedField = '';
+      if (userId) {
+        userAssociatedField = ', (EXISTS(SELECT 1 FROM sec_roles sr WHERE sr.UserId = ? AND sr.tournamentId = t.id)) AS user_associated_flag';
+        sqlParams.push(userId);
+      }
+
+      const query = `
+        SELECT
+            t.id, t.Title, t.region, t.Location, t.Date, t.endDate, t.status AS db_status,
+            t.season, t.sport AS db_sport, t.eventUuid, t.Lat, t.Lon
+            ${userAssociatedField}
+        FROM tournaments t
+        WHERE (${sqlFilterConditions.join(' OR ')})
+        ORDER BY t.Date DESC
+      `;
+
+      const dbRows = await select(query, sqlParams);
+
+      return dbRows.map(row => {
+        let finalStatus = 'past'; // Default
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const tournamentStartDate = new Date(row.Date); tournamentStartDate.setHours(0, 0, 0, 0);
+        const tournamentEndDate = row.endDate ? new Date(row.endDate) : null;
+        if (tournamentEndDate) tournamentEndDate.setHours(0, 0, 0, 0);
+
+        if (row.db_status === 'new') {
+          finalStatus = tournamentStartDate >= today ? 'upcoming' : 'active';
+        } else if (row.db_status === 'published') {
+          if (tournamentStartDate >= today) {
+            finalStatus = 'upcoming';
+          } else if (!tournamentEndDate || tournamentEndDate >= today) {
+            finalStatus = 'active';
+          } else {
+            finalStatus = 'past';
+          }
+        } else if (row.db_status === 'started') {
+          if (!tournamentEndDate || tournamentEndDate >= today) {
+            finalStatus = 'active';
+          } else {
+            finalStatus = 'past';
+          }
+        } else if (row.db_status === 'closed') {
+          finalStatus = 'past';
+        }
+        // 'on-hold' will default to 'past' or as per its date relation if logic expanded
+
+        let sportMapped;
+        if (row.db_sport === 'Gaelic Football') sportMapped = 'gaelic-football';
+        else if (row.db_sport === 'Hurling') sportMapped = 'hurling'; // Assuming 'Hurling' is how it's stored
+
+        return {
+          id: String(row.id),
+          title: row.Title,
+          region: row.region,
+          location: row.Location,
+          startDate: row.Date ? new Date(row.Date).toISOString().split('T')[0] : null,
+          endDate: row.endDate ? new Date(row.endDate).toISOString().split('T')[0] : null,
+          status: finalStatus,
+          season: row.season ? String(row.season) : null,
+          sport: sportMapped,
+          uuid: row.eventUuid,
+          description: undefined, // Not in DB table
+          isUserAssociated: userId ? Boolean(row.user_associated_flag) : null,
+          latitude: row.Lat,
+          longitude: row.Lon,
+        };
+      });
+    },
+
     getFilters: async (tournamentId, queryRole, queryCategory) => {
       II(`Fetching filters for tournament [${tournamentId}], role [${queryRole}], category [${queryCategory || 'N/A'}]`);
 
