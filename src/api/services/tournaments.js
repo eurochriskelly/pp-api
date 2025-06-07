@@ -264,10 +264,15 @@ module.exports = (db) => {
         ORDER BY t.Date DESC`;
         
       const tournaments = await select(sql, params);
-      return tournaments.map(t => ({
-        ...t,
-        lifecycleStatus: calculateLifecycleStatus(t.status, t.Date, t.endDate)
-      }));
+      return tournaments.map(t => {
+        const lifecycleStatus = calculateLifecycleStatus(t.status, t.Date, t.endDate);
+        return {
+          ...t,
+          Date: t.Date ? new Date(t.Date).toISOString().split('T')[0] : null,
+          endDate: t.endDate ? new Date(t.endDate).toISOString().split('T')[0] : null,
+          lifecycleStatus: lifecycleStatus
+        };
+      });
     },
 
     getTournament: async (id, uuid) => {
@@ -491,18 +496,25 @@ module.exports = (db) => {
       }
       if (!tournamentRows || tournamentRows.length === 0) return null;
       
-      const tournament = tournamentRows.shift();
-      tournament.lifecycleStatus = calculateLifecycleStatus(tournament.status, tournament.Date, tournament.endDate);
+      const tournamentData = tournamentRows.shift();
       
-      const tId = tournament.id; 
+      const lifecycleStatus = calculateLifecycleStatus(tournamentData.status, tournamentData.Date, tournamentData.endDate);
+      
+      const tId = tournamentData.id; 
       const [groups, pitchesData] = await Promise.all([
         select(`SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`, [tId]),
         select(`SELECT id, pitch, location FROM pitches WHERE tournamentId = ?`, [tId]),
       ]);
-      tournament.groups = groups;
-      tournament.pitches = pitchesData; // Renamed to avoid conflict with existing tournament.pitches if any
-      tournament.categories = [...new Set(groups.map(g => g.category))];
-      return tournament;
+
+      return {
+        ...tournamentData,
+        Date: tournamentData.Date ? new Date(tournamentData.Date).toISOString().split('T')[0] : null,
+        endDate: tournamentData.endDate ? new Date(tournamentData.endDate).toISOString().split('T')[0] : null,
+        lifecycleStatus: lifecycleStatus,
+        groups: groups,
+        pitches: pitchesData,
+        categories: [...new Set(groups.map(g => g.category))]
+      };
     },
 
     getTournamentCategories: async (id) => {

@@ -6,7 +6,7 @@ module.exports = (db, useMock) => {
   const ctrl = tournamentController(db, useMock);
   router.post("/", ctrl.createTournament);
   router.get("/", ctrl.getTournaments);
-  router.get("/summary", ctrl.getTournamentsSummary); // New route for summary
+  router.get("/summary", ctrl.getTournamentsSummary);
   router.get("/by-status/:status", ctrl.getTournamentsByStatus);
   router.get("/:id", ctrl.getTournament);
   router.get("/:id/report", ctrl.getTournamentReport);
@@ -24,7 +24,7 @@ module.exports = (db, useMock) => {
   router.post("/:id/validate-tsv", ctrl.validateTsv);
   router.get("/:id/all-matches", ctrl.getAllMatches);
 
-  router.get("/:tournamentId/filters", ctrl.getFilters); // New route for filters
+  router.get("/:tournamentId/filters", ctrl.getFilters);
 
   router.get("/:id/code-check/:code", ctrl.codeCheck);
 
