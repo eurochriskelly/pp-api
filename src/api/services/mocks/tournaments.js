@@ -101,6 +101,8 @@ const mockTournaments = [
 ];
 
 module.exports = () => {
+  const { II } = require('../../../lib/logging'); // Ensure II is available if not already
+
   return {
     createTournament: async (tournament) => {
       const newTournament = {
@@ -208,6 +210,81 @@ module.exports = () => {
         return [];
       }
       return roleFilterKeys.map(key => allMockFilters[key]);
+    },
+
+    getTournamentsByStatus: async (requestedStatusString, userId) => {
+      II(`Mock: getTournamentsByStatus for statuses [${requestedStatusString}], userId [${userId || 'N/A'}]`);
+      const requestedStatuses = requestedStatusString ? requestedStatusString.split(',').map(s => s.toLowerCase()) : [];
+      if (requestedStatuses.length === 0) return { data: [] };
+
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      const filteredTournaments = mockTournaments.filter(t => {
+        // Simplified mock status determination logic, as mock data already has 'upcoming', 'active', 'past'
+        // This mock will primarily filter on the pre-assigned status in mockTournaments.
+        // For a more accurate mock, replicate the full derivation logic from the real service.
+        let tournamentMatchesRequestedStatus = false;
+
+        const tStartDate = new Date(t.startDate); tStartDate.setHours(0,0,0,0);
+        const tEndDate = t.endDate ? new Date(t.endDate) : null;
+        if (tEndDate) tEndDate.setHours(0,0,0,0);
+
+        let derivedStatus;
+        // A simplified derivation for mock, actual service has more complex DB status mapping
+        if (t.status === 'upcoming' && tStartDate >= today) derivedStatus = 'upcoming';
+        else if (t.status === 'active' && tStartDate <= today && (!tEndDate || tEndDate >= today)) derivedStatus = 'active';
+        else if (t.status === 'past' && (tEndDate ? tEndDate < today : tStartDate < today)) derivedStatus = 'past';
+        else { // Fallback for mocks if status field isn't perfectly aligned
+            if (tStartDate >= today) derivedStatus = 'upcoming';
+            else if (!tEndDate || tEndDate >= today) derivedStatus = 'active';
+            else derivedStatus = 'past';
+        }
+
+
+        if (requestedStatuses.includes(derivedStatus)) {
+            tournamentMatchesRequestedStatus = true;
+        }
+        
+        if (requestedStatuses.includes('recent') && derivedStatus === 'past') {
+            const threeMonthsAgo = new Date(today);
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+            if (tStartDate >= threeMonthsAgo && tStartDate < today) tournamentMatchesRequestedStatus = true;
+            else if (!requestedStatuses.includes('past')) tournamentMatchesRequestedStatus = false; // Don't match if only 'recent' is asked and this is older 'past'
+        }
+        if (requestedStatuses.includes('archive') && derivedStatus === 'past') {
+            const threeMonthsAgo = new Date(today);
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+            if (tStartDate < threeMonthsAgo) tournamentMatchesRequestedStatus = true;
+            else if (!requestedStatuses.includes('past')) tournamentMatchesRequestedStatus = false; // Don't match if only 'archive' is asked and this is newer 'past'
+        }
+        return tournamentMatchesRequestedStatus;
+      });
+
+      return filteredTournaments.map((t, index) => {
+        let isUserAssociated = null;
+        if (userId) {
+          // Mock logic: user is associated with every second tournament for testing
+          isUserAssociated = index % 2 === 0;
+        }
+        
+        // Map to the Tournament interface
+        return {
+          id: String(t.id), // Assuming mock id can be number or string
+          title: t.title,
+          region: t.region,
+          location: t.location,
+          startDate: t.startDate, // Assuming YYYY-MM-DD
+          endDate: t.endDate,   // Assuming YYYY-MM-DD or undefined
+          status: t.status, // Mock status is already 'upcoming', 'active', or 'past'
+          season: t.season || String(new Date(t.startDate).getFullYear()), // Mock season or derive
+          sport: t.sport, // 'hurling' | 'gaelic-football'
+          uuid: t.uuid,
+          description: t.description, // Mock data might have description
+          isUserAssociated: isUserAssociated,
+          latitude: t.latitude,
+          longitude: t.longitude,
+        };
+      });
     },
   };
 };

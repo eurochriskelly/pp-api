@@ -377,7 +377,14 @@ module.exports = (db, useMock) => {
           warnings: err.warnings || undefined
         });
       }
-    }
+    },
+
+    getTournamentsByStatus: handleRoute(async (req) => {
+      const { status } = req.params;
+      const { userId } = req.query;
+      const tournaments = await dbSvc.getTournamentsByStatus(status, userId);
+      return { data: tournaments };
+    })
 
   };
 };
