@@ -42,20 +42,32 @@ function calculateLifecycleStatus(dbStatus, startDateString, endDateString) {
     // Handle 'started' status
     if (dbStatus === 'started') {
         if (!endDate || endDate >= today) return 'active'; // No end date or end date is in future/today
-        return 'past'; // Has an end date in the past
+        // If endDate is past, it's over
     }
     
     // Handle 'on-hold' status
     if (dbStatus === 'on-hold') {
         if (startDate >= today) return 'upcoming';
         if (!endDate || endDate >= today) return 'active';
-        return 'past';
+        // If endDate is past, it's over
     }
 
-    // Fallback for any other dbStatus or if none of the above conditions were met
-    if (startDate >= today) return 'upcoming';
-    if (startDate < today && (!endDate || endDate >= today)) return 'active';
-    return 'past';
+    // Fallback logic for any dbStatus not explicitly resulting in 'recent', 'archive', 'upcoming', or 'active' above.
+    // Or for statuses like 'published', 'started', 'in-design', 'on-hold' where dates indicate they are finished.
+    if (startDate < today && endDate && endDate < today) {
+        // Tournament is definitively over (both start and end dates in the past)
+        // and wasn't 'closed' (or it would have been handled).
+        // This is a key case that previously might have been 'past'.
+        return 'archive';
+    }
+
+    // General date-based fallbacks if not specifically categorized yet
+    if (startDate >= today) return 'upcoming'; // If it's for the future, it's upcoming.
+    if (startDate < today && (!endDate || endDate >= today)) return 'active'; // If started and ongoing, it's active.
+    
+    // Default for anything else (e.g. startDate is past, and no endDate, but didn't fit 'active' for its dbStatus)
+    // This typically means it's an older item.
+    return 'archive';
 }
 
 const createPitches = async (insert, tournamentId, pitches) => {
@@ -579,32 +591,7 @@ module.exports = (db) => {
       const dbRows = await select(finalQuery, sqlParams);
 
       return dbRows.map(row => {
-        let finalStatus = 'past'; // Default
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const tournamentStartDate = new Date(row.Date); tournamentStartDate.setHours(0, 0, 0, 0);
-        const tournamentEndDate = row.endDate ? new Date(row.endDate) : null;
-        if (tournamentEndDate) tournamentEndDate.setHours(0, 0, 0, 0);
-
-        if (row.db_status === 'new') {
-          finalStatus = tournamentStartDate >= today ? 'upcoming' : 'active';
-        } else if (row.db_status === 'published') {
-          if (tournamentStartDate >= today) {
-            finalStatus = 'upcoming';
-          } else if (!tournamentEndDate || tournamentEndDate >= today) {
-            finalStatus = 'active';
-          } else {
-            finalStatus = 'past';
-          }
-        } else if (row.db_status === 'started') {
-          if (!tournamentEndDate || tournamentEndDate >= today) {
-            finalStatus = 'active';
-          } else {
-            finalStatus = 'past';
-          }
-        } else if (row.db_status === 'closed') {
-          finalStatus = 'past';
-        }
-        // 'on-hold' will default to 'past' or as per its date relation if logic expanded
+        const lifecycleStatus = calculateLifecycleStatus(row.db_status, row.Date, row.endDate);
 
         let sportMapped;
         if (row.db_sport === 'Gaelic Football') sportMapped = 'gaelic-football';
@@ -618,7 +605,7 @@ module.exports = (db) => {
           startDate: row.Date ? new Date(row.Date).toISOString().split('T')[0] : null,
           endDate: row.endDate ? new Date(row.endDate).toISOString().split('T')[0] : null,
           status: row.db_status, // Original database status
-          lifecycleStatus: finalStatus, // Calculated lifecycle status
+          lifecycleStatus: lifecycleStatus, // Calculated lifecycle status from helper
           season: row.season ? String(row.season) : null,
           sport: sportMapped,
           uuid: row.eventUuid,

@@ -116,35 +116,42 @@ function calculateMockLifecycleStatus(mockStatus, startDateString, endDateString
         endDate.setHours(0, 0, 0, 0);
     }
 
-    // Treat mockStatus as a simplified dbStatus for calculation
-    let dbEquivalentStatus = mockStatus;
-    if (mockStatus === 'past') dbEquivalentStatus = 'closed';
-    else if (mockStatus === 'upcoming') dbEquivalentStatus = 'published'; // or 'new'
-    else if (mockStatus === 'active') dbEquivalentStatus = 'started'; // or 'published'/'new' if dates match
+    // The mockStatus field in mockTournaments is already like 'upcoming', 'active', 'past'.
+    // We need to map this, along with dates, to the four allowed lifecycle statuses.
+    // Let's treat mockStatus as a proxy for dbStatus.
+    let dbStatus = mockStatus; 
 
-    if (dbEquivalentStatus === 'closed') {
-        const threeMonthsAgo = new Date(today);
-        threeMonthsAgo.setMonth(today.getMonth() - 3);
+    // 1. Handle 'closed' equivalent status (mock 'past' often implies closed)
+    if (dbStatus === 'past') { // Assuming mock 'past' means it's effectively closed for this calculation
+        const threeMonthsAgo = new Date(new Date().setMonth(today.getMonth() - 3));
+        threeMonthsAgo.setHours(0,0,0,0);
         if (startDate < today && startDate >= threeMonthsAgo) return 'recent';
         if (startDate < threeMonthsAgo) return 'archive';
-        return 'past';
-    }
-
-    if (dbEquivalentStatus === 'published' || dbEquivalentStatus === 'new') {
+        // If mock 'past' but doesn't fit recent/archive (e.g., future start date, anomaly)
         if (startDate >= today) return 'upcoming';
-        if (!endDate || endDate >= today) return 'active';
-        return 'past';
+        return 'archive'; // Default for other 'past' mock statuses
     }
 
-    if (dbEquivalentStatus === 'started') {
-        if (!endDate || endDate >= today) return 'active';
-        return 'past';
+    // 2. Handle 'upcoming' for non-closed statuses
+    if ((dbStatus === 'upcoming' || dbStatus === 'new' || dbStatus === 'published' || dbStatus === 'in-design' || dbStatus === 'on-hold') && startDate >= today) {
+        return 'upcoming';
+    }
+
+    // 3. Handle 'active' for non-closed statuses
+    if ( (dbStatus === 'active' || dbStatus === 'new') && startDate < today && (!endDate || endDate >= today) ||
+         ((dbStatus === 'published' || dbStatus === 'started' || dbStatus === 'in-design' || dbStatus === 'on-hold') && 
+          startDate <= today && (!endDate || endDate >= today)) ) {
+        return 'active';
     }
     
-    // Fallback based on dates if mockStatus is not one of the above
+    // 4. Fallback logic for any dbStatus not explicitly resulting in 'recent', 'archive', 'upcoming', or 'active' above.
+    if (startDate < today && endDate && endDate < today) {
+        return 'archive';
+    }
     if (startDate >= today) return 'upcoming';
     if (startDate < today && (!endDate || endDate >= today)) return 'active';
-    return 'past';
+    
+    return 'archive'; // Default for anything else
 }
 
 
@@ -304,33 +311,28 @@ module.exports = () => {
         const tEndDate = t.endDate ? new Date(t.endDate) : null;
         if (tEndDate) tEndDate.setHours(0,0,0,0);
 
-        let derivedStatus;
-        // A simplified derivation for mock, actual service has more complex DB status mapping
-        if (t.status === 'upcoming' && tStartDate >= today) derivedStatus = 'upcoming';
-        else if (t.status === 'active' && tStartDate <= today && (!tEndDate || tEndDate >= today)) derivedStatus = 'active';
-        else if (t.status === 'past' && (tEndDate ? tEndDate < today : tStartDate < today)) derivedStatus = 'past';
-        else { // Fallback for mocks if status field isn't perfectly aligned
-            if (tStartDate >= today) derivedStatus = 'upcoming';
-            else if (!tEndDate || tEndDate >= today) derivedStatus = 'active';
-            else derivedStatus = 'past';
-        }
+        // For filtering, calculate a status that aligns with the four target types
+        let filterLifecycleStatus = calculateMockLifecycleStatus(t.status, t.startDate, t.endDate);
 
-
-        if (requestedStatuses.includes(derivedStatus)) {
+        if (requestedStatuses.includes(filterLifecycleStatus)) {
             tournamentMatchesRequestedStatus = true;
         }
-        
-        if (requestedStatuses.includes('recent') && derivedStatus === 'past') {
-            const threeMonthsAgo = new Date(today);
-            threeMonthsAgo.setMonth(today.getMonth() - 3);
-            if (tStartDate >= threeMonthsAgo && tStartDate < today) tournamentMatchesRequestedStatus = true;
-            else if (!requestedStatuses.includes('past')) tournamentMatchesRequestedStatus = false; // Don't match if only 'recent' is asked and this is older 'past'
-        }
-        if (requestedStatuses.includes('archive') && derivedStatus === 'past') {
-            const threeMonthsAgo = new Date(today);
-            threeMonthsAgo.setMonth(today.getMonth() - 3);
-            if (tStartDate < threeMonthsAgo) tournamentMatchesRequestedStatus = true;
-            else if (!requestedStatuses.includes('past')) tournamentMatchesRequestedStatus = false; // Don't match if only 'archive' is asked and this is newer 'past'
+        // The requestedStatuses array will contain 'active', 'upcoming', 'recent', 'archive'.
+        // The calculateMockLifecycleStatus should correctly map to one of these, so direct check is fine.
+        // No need for special 'recent'/'archive' checks here if filterLifecycleStatus is accurate.
+        // However, if requestedStatuses contains 'past', that's an issue as 'past' is not a valid lifecycleStatus.
+        // Assuming requestedStatuses only contains the four valid ones.
+
+        // This block for 'recent'/'archive' specific filtering might be redundant if filterLifecycleStatus is comprehensive
+        // and requestedStatuses only contains the four valid lifecycle states.
+        // For example, if filterLifecycleStatus is 'recent', and 'recent' is in requestedStatuses, it matches.
+        // If filterLifecycleStatus is 'archive', and 'archive' is in requestedStatuses, it matches.
+        // Let's simplify assuming filterLifecycleStatus is the ground truth for matching.
+        // The original logic for derivedStatus was trying to map t.status ('upcoming', 'active', 'past')
+        // to the requested statuses, which could include 'recent'/'archive' that are not direct t.status values.
+        // Using calculateMockLifecycleStatus for filtering simplifies this.
+        if (requestedStatuses.includes(filterLifecycleStatus)) {
+            tournamentMatchesRequestedStatus = true;
         }
         return tournamentMatchesRequestedStatus;
         });
@@ -353,7 +355,7 @@ module.exports = () => {
           startDate: t.startDate, // Assuming YYYY-MM-DD
           endDate: t.endDate,   // Assuming YYYY-MM-DD or undefined
           status: t.status, // This is the original status from the mock data item
-          lifecycleStatus: derivedStatus, // This was the calculated status
+          lifecycleStatus: calculateMockLifecycleStatus(t.status, t.startDate, t.endDate), // Use the canonical mock calculator
           season: t.season || String(new Date(t.startDate).getFullYear()), // Mock season or derive
           sport: t.sport, // 'hurling' | 'gaelic-football'
           uuid: t.uuid,
