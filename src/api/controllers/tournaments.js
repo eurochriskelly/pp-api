@@ -381,8 +381,8 @@ module.exports = (db, useMock) => {
 
     getTournamentsByStatus: handleRoute(async (req) => {
       const { status } = req.params;
-      const { userId } = req.query;
-      const tournaments = await dbSvc.getTournamentsByStatus(status, userId);
+      const { userId, region } = req.query; // Extract region
+      const tournaments = await dbSvc.getTournamentsByStatus(status, userId, region); // Pass region
       return { data: tournaments };
     })
 

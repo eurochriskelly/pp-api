@@ -443,9 +443,9 @@ module.exports = (db) => {
       }));
     },
 
-    getTournamentsByStatus: async (requestedStatusString, userId) => {
+    getTournamentsByStatus: async (requestedStatusString, userId, region) => {
       const requestedStatuses = requestedStatusString ? requestedStatusString.split(',') : [];
-      if (requestedStatuses.length === 0) {
+      if (requestedStatuses.length === 0 && !region) { // if no status and no region, return empty
         return [];
       }
 
@@ -476,9 +476,8 @@ module.exports = (db) => {
         }
       });
 
-      if (sqlFilterConditions.length === 0) {
-        return []; // No valid statuses requested
-      }
+      // If only region is provided, sqlFilterConditions might be empty, which is fine.
+      // The WHERE clause will be constructed based on what's available.
 
       let userAssociatedField = '';
       if (userId) {
@@ -492,11 +491,34 @@ module.exports = (db) => {
             t.season, t.sport AS db_sport, t.eventUuid, t.Lat, t.Lon
             ${userAssociatedField}
         FROM tournaments t
-        WHERE (${sqlFilterConditions.join(' OR ')})
-        ORDER BY t.Date DESC
+        WHERE 
       `;
 
-      const dbRows = await select(query, sqlParams);
+      const whereClauses = [];
+      if (sqlFilterConditions.length > 0) {
+        whereClauses.push(`(${sqlFilterConditions.join(' OR ')})`);
+      }
+
+      if (region) {
+        whereClauses.push(`LOWER(t.region) = LOWER(?)`);
+        sqlParams.push(region);
+      }
+
+      if (whereClauses.length === 0) {
+        // This case should ideally not be hit if we check for empty statuses and no region earlier,
+        // but as a safeguard, prevent querying without any WHERE conditions if not intended.
+        // However, if the intent is to allow fetching all tournaments if no status/region is given,
+        // this block might need adjustment. For now, assuming at least one filter is desired.
+        // Given the initial check, this means if region is provided, it will be the sole filter.
+        // If neither status nor region, we return [] early.
+        // If only status, that's the filter.
+        // If both, they are ANDed.
+        if (requestedStatuses.length === 0 && !region) return []; // Should have been caught earlier
+      }
+      
+      const finalQuery = query + whereClauses.join(' AND ') + ` ORDER BY t.Date DESC`;
+
+      const dbRows = await select(finalQuery, sqlParams);
 
       return dbRows.map(row => {
         let finalStatus = 'past'; // Default

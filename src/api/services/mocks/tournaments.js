@@ -212,14 +212,27 @@ module.exports = () => {
       return roleFilterKeys.map(key => allMockFilters[key]);
     },
 
-    getTournamentsByStatus: async (requestedStatusString, userId) => {
-      II(`Mock: getTournamentsByStatus for statuses [${requestedStatusString}], userId [${userId || 'N/A'}]`);
+    getTournamentsByStatus: async (requestedStatusString, userId, region) => {
+      II(`Mock: getTournamentsByStatus for statuses [${requestedStatusString}], userId [${userId || 'N/A'}], region [${region || 'N/A'}]`);
       const requestedStatuses = requestedStatusString ? requestedStatusString.split(',').map(s => s.toLowerCase()) : [];
-      if (requestedStatuses.length === 0) return { data: [] };
+      
+      // If no statuses are requested AND no region is specified, return empty.
+      // If statuses are empty but region is specified, proceed to filter by region.
+      if (requestedStatuses.length === 0 && !region) return [];
+
 
       const today = new Date(); today.setHours(0, 0, 0, 0);
 
-      const filteredTournaments = mockTournaments.filter(t => {
+      let filteredTournaments = mockTournaments;
+
+      // Filter by region first if provided
+      if (region) {
+        filteredTournaments = filteredTournaments.filter(t => t.region && t.region.toLowerCase() === region.toLowerCase());
+      }
+
+      // Then filter by status if statuses are provided
+      if (requestedStatuses.length > 0) {
+        filteredTournaments = filteredTournaments.filter(t => {
         // Simplified mock status determination logic, as mock data already has 'upcoming', 'active', 'past'
         // This mock will primarily filter on the pre-assigned status in mockTournaments.
         // For a more accurate mock, replicate the full derivation logic from the real service.
@@ -258,7 +271,9 @@ module.exports = () => {
             else if (!requestedStatuses.includes('past')) tournamentMatchesRequestedStatus = false; // Don't match if only 'archive' is asked and this is newer 'past'
         }
         return tournamentMatchesRequestedStatus;
-      });
+        });
+      }
+
 
       return filteredTournaments.map((t, index) => {
         let isUserAssociated = null;
