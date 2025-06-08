@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
-const { buildReport } = require('./tournaments/build-report');
+const { buildReport } = require('./tournaments/builld-report/index.js');
 const { sqlGroupStandings } = require('../../lib/queries');
 const TSVValidator = require('./fixtures/validate-tsv');
 const { buildFixturesInsertSQL } = require('./tournaments/import-fixtures.js');
