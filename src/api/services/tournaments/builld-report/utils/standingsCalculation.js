@@ -112,7 +112,7 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
     return a.team.localeCompare(b.team);
   });
 
-  finalStandings.byGroup.allGroups = allGroupsStandings;
+  finalStandings.allGroups = allGroupsStandings;
 
   return finalStandings;
 }

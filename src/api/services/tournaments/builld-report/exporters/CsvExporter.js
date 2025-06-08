@@ -94,28 +94,53 @@ class CsvExporter {
     const allStandingsRows = [];
 
     categories.forEach(category => {
-      if (!category.standings || !category.standings.byGroup) return;
+      if (!category.standings) return;
 
       allStandingsRows.push([`Standings for ${category.category}`]);
 
-      const groupKeys = Object.keys(category.standings.byGroup);
-      
-      // Sort GP.n groups numerically
-      const sortedGroupKeys = groupKeys
-        .filter(key => key.startsWith('GP.'))
-        .sort((a, b) => parseInt(a.slice(3)) - parseInt(b.slice(3)));
+      // Process byGroup standings
+      if (category.standings.byGroup) {
+        const groupKeys = Object.keys(category.standings.byGroup);
+        
+        const sortedGroupKeys = groupKeys
+          .filter(key => key.startsWith('GP.'))
+          .sort((a, b) => parseInt(a.slice(3)) - parseInt(b.slice(3)));
 
-      // Add 'allGroups' to the end if it exists
-      if (groupKeys.includes('allGroups')) {
-        sortedGroupKeys.push('allGroups');
+        sortedGroupKeys.forEach(groupName => {
+          const standings = category.standings.byGroup[groupName];
+          if (!standings || standings.length === 0) return;
+
+          allStandingsRows.push([]); // Blank line for spacing
+          const title = `Group: ${groupName}`;
+          allStandingsRows.push([title]);
+          
+          const headers = ['Rank', 'Team', 'Played', 'Won', 'Draw', 'Loss', 'Score For', 'Score Against', 'Score Diff', 'Points'];
+          allStandingsRows.push(headers);
+
+          standings.forEach((team, index) => {
+            const row = [
+              index + 1,
+              team.team,
+              team.matchesPlayed,
+              team.won,
+              team.draw,
+              team.loss,
+              team.scoreFor,
+              team.scoreAgainst,
+              team.scoreDifference,
+              team.points
+            ];
+            allStandingsRows.push(row);
+          });
+        });
       }
 
-      sortedGroupKeys.forEach(groupName => {
-        const standings = category.standings.byGroup[groupName];
-        if (!standings || standings.length === 0) return;
-
+      // Process allGroups standings
+      if (category.standings.allGroups && category.standings.allGroups.length > 0) {
+        const standings = category.standings.allGroups;
+        
         allStandingsRows.push([]); // Blank line for spacing
-        const title = groupName === 'allGroups' ? 'Overall Group Standings' : `Group: ${groupName}`;
+        const title = 'Overall Group Standings';
         allStandingsRows.push([title]);
         
         const headers = ['Rank', 'Team', 'Played', 'Won', 'Draw', 'Loss', 'Score For', 'Score Against', 'Score Diff', 'Points'];
@@ -136,7 +161,7 @@ class CsvExporter {
           ];
           allStandingsRows.push(row);
         });
-      });
+      }
     });
 
     return allStandingsRows;
