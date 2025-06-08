@@ -6,11 +6,13 @@ class CsvExporter {
     // Create arrays to hold our CSV data
     const tournamentInfo = this.formatTournamentInfo(reportData.tournament);
     const fixtureRows = this.formatFixtures(reportData.categories);
+    const standingsRows = this.formatStandings(reportData.categories);
     
     // Combine all data
     return {
       tournamentInfo,
-      fixtures: fixtureRows
+      fixtures: fixtureRows,
+      standings: standingsRows,
     };
   }
 
@@ -84,6 +86,60 @@ class CsvExporter {
       fixture.actual.pitch || fixture.planned.pitch,
       fixture.outcome
     ];
+  }
+
+  formatStandings(categories) {
+    if (!categories || categories.length === 0) return [];
+
+    const allStandingsRows = [];
+
+    categories.forEach(category => {
+      if (!category.standings || !category.standings.byGroup) return;
+
+      allStandingsRows.push([`Standings for ${category.category}`]);
+
+      const groupKeys = Object.keys(category.standings.byGroup);
+      
+      // Sort GP.n groups numerically
+      const sortedGroupKeys = groupKeys
+        .filter(key => key.startsWith('GP.'))
+        .sort((a, b) => parseInt(a.slice(3)) - parseInt(b.slice(3)));
+
+      // Add 'allGroups' to the end if it exists
+      if (groupKeys.includes('allGroups')) {
+        sortedGroupKeys.push('allGroups');
+      }
+
+      sortedGroupKeys.forEach(groupName => {
+        const standings = category.standings.byGroup[groupName];
+        if (!standings || standings.length === 0) return;
+
+        allStandingsRows.push([]); // Blank line for spacing
+        const title = groupName === 'allGroups' ? 'Overall Group Standings' : `Group: ${groupName}`;
+        allStandingsRows.push([title]);
+        
+        const headers = ['Rank', 'Team', 'Played', 'Won', 'Draw', 'Loss', 'Score For', 'Score Against', 'Score Diff', 'Points'];
+        allStandingsRows.push(headers);
+
+        standings.forEach((team, index) => {
+          const row = [
+            index + 1,
+            team.team,
+            team.matchesPlayed,
+            team.won,
+            team.draw,
+            team.loss,
+            team.scoreFor,
+            team.scoreAgainst,
+            team.scoreDifference,
+            team.points
+          ];
+          allStandingsRows.push(row);
+        });
+      });
+    });
+
+    return allStandingsRows;
   }
 }
 
