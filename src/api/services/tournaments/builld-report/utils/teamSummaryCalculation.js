@@ -1,18 +1,23 @@
+const { calculateTeamRankings } = require('./teamRankingCalculation');
+
 /**
  * Calculates a detailed summary for each team in a category.
  * @param {Array<string>} allTeams - A list of all team names in the category.
  * @param {object} fixtures - The structured fixtures object from ReportBuilder.
  * @param {Array<object>} teamsByGroup - Team groupings by group number.
  * @param {Array<object>} teamsByBracket - Team groupings by bracket name.
+ * @param {object} standings - The calculated standings object.
  * @returns {Array<object>} - An array of team summary objects.
  */
-function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket) {
+function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket, standings) {
   const summaryMap = new Map();
+  const teamRanks = calculateTeamRankings(fixtures, teamsByBracket, standings.allGroups);
 
   // 1. Initialize summary object for each team
   allTeams.forEach(team => {
     summaryMap.set(team, {
       team: team,
+      rank: teamRanks.get(team) || null,
       playingTime: 0,
       matchesPlayed: 0,
       matchesSkipped: 0,

@@ -20,7 +20,7 @@ class ReportBuilder {
       categoryTeamInfo.map(async (catInfo) => {
         const fixtures = await this.getFixturesForCategory(tournamentId, catInfo.category, cardsByFixtureId);
         const standings = calculateStandings(fixtures, catInfo.byGroup, tournament.pointsFor);
-        const teamSummary = calculateTeamSummary(catInfo.allTeams, fixtures, catInfo.byGroup, catInfo.byBracket);
+        const teamSummary = calculateTeamSummary(catInfo.allTeams, fixtures, catInfo.byGroup, catInfo.byBracket, standings);
 
         return {
           category: catInfo.category,

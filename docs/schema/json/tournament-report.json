@@ -86,6 +86,7 @@
                       "type": "object",
                       "properties": {
                         "team": { "type": "string" },
+                        "rank": { "type": ["integer", "null"] },
                         "playingTime": { "type": "number" },
                         "matchesPlayed": { "type": "integer" },
                         "matchesSkipped": { "type": "integer" },
@@ -135,7 +136,7 @@
                           "required": ["yellow", "red", "black"]
                         }
                       },
-                      "required": ["team", "playingTime", "matchesPlayed", "matchesSkipped", "progression", "totalScore", "cards"]
+                      "required": ["team", "rank", "playingTime", "matchesPlayed", "matchesSkipped", "progression", "totalScore", "cards"]
                     }
                   }
                 },
