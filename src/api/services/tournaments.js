@@ -227,13 +227,57 @@ module.exports = (db) => {
         [firstName, secondName, dateOfBirth, foirreannId, id]
       );
     },
-    createTournament: async ({ title, date, location, lat, lon, eventUuid = uuidv4() }) => {
-      const result = await insert(
-        `INSERT INTO tournaments (Title, Date, Location, Lat, Lon, eventUuid) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [title, date, location, lat, lon, eventUuid]
+
+    createTournament: async (userId, {
+      region, title, date, location, lat, lon,
+      codeOrganizer, winPoints = 3, drawPoints = 1, lossPoints = 0
+    }) => {
+      const eventUuid = uuidv4();
+      await insert(
+        `INSERT INTO tournaments (
+           region, Title, Date, Location, Lat, Lon, eventUuid, code,
+           pointsForWin, pointsForDraw, pointsForLoss
+         ) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          region, title, date, location, lat, lon, 
+          eventUuid, codeOrganizer, winPoints, drawPoints, lossPoints
+        ]
       );
-      return result;
+      const [newTournament] = await select(
+        `SELECT * FROM tournaments WHERE eventUuid = ?`,
+        [eventUuid]
+      );
+      if (!newTournament) {
+        throw new Error('Failed to retrieve the newly created tournament.');
+      }
+      const newTournamentId = newTournament.id;
+      await insert(
+        `INSERT INTO sec_roles (UserId, RoleName, tournamentId) VALUES (?, ?, ?)`,
+        [userId, 'organizer', newTournamentId]
+      );
+      return newTournament;
+    },
+
+    updateTournament: async (id, {
+      region, title, date, location, lat, lon,
+      codeOrganizer, winPoints = 3, drawPoints = 1, lossPoints = 0
+    }) => {
+      await update(
+        `UPDATE tournaments 
+         SET Region = ?, Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ?, 
+         code = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
+         WHERE id = ?`,
+        [region, title, date, location, lat, lon, codeOrganizer, winPoints, drawPoints, lossPoints, id]
+      );
+      const [updatedTournament] = await select(
+        `SELECT * FROM tournaments WHERE eventUuid = ?`,
+        [eventUuid]
+      );
+      if (!updatedTournament) {
+        throw new Error('Failed to retrieve the newly created tournament.');
+      }
+      return updatedTournament;
     },
 
     getTournaments: async (status, userId, role) => {
@@ -782,14 +826,6 @@ module.exports = (db) => {
       );
     },
 
-    updateTournament: async (id, { title, date, location, lat, lon }) => {
-      await update(
-        `UPDATE tournaments 
-         SET Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ? 
-         WHERE id = ?`,
-        [title, date, location, lat, lon, id]
-      );
-    },
   };
 
 };

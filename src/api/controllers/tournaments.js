@@ -19,12 +19,37 @@ module.exports = (db, useMock) => {
       }
     }, 201),
 
-    createTournament: handleRoute(async (req) => {
-      const { title, date, location, lat, lon, uuid } = req.body;
-      const id = await dbSvc.createTournament({ title, date, location, lat, lon, uuid });
-      const tournament = await dbSvc.getTournament(id);
-      return tournament;
+    createTournament: handleRoute(async (req, res) => {
+      const { 
+        userId, region, title, date, location, lat, lon, 
+        codeOrganizer, winPoints = 2, drawPoints =1, lossPoints = 0
+      } = req.body;
+console.log('a')
+      const tournament = await dbSvc.createTournament(userId, { 
+        title, date, location, lat, lon, 
+        codeOrganizer, winPoints, drawPoints, lossPoints
+      });
+      console.log('b', tournament)
+      res.json(tournament);
     }, 201),
+
+    updateTournament: handleRoute(async (req, res) => {
+      const { id } = req.params;
+      const { 
+        userId, region, title, date, location, lat, lon, 
+        codeOrganizer, winPoints = 2, drawPoints =1, lossPoints = 0
+      } = req.body;
+      try {
+        await dbSvc.updateTournament(id, { 
+          title, date, location, lat, lon, 
+          codeOrganizer, winPoints, drawPoints, lossPoints 
+        });
+        const tournament = await dbSvc.getTournament(id);
+        res.json(tournament);
+      } catch (err) {
+        throw err;
+      }
+    }, 200),
 
     getTournaments: handleRoute(async (req) => {
       const status = req.query.status || 'all';
@@ -69,17 +94,6 @@ module.exports = (db, useMock) => {
       }
     },
 
-    updateTournament: async (req, res) => {
-      const { id } = req.params;
-      const { title, date, location, lat, lon } = req.body;
-      try {
-        await dbSvc.updateTournament(id, { title, date, location, lat, lon });
-        const tournament = await dbSvc.getTournament(id);
-        res.json(tournament);
-      } catch (err) {
-        throw err;
-      }
-    },
 
     deleteTournament: async (req, res) => {
       const { id } = req.params;
