@@ -88,6 +88,7 @@
                         "team": { "type": "string" },
                         "playingTime": { "type": "number" },
                         "matchesPlayed": { "type": "integer" },
+                        "matchesSkipped": { "type": "integer" },
                         "progression": {
                           "type": "object",
                           "properties": {
@@ -134,7 +135,7 @@
                           "required": ["yellow", "red", "black"]
                         }
                       },
-                      "required": ["team", "playingTime", "matchesPlayed", "progression", "totalScore", "cards"]
+                      "required": ["team", "playingTime", "matchesPlayed", "matchesSkipped", "progression", "totalScore", "cards"]
                     }
                   }
                 },
@@ -229,7 +230,7 @@
                               "required": ["name", "goals", "points", "total", "goalsExtra", "pointsExtra", "goalsPenalties", "status"]
                             },
                             "umpireTeam": { "type": "string" },
-                            "outcome": { "type": "string", "enum": ["played", "scheduled"] }
+                            "outcome": { "type": "string", "enum": ["played", "scheduled", "not played", "skipped"] }
                           },
                           "required": ["matchId", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
                         }
@@ -308,7 +309,7 @@
                               "required": ["name", "goals", "points", "total", "goalsExtra", "pointsExtra", "goalsPenalties", "status"]
                             },
                             "umpireTeam": { "type": "string" },
-                            "outcome": { "type": "string", "enum": ["played", "scheduled"] }
+                            "outcome": { "type": "string", "enum": ["played", "scheduled", "not played", "skipped"] }
                           },
                           "required": ["matchId", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
                         }
