@@ -1,0 +1,278 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "tournamentId": { "type": "string" },
+        "tournament": {
+          "type": "object",
+          "properties": {
+            "eventUuid": { "type": "string", "format": "uuid" },
+            "status": { "type": "string", "enum": ["new", "ongoing", "completed"] },
+            "date": { "type": "string", "format": "date-time" },
+            "title": { "type": "string" },
+            "season": { "type": ["string", "null"] },
+            "location": {
+              "type": "object",
+              "properties": {
+                "region": { "type": "string" },
+                "address": { "type": "string" },
+                "lat": { "type": "number" },
+                "lon": { "type": "number" }
+              },
+              "required": ["region", "address", "lat", "lon"]
+            },
+            "pointsFor": {
+              "type": "object",
+              "properties": {
+                "win": { "type": "integer" },
+                "draw": { "type": "integer" },
+                "loss": { "type": "integer" }
+              },
+              "required": ["win", "draw", "loss"]
+            }
+          },
+          "required": ["eventUuid", "status", "date", "title", "season", "location", "pointsFor"]
+        },
+        "pitches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pitch": { "type": "string" },
+              "id": { "type": "integer" },
+              "location": { "type": ["object", "null"] }
+            },
+            "required": ["pitch", "id", "location"]
+          }
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": { "type": "string", "enum": ["LADIES", "MEN"] },
+              "teams": {
+                "type": "object",
+                "properties": {
+                  "allTeams": { "type": "array", "items": { "type": "string" } },
+                  "byGroup": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "group": { "type": "integer" },
+                        "teams": { "type": "array", "items": { "type": "string" } }
+                      },
+                      "required": ["group", "teams"]
+                    }
+                  }
+                },
+                "required": ["allTeams", "byGroup"]
+              },
+              "fixtures": {
+                "type": "object",
+                "properties": {
+                  "lastUpdated": { "type": "string", "format": "date-time" },
+                  "totals": {
+                    "type": "object",
+                    "properties": {
+                      "group": { "type": "integer" },
+                      "knockouts": { "type": "integer" }
+                    },
+                    "required": ["group", "knockouts"]
+                  },
+                  "stage": {
+                    "type": "object",
+                    "properties": {
+                      "group": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "matchId": { "type": "integer" },
+                            "pool": { "type": ["integer", "null"] },
+                            "bracket": { "type": "string", "enum": ["group", "Cup"] },
+                            "stage": { "type": "string" },
+                            "planned": {
+                              "type": "object",
+                              "properties": {
+                                "team1": { "type": "string" },
+                                "team2": { "type": "string" },
+                                "umpireTeam": { "type": "string" },
+                                "scheduled": { "type": "string", "format": "date-time" },
+                                "pitch": { "type": "string" }
+                              },
+                              "required": ["team1", "team2", "umpireTeam", "scheduled", "pitch"]
+                            },
+                            "actual": {
+                              "type": "object",
+                              "properties": {
+                                "scheduled": { "type": "string", "format": "date-time" },
+                                "pitch": { "type": "string" },
+                                "started": { "type": "string", "format": "date-time" },
+                                "ended": { "type": "string", "format": "date-time" }
+                              },
+                              "required": ["scheduled", "pitch", "started", "ended"]
+                            },
+                            "team1": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string" },
+                                "goals": { "type": ["integer", "null"] },
+                                "points": { "type": ["integer", "null"] },
+                                "total": { "type": ["integer", "null"] },
+                                "goalsExtra": { "type": ["integer", "null"] },
+                                "pointsExtra": { "type": ["integer", "null"] },
+                                "goalsPenalties": { "type": ["integer", "null"] },
+                                "status": { "type": "string", "enum": ["won", "lost", "draw"] }
+                              },
+                              "required": ["name", "goals", "points", "total", "goalsExtra", "pointsExtra", "goalsPenalties", "status"]
+                            },
+                            "team2": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string" },
+                                "goals": { "type": ["integer", "null"] },
+                                "points": { "type": ["integer", "null"] },
+                                "total": { "type": ["integer", "null"] },
+                                "goalsExtra": { "type": ["integer", "null"] },
+                                "pointsExtra": { "type": ["integer", "null"] },
+                                "goalsPenalties": { "type": ["integer", "null"] },
+                                "status": { "type": "string", "enum": ["won", "lost", "draw"] }
+                              },
+                              "required": ["name", "goals", "points", "total", "goalsExtra", "pointsExtra", "goalsPenalties", "status"]
+                            },
+                            "umpireTeam": { "type": "string" },
+                            "outcome": { "type": "string", "enum": ["played", "scheduled"] }
+                          },
+                          "required": ["matchId", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
+                        }
+                      },
+                      "knockouts": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "matchId": { "type": "integer" },
+                            "pool": { "type": ["integer", "null"] },
+                            "bracket": { "type": "string", "enum": ["Cup"] },
+                            "stage": { "type": "string" },
+                            "planned": {
+                              "type": "object",
+                              "properties": {
+                                "team1": { "type": "string" },
+                                "team2": { "type": "string" },
+                                "umpireTeam": { "type": "string" },
+                                "scheduled": { "type": "string", "format": "date-time" },
+                                "pitch": { "type": "string" }
+                              },
+                              "required": ["team1", "team2", "umpireTeam", "scheduled", "pitch"]
+                            },
+                            "actual": {
+                              "type": "object",
+                              "properties": {
+                                "scheduled": { "type": "string", "format": "date-time" },
+                                "pitch": { "type": "string" },
+                                "started": { "type": "string", "format": "date-time" },
+                                "ended": { "type": "string", "format": "date-time" }
+                              },
+                              "required": ["scheduled", "pitch", "started", "ended"]
+                            },
+                            "team1": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string" },
+                                "goals": { "type": ["integer", "null"] },
+                                "points": { "type": ["integer", "null"] },
+                                "total": { "type": ["integer", "null"] },
+                                "goalsExtra": { "type": ["integer", "null"] },
+                                "pointsExtra": { "type": ["integer", "null"] },
+                                "goalsPenalties": { "type": ["integer", "null"] },
+                                "status": { "type": "string", "enum": ["won", "lost", "draw"] }
+                              },
+                              "required": ["name", "goals", "points", "total", "goalsExtra", "pointsExtra", "goalsPenalties", "status"]
+                            },
+                            "team2": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string" },
+                                "goals": { "type": ["integer", "null"] },
+                                "points": { "type": ["integer", "null"] },
+                                "total": { "type": ["integer", "null"] },
+                                "goalsExtra": { "type": ["integer", "null"] },
+                                "pointsExtra": { "type": ["integer", "null"] },
+                                "goalsPenalties": { "type": ["integer", "null"] },
+                                "status": { "type": "string", "enum": ["won", "lost", "draw"] }
+                              },
+                              "required": ["name", "goals", "points", "total", "goalsExtra", "pointsExtra", "goalsPenalties", "status"]
+                            },
+                            "umpireTeam": { "type": "string" },
+                            "outcome": { "type": "string", "enum": ["played", "scheduled"] }
+                          },
+                          "required": ["matchId", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
+                        }
+                      }
+                    },
+                    "required": ["group", "knockouts"]
+                  }
+                },
+                "required": ["lastUpdated", "totals", "stage"]
+              },
+              "standings": {
+                "type": "object",
+                "properties": {
+                  "byGroup": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "team": { "type": "string" },
+                          "matchesPlayed": { "type": "integer" },
+                          "won": { "type": "integer" },
+                          "draw": { "type": "integer" },
+                          "loss": { "type": "integer" },
+                          "scoreFor": { "type": "integer" },
+                          "scoreAgainst": { "type": "integer" },
+                          "scoreDifference": { "type": "integer" },
+                          "points": { "type": "integer" }
+                        },
+                        "required": ["team", "matchesPlayed", "won", "draw", "loss", "scoreFor", "scoreAgainst", "scoreDifference", "points"]
+                      }
+                    }
+                  },
+                  "allGroups": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "team": { "type": "string" },
+                        "matchesPlayed": { "type": "integer" },
+                        "won": { "type": "integer" },
+                        "draw": { "type": "integer" },
+                        "loss": { "type": "integer" },
+                        "scoreFor": { "type": "integer" },
+                        "scoreAgainst": { "type": "integer" },
+                        "scoreDifference": { "type": "integer" },
+                        "points": { "type": "integer" }
+                      },
+                      "required": ["team", "matchesPlayed", "won", "draw", "loss", "scoreFor", "scoreAgainst", "scoreDifference", "points"]
+                    }
+                  }
+                },
+                "required": ["byGroup", "allGroups"]
+              }
+            },
+            "required": ["category", "teams", "fixtures", "standings"]
+          }
+        }
+      },
+      "required": ["tournamentId", "tournament", "pitches", "categories"]
+    }
+  },
+  "required": ["data"]
+}
