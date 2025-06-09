@@ -138,7 +138,7 @@ const deletePitches = async (dbDelete, tournamentId) => {
 
 module.exports = (db) => {
   const { select, insert, update, delete: dbDelete } = dbHelper(db);
-  const winAward = 3;
+  const winAward = 2;
   return {
     codeCheck: async (tournamentId, code, role) => {
       const roleCodeMap = {
