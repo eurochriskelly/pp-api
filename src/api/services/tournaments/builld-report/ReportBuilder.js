@@ -1,6 +1,7 @@
 const { friendlyTeamLabel } = require('./utils/teamFormatting');
 const { calcBracket, calcStage, getMatchStatus } = require('./utils/stageFormatting');
 const { calculateStandings } = require('./utils/standingsCalculation');
+const { calculateTeamSummary } = require('./utils/teamSummaryCalculation');
 
 class ReportBuilder {
   constructor(select) {
@@ -19,6 +20,7 @@ class ReportBuilder {
       categoryTeamInfo.map(async (catInfo) => {
         const fixtures = await this.getFixturesForCategory(tournamentId, catInfo.category, cardsByFixtureId);
         const standings = calculateStandings(fixtures, catInfo.byGroup, tournament.pointsFor);
+        const teamSummary = calculateTeamSummary(catInfo.allTeams, fixtures, catInfo.byGroup, catInfo.byBracket);
 
         return {
           category: catInfo.category,
@@ -26,6 +28,7 @@ class ReportBuilder {
             allTeams: catInfo.allTeams,
             byGroup: catInfo.byGroup,
             byBracket: catInfo.byBracket,
+            summary: teamSummary,
           },
           fixtures: fixtures, // Add the structured fixtures
           standings: standings,
