@@ -193,8 +193,14 @@ class ReportBuilder {
   }
 
   async getPitchInfo(tournamentId) {
-    // Use parameterized query for security
-    return await this.select(`select id, pitch, location from pitches where tournamentId=?`, [tournamentId]);
+    // Use parameterized query for security - get distinct pitches
+    return await this.select(`
+      SELECT DISTINCT pitch, MIN(id) as id, MIN(location) as location 
+      FROM pitches 
+      WHERE tournamentId=? 
+      GROUP BY pitch
+      ORDER BY pitch
+    `, [tournamentId]);
   }
 
   async getTournamentInfo(tournamentId) {

@@ -271,8 +271,8 @@ module.exports = (db) => {
         [region, title, date, location, lat, lon, codeOrganizer, winPoints, drawPoints, lossPoints, id]
       );
       const [updatedTournament] = await select(
-        `SELECT * FROM tournaments WHERE eventUuid = ?`,
-        [eventUuid]
+        `SELECT * FROM tournaments WHERE id = ?`,
+        [id]
       );
       if (!updatedTournament) {
         throw new Error('Failed to retrieve the newly created tournament.');

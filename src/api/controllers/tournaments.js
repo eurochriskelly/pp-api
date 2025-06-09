@@ -24,9 +24,8 @@ module.exports = (db, useMock) => {
         userId, region, title, date, location, lat, lon, 
         codeOrganizer, winPoints = 2, drawPoints =1, lossPoints = 0
       } = req.body;
-console.log('a')
       const tournament = await dbSvc.createTournament(userId, { 
-        title, date, location, lat, lon, 
+        region, title, date, location, lat, lon, 
         codeOrganizer, winPoints, drawPoints, lossPoints
       });
       console.log('b', tournament)
@@ -36,12 +35,12 @@ console.log('a')
     updateTournament: handleRoute(async (req, res) => {
       const { id } = req.params;
       const { 
-        userId, region, title, date, location, lat, lon, 
+        tournamentId, userId, region, title, date, location, lat, lon, 
         codeOrganizer, winPoints = 2, drawPoints =1, lossPoints = 0
       } = req.body;
       try {
         await dbSvc.updateTournament(id, { 
-          title, date, location, lat, lon, 
+          region, title, date, location, lat, lon, 
           codeOrganizer, winPoints, drawPoints, lossPoints 
         });
         const tournament = await dbSvc.getTournament(id);
