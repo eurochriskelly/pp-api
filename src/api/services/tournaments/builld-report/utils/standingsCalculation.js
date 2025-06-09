@@ -32,8 +32,8 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
 
   // Process each group fixture to calculate results
   groupFixtures.forEach(fixture => {
-    if (fixture.outcome === 'not played' || !fixture.team1.name || !fixture.team2.name) {
-      return; // Skip unplayed or placeholder fixtures
+    if (fixture.outcome === 'not played' || fixture.outcome === 'skipped' || !fixture.team1.name || !fixture.team2.name) {
+      return; // Skip unplayed, skipped, or placeholder fixtures
     }
 
     const groupName = `GP.${fixture.pool}`;

@@ -15,6 +15,7 @@ function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket) 
       team: team,
       playingTime: 0,
       matchesPlayed: 0,
+      matchesSkipped: 0,
       progression: {
         group: null,
         bracket: null,
@@ -66,11 +67,18 @@ function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket) 
       return;
     }
 
+    // Handle skipped matches
+    if (fixture.outcome === 'skipped') {
+      team1Summary.matchesSkipped++;
+      team2Summary.matchesSkipped++;
+      return; // Do not count towards playing time, matches played, or scores
+    }
+
     // Aggregate match stats
     team1Summary.matchesPlayed++;
     team2Summary.matchesPlayed++;
 
-    const duration = fixture.actual.duration || 0;
+    const duration = fixture.planned.duration || 0;
     team1Summary.playingTime += duration;
     team2Summary.playingTime += duration;
 
