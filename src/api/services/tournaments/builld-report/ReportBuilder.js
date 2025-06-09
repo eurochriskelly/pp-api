@@ -104,7 +104,7 @@ class ReportBuilder {
       SELECT 
         id, tournamentId, category, groupNumber, stage, 
         pitchPlanned, pitch, 
-        scheduledPlanned, scheduled, started, ended, duration,
+        scheduledPlanned, scheduled, started, ended, durationPlanned,
         team1Planned, team1Id as team1, team2Planned, team2Id as team2, 
         goals1, points1, goals1Extra, points1Extra, goals1Penalties, 
         goals2, points2, goals2Extra, points2Extra, goals2Penalties, 
@@ -142,7 +142,7 @@ class ReportBuilder {
           umpireTeam: f.umpireTeamPlanned,
           scheduled: f.scheduledPlanned,
           pitch: f.pitchPlanned,
-          duration: f.duration,
+          duration: f.durationPlanned,
         },
         actual: {
           scheduled: f.scheduled,
