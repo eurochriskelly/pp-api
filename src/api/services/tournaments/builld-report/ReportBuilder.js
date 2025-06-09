@@ -25,6 +25,7 @@ class ReportBuilder {
           teams: { // Keep the teams structure from getCategoriesInfo
             allTeams: catInfo.allTeams,
             byGroup: catInfo.byGroup,
+            byBracket: catInfo.byBracket,
           },
           fixtures: fixtures, // Add the structured fixtures
           standings: standings,
@@ -111,11 +112,57 @@ class ReportBuilder {
 
       const byGroup = await Promise.all(groupPromises);
 
-      // 4. Assemble the final object for the category
+      // 4. Get teams by bracket
+      const bracketFixtures = await this.select(`
+        SELECT stage, team1Id, team2Id 
+        FROM fixtures 
+        WHERE tournamentId=? AND category=? AND stage != 'group'
+      `, [tournamentId, category]);
+
+      const teamsByBracketMap = new Map();
+      const teamsInAnyBracket = new Set();
+
+      bracketFixtures.forEach(fixture => {
+        const bracketName = calcBracket(fixture.stage);
+        if (bracketName === 'group' || bracketName === 'Unknown') return;
+
+        if (!teamsByBracketMap.has(bracketName)) {
+          teamsByBracketMap.set(bracketName, new Set());
+        }
+        const bracketTeamsSet = teamsByBracketMap.get(bracketName);
+
+        if (fixture.team1Id && !fixture.team1Id.startsWith('~')) {
+          bracketTeamsSet.add(fixture.team1Id);
+          teamsInAnyBracket.add(fixture.team1Id);
+        }
+        if (fixture.team2Id && !fixture.team2Id.startsWith('~')) {
+          bracketTeamsSet.add(fixture.team2Id);
+          teamsInAnyBracket.add(fixture.team2Id);
+        }
+      });
+
+      // Determine teams not in any bracket
+      const noneBracketTeams = allTeams.filter(team => !teamsInAnyBracket.has(team));
+      if (noneBracketTeams.length > 0) {
+        teamsByBracketMap.set('None', new Set(noneBracketTeams));
+      }
+
+      // Convert map to the desired array structure and sort teams
+      const byBracket = [];
+      for (const [bracket, teamsSet] of teamsByBracketMap.entries()) {
+        byBracket.push({
+          bracket: bracket,
+          teams: Array.from(teamsSet).sort()
+        });
+      }
+      byBracket.sort((a, b) => a.bracket.localeCompare(b.bracket));
+
+      // 5. Assemble the final object for the category
       return {
         category: category,
         allTeams: allTeams,
-        byGroup: byGroup
+        byGroup: byGroup,
+        byBracket: byBracket,
       };
     });
 

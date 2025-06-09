@@ -68,9 +68,20 @@
                       },
                       "required": ["group", "teams"]
                     }
+                  },
+                  "byBracket": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "bracket": { "type": "string" },
+                        "teams": { "type": "array", "items": { "type": "string" } }
+                      },
+                      "required": ["bracket", "teams"]
+                    }
                   }
                 },
-                "required": ["allTeams", "byGroup"]
+                "required": ["allTeams", "byGroup", "byBracket"]
               },
               "fixtures": {
                 "type": "object",
