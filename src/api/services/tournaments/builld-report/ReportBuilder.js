@@ -104,7 +104,7 @@ class ReportBuilder {
       SELECT 
         id, tournamentId, category, groupNumber, stage, 
         pitchPlanned, pitch, 
-        scheduledPlanned, scheduled, started, ended, 
+        scheduledPlanned, scheduled, started, ended, plannedDuration,
         team1Planned, team1Id as team1, team2Planned, team2Id as team2, 
         goals1, points1, goals1Extra, points1Extra, goals1Penalties, 
         goals2, points2, goals2Extra, points2Extra, goals2Penalties, 
@@ -129,6 +129,8 @@ class ReportBuilder {
       f.total1 = f.outcome !== 'not played' ? (f.goals1*3 + f.points1) : null;
       f.total2 = f.outcome !== 'not played' ? (f.goals2*3 + f.points2) : null;
 
+      const actualDuration = f.started && f.ended ? Math.round((new Date(f.ended) - new Date(f.started)) / 60000) : null;
+
       const transformedFixture = {
         matchId: f.id,
         pool: f.stage === 'group' ? f.groupNumber : null, // Use groupNumber for pool in group stage
@@ -140,12 +142,14 @@ class ReportBuilder {
           umpireTeam: f.umpireTeamPlanned,
           scheduled: f.scheduledPlanned,
           pitch: f.pitchPlanned,
+          duration: f.plannedDuration,
         },
         actual: {
           scheduled: f.scheduled,
           pitch: f.pitch,
           started: f.started,
           ended: f.ended,
+          duration: actualDuration,
         },
         team1: {
           name: friendlyTeamLabel(f.team1),
