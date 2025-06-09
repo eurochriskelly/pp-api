@@ -2,6 +2,29 @@
  * Format and calculate information about tournament stages and brackets
  */
 
+function generateCategoryCode(categoryName) {
+  if (!categoryName) return '';
+
+  // First uppercase letter of each word
+  const letters = categoryName
+    .split(/[\s-]+/) // split by space or hyphen
+    .filter(word => isNaN(parseInt(word, 10))) // filter out parts that are just numbers
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase();
+
+  // Any numbers in the category
+  const numbers = (categoryName.match(/\d+/g) || []).join('');
+
+  return letters + numbers;
+}
+
+function generateMatchLabel(category, matchId) {
+  const categoryCode = generateCategoryCode(category);
+  const matchNumber = String(matchId).slice(-2).padStart(2, '0');
+  return `${categoryCode}.${matchNumber}`;
+}
+
 function calcStage(stage, groupNumber) {
   if (stage === 'group') {
     return `GP.${groupNumber}`; // Group stage with group number
@@ -71,5 +94,6 @@ function calcBracket(stage) {
 module.exports = {
   calcStage,
   getMatchStatus,
-  calcBracket
+  calcBracket,
+  generateMatchLabel
 };
