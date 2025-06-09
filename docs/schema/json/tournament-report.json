@@ -93,6 +93,19 @@
                           "type": "object",
                           "properties": {
                             "matchId": { "type": "integer" },
+                            "cards": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "playerNumber": { "type": ["integer", "null"] },
+                                  "playerName": { "type": ["string", "null"] },
+                                  "team": { "type": ["string", "null"] },
+                                  "cardColor": { "type": "string", "enum": ["yellow", "red", "black"] }
+                                },
+                                "required": ["playerNumber", "playerName", "team", "cardColor"]
+                              }
+                            },
                             "pool": { "type": ["integer", "null"] },
                             "bracket": { "type": "string", "enum": ["group", "Cup"] },
                             "stage": { "type": "string" },
@@ -150,7 +163,7 @@
                             "umpireTeam": { "type": "string" },
                             "outcome": { "type": "string", "enum": ["played", "scheduled"] }
                           },
-                          "required": ["matchId", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
+                          "required": ["matchId", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
                         }
                       },
                       "knockouts": {
@@ -159,6 +172,19 @@
                           "type": "object",
                           "properties": {
                             "matchId": { "type": "integer" },
+                            "cards": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "playerNumber": { "type": ["integer", "null"] },
+                                  "playerName": { "type": ["string", "null"] },
+                                  "team": { "type": ["string", "null"] },
+                                  "cardColor": { "type": "string", "enum": ["yellow", "red", "black"] }
+                                },
+                                "required": ["playerNumber", "playerName", "team", "cardColor"]
+                              }
+                            },
                             "pool": { "type": ["integer", "null"] },
                             "bracket": { "type": "string", "enum": ["Cup"] },
                             "stage": { "type": "string" },
@@ -216,7 +242,7 @@
                             "umpireTeam": { "type": "string" },
                             "outcome": { "type": "string", "enum": ["played", "scheduled"] }
                           },
-                          "required": ["matchId", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
+                          "required": ["matchId", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
                         }
                       }
                     },

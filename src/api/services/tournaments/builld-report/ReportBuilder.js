@@ -12,11 +12,12 @@ class ReportBuilder {
     const pitches = await this.getPitchInfo(tournamentId);
     // Get the basic category info (teams, groups)
     const categoryTeamInfo = await this.getCategoriesInfo(tournamentId); 
+    const cardsByFixtureId = await this.getCardsForTournament(tournamentId);
 
     // Now, for each category, fetch and structure its fixtures
     const categoriesWithFixtures = await Promise.all(
       categoryTeamInfo.map(async (catInfo) => {
-        const fixtures = await this.getFixturesForCategory(tournamentId, catInfo.category);
+        const fixtures = await this.getFixturesForCategory(tournamentId, catInfo.category, cardsByFixtureId);
         const standings = calculateStandings(fixtures, catInfo.byGroup, tournament.pointsFor);
 
         return {
@@ -37,6 +38,29 @@ class ReportBuilder {
       pitches,
       categories: categoriesWithFixtures, // Use the combined data
     };
+  }
+
+  async getCardsForTournament(tournamentId) {
+    const cards = await this.select(
+      `SELECT fixtureId, playerNumber, playerName, team, cardColor 
+       FROM cards 
+       WHERE tournamentId = ? AND fixtureId IS NOT NULL`,
+      [tournamentId]
+    );
+
+    const cardsByFixtureId = new Map();
+    cards.forEach(card => {
+      if (!cardsByFixtureId.has(card.fixtureId)) {
+        cardsByFixtureId.set(card.fixtureId, []);
+      }
+      cardsByFixtureId.get(card.fixtureId).push({
+        playerNumber: card.playerNumber,
+        playerName: card.playerName,
+        team: card.team,
+        cardColor: card.cardColor,
+      });
+    });
+    return cardsByFixtureId;
   }
 
   async getCategoriesInfo(tournamentId) {
@@ -99,7 +123,7 @@ class ReportBuilder {
     return Promise.all(categoryPromises);
   }
 
-  async getFixturesForCategory(tournamentId, category) {
+  async getFixturesForCategory(tournamentId, category, cardsByFixtureId) {
     const fixturesData = await this.select(`
       SELECT 
         id, tournamentId, category, groupNumber, stage, 
@@ -133,6 +157,7 @@ class ReportBuilder {
 
       const transformedFixture = {
         matchId: f.id,
+        cards: cardsByFixtureId.get(f.id) || [],
         pool: f.stage === 'group' ? f.groupNumber : null, // Use groupNumber for pool in group stage
         bracket: calcBracket(f.stage), 
         stage: calcStage(f.stage, f.groupNumber), 
