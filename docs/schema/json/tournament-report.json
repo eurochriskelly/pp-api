@@ -163,6 +163,7 @@
                           "type": "object",
                           "properties": {
                             "matchId": { "type": "integer" },
+                            "matchLabel": { "type": "string" },
                             "cards": {
                               "type": "array",
                               "items": {
@@ -233,7 +234,7 @@
                             "umpireTeam": { "type": "string" },
                             "outcome": { "type": "string", "enum": ["played", "scheduled", "not played", "skipped"] }
                           },
-                          "required": ["matchId", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
+                          "required": ["matchId", "matchLabel", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
                         }
                       },
                       "knockouts": {
@@ -242,6 +243,7 @@
                           "type": "object",
                           "properties": {
                             "matchId": { "type": "integer" },
+                            "matchLabel": { "type": "string" },
                             "cards": {
                               "type": "array",
                               "items": {
@@ -312,7 +314,7 @@
                             "umpireTeam": { "type": "string" },
                             "outcome": { "type": "string", "enum": ["played", "scheduled", "not played", "skipped"] }
                           },
-                          "required": ["matchId", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
+                          "required": ["matchId", "matchLabel", "cards", "pool", "bracket", "stage", "planned", "actual", "team1", "team2", "umpireTeam", "outcome"]
                         }
                       }
                     },

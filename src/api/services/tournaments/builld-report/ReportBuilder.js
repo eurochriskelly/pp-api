@@ -1,5 +1,5 @@
 const { friendlyTeamLabel } = require('./utils/teamFormatting');
-const { calcBracket, calcStage, getMatchStatus } = require('./utils/stageFormatting');
+const { calcBracket, calcStage, getMatchStatus, generateMatchLabel } = require('./utils/stageFormatting');
 const { calculateStandings } = require('./utils/standingsCalculation');
 const { calculateTeamSummary } = require('./utils/teamSummaryCalculation');
 
@@ -207,6 +207,7 @@ class ReportBuilder {
 
       const transformedFixture = {
         matchId: f.id,
+        matchLabel: generateMatchLabel(f.category, f.id),
         cards: cardsByFixtureId.get(f.id) || [],
         pool: f.stage === 'group' ? f.groupNumber : null, // Use groupNumber for pool in group stage
         bracket: calcBracket(f.stage), 
