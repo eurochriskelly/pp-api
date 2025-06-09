@@ -103,9 +103,10 @@
                                 "team2": { "type": "string" },
                                 "umpireTeam": { "type": "string" },
                                 "scheduled": { "type": "string", "format": "date-time" },
-                                "pitch": { "type": "string" }
+                                "pitch": { "type": "string" },
+                                "duration": { "type": ["integer", "null"] }
                               },
-                              "required": ["team1", "team2", "umpireTeam", "scheduled", "pitch"]
+                              "required": ["team1", "team2", "umpireTeam", "scheduled", "pitch", "duration"]
                             },
                             "actual": {
                               "type": "object",
@@ -113,9 +114,10 @@
                                 "scheduled": { "type": "string", "format": "date-time" },
                                 "pitch": { "type": "string" },
                                 "started": { "type": "string", "format": "date-time" },
-                                "ended": { "type": "string", "format": "date-time" }
+                                "ended": { "type": "string", "format": "date-time" },
+                                "duration": { "type": ["number", "null"] }
                               },
-                              "required": ["scheduled", "pitch", "started", "ended"]
+                              "required": ["scheduled", "pitch", "started", "ended", "duration"]
                             },
                             "team1": {
                               "type": "object",
@@ -167,9 +169,10 @@
                                 "team2": { "type": "string" },
                                 "umpireTeam": { "type": "string" },
                                 "scheduled": { "type": "string", "format": "date-time" },
-                                "pitch": { "type": "string" }
+                                "pitch": { "type": "string" },
+                                "duration": { "type": ["integer", "null"] }
                               },
-                              "required": ["team1", "team2", "umpireTeam", "scheduled", "pitch"]
+                              "required": ["team1", "team2", "umpireTeam", "scheduled", "pitch", "duration"]
                             },
                             "actual": {
                               "type": "object",
@@ -177,9 +180,10 @@
                                 "scheduled": { "type": "string", "format": "date-time" },
                                 "pitch": { "type": "string" },
                                 "started": { "type": "string", "format": "date-time" },
-                                "ended": { "type": "string", "format": "date-time" }
+                                "ended": { "type": "string", "format": "date-time" },
+                                "duration": { "type": ["number", "null"] }
                               },
-                              "required": ["scheduled", "pitch", "started", "ended"]
+                              "required": ["scheduled", "pitch", "started", "ended", "duration"]
                             },
                             "team1": {
                               "type": "object",
