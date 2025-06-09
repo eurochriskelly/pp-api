@@ -1,0 +1,564 @@
+{
+  "data": {
+    "tournamentId": "34",
+    "tournament": {
+      "eventUuid": "3e2e7421-f277-4b7e-a3b6-bfc5e482f20f",
+      "status": "new",
+      "date": "2025-06-15T22:00:00.000Z",
+      "title": "Super small mini tournament",
+      "season": null,
+      "location": {
+        "region": "Benelux",
+        "address": "Austria",
+        "lat": 1,
+        "lon": 1
+      },
+      "pointsFor": { "win": 2, "draw": 1, "loss": 0 }
+    },
+    "pitches": [
+      { "pitch": "PITCH 1", "id": 1813, "location": null },
+      { "pitch": "PITCH 2", "id": 1819, "location": null },
+      { "pitch": "PITCH 3", "id": 1820, "location": null },
+      { "pitch": "PITCH 4", "id": 1817, "location": null },
+      { "pitch": "PITCH 5", "id": 1815, "location": null }
+    ],
+    "categories": [
+      {
+        "category": "LADIES",
+        "teams": {
+          "allTeams": ["TEAM A", "TEAM B"],
+          "byGroup": [{ "group": 1, "teams": ["TEAM A", "TEAM B"] }]
+        },
+        "fixtures": {
+          "lastUpdated": "2025-06-09T11:35:28.000Z",
+          "totals": { "group": 1, "knockouts": 0 },
+          "stage": {
+            "group": [
+              {
+                "matchId": 341001,
+                "pool": 1,
+                "bracket": "group",
+                "stage": "GP.1",
+                "planned": {
+                  "team1": "TEAM A",
+                  "team2": "TEAM B",
+                  "umpireTeam": "TEAM C",
+                  "scheduled": "2025-01-01T10:30:00.000Z",
+                  "pitch": "PITCH 5"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T10:30:00.000Z",
+                  "pitch": "PITCH 5",
+                  "started": "2025-06-09T11:35:28.000Z",
+                  "ended": "2025-06-09T11:35:28.000Z"
+                },
+                "team1": {
+                  "name": "TEAM A",
+                  "goals": 2,
+                  "points": 1,
+                  "total": 7,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "team2": {
+                  "name": "TEAM B",
+                  "goals": 5,
+                  "points": 1,
+                  "total": 16,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "umpireTeam": "TEAM C",
+                "outcome": "played"
+              }
+            ],
+            "knockouts": []
+          }
+        },
+        "standings": {
+          "byGroup": {
+            "GP.1": [
+              {
+                "team": "TEAM B",
+                "matchesPlayed": 1,
+                "won": 1,
+                "draw": 0,
+                "loss": 0,
+                "scoreFor": 16,
+                "scoreAgainst": 7,
+                "scoreDifference": 9,
+                "points": 2
+              },
+              {
+                "team": "TEAM A",
+                "matchesPlayed": 1,
+                "won": 0,
+                "draw": 0,
+                "loss": 1,
+                "scoreFor": 7,
+                "scoreAgainst": 16,
+                "scoreDifference": -9,
+                "points": 0
+              }
+            ]
+          },
+          "allGroups": [
+            {
+              "team": "TEAM B",
+              "matchesPlayed": 1,
+              "won": 1,
+              "draw": 0,
+              "loss": 0,
+              "scoreFor": 16,
+              "scoreAgainst": 7,
+              "scoreDifference": 9,
+              "points": 2
+            },
+            {
+              "team": "TEAM A",
+              "matchesPlayed": 1,
+              "won": 0,
+              "draw": 0,
+              "loss": 1,
+              "scoreFor": 7,
+              "scoreAgainst": 16,
+              "scoreDifference": -9,
+              "points": 0
+            }
+          ]
+        }
+      },
+      {
+        "category": "MEN",
+        "teams": {
+          "allTeams": ["TEAM A", "TEAM B", "TEAM C", "TEAM D", "TEAM E"],
+          "byGroup": [
+            { "group": 1, "teams": ["TEAM A", "TEAM B", "TEAM C"] },
+            { "group": 2, "teams": ["TEAM D", "TEAM E"] }
+          ]
+        },
+        "fixtures": {
+          "lastUpdated": "2025-06-09T11:35:24.000Z",
+          "totals": { "group": 4, "knockouts": 3 },
+          "stage": {
+            "group": [
+              {
+                "matchId": 340001,
+                "pool": 1,
+                "bracket": "group",
+                "stage": "GP.1",
+                "planned": {
+                  "team1": "TEAM A",
+                  "team2": "TEAM B",
+                  "umpireTeam": "TEAM C",
+                  "scheduled": "2025-01-01T09:00:00.000Z",
+                  "pitch": "PITCH 1"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T09:00:00.000Z",
+                  "pitch": "PITCH 1",
+                  "started": "2025-06-09T11:35:21.000Z",
+                  "ended": "2025-06-09T11:35:21.000Z"
+                },
+                "team1": {
+                  "name": "TEAM A",
+                  "goals": 0,
+                  "points": 20,
+                  "total": 20,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "team2": {
+                  "name": "TEAM B",
+                  "goals": 1,
+                  "points": 1,
+                  "total": 4,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "umpireTeam": "TEAM C",
+                "outcome": "played"
+              },
+              {
+                "matchId": 340002,
+                "pool": 1,
+                "bracket": "group",
+                "stage": "GP.1",
+                "planned": {
+                  "team1": "TEAM C",
+                  "team2": "TEAM B",
+                  "umpireTeam": "TEAM X",
+                  "scheduled": "2025-01-01T09:50:00.000Z",
+                  "pitch": "PITCH 1"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T09:50:00.000Z",
+                  "pitch": "PITCH 1",
+                  "started": "2025-06-09T11:35:21.000Z",
+                  "ended": "2025-06-09T11:35:21.000Z"
+                },
+                "team1": {
+                  "name": "TEAM C",
+                  "goals": 1,
+                  "points": 1,
+                  "total": 4,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "team2": {
+                  "name": "TEAM B",
+                  "goals": 0,
+                  "points": 5,
+                  "total": 5,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "umpireTeam": "TEAM X",
+                "outcome": "played"
+              },
+              {
+                "matchId": 340003,
+                "pool": 1,
+                "bracket": "group",
+                "stage": "GP.1",
+                "planned": {
+                  "team1": "TEAM A",
+                  "team2": "TEAM C",
+                  "umpireTeam": "TEAM B",
+                  "scheduled": "2025-01-01T11:00:00.000Z",
+                  "pitch": "PITCH 1"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T11:00:00.000Z",
+                  "pitch": "PITCH 1",
+                  "started": "2025-06-09T11:35:22.000Z",
+                  "ended": "2025-06-09T11:35:22.000Z"
+                },
+                "team1": {
+                  "name": "TEAM A",
+                  "goals": 2,
+                  "points": 18,
+                  "total": 24,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "team2": {
+                  "name": "TEAM C",
+                  "goals": 0,
+                  "points": 4,
+                  "total": 4,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "umpireTeam": "TEAM B",
+                "outcome": "played"
+              },
+              {
+                "matchId": 340004,
+                "pool": 2,
+                "bracket": "group",
+                "stage": "GP.2",
+                "planned": {
+                  "team1": "TEAM D",
+                  "team2": "TEAM E",
+                  "umpireTeam": "TEAM C",
+                  "scheduled": "2025-01-01T11:30:00.000Z",
+                  "pitch": "PITCH 4"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T11:30:00.000Z",
+                  "pitch": "PITCH 4",
+                  "started": "2025-06-09T11:35:22.000Z",
+                  "ended": "2025-06-09T11:35:23.000Z"
+                },
+                "team1": {
+                  "name": "TEAM D",
+                  "goals": 3,
+                  "points": 14,
+                  "total": 23,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "team2": {
+                  "name": "TEAM E",
+                  "goals": 4,
+                  "points": 16,
+                  "total": 28,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "umpireTeam": "TEAM C",
+                "outcome": "played"
+              }
+            ],
+            "knockouts": [
+              {
+                "matchId": 340007,
+                "pool": null,
+                "bracket": "Cup",
+                "stage": "FIN",
+                "planned": {
+                  "team1": "~match:340006/p:1",
+                  "team2": "~match:340005/p:1",
+                  "umpireTeam": "~match:340006/p:2",
+                  "scheduled": "2025-01-01T14:30:00.000Z",
+                  "pitch": "PITCH 3"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T14:30:00.000Z",
+                  "pitch": "PITCH 3",
+                  "started": "2025-06-09T11:35:24.000Z",
+                  "ended": "2025-06-09T11:35:24.000Z"
+                },
+                "team1": {
+                  "name": "TEAM B",
+                  "goals": 3,
+                  "points": 17,
+                  "total": 26,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "team2": {
+                  "name": "TEAM E",
+                  "goals": 0,
+                  "points": 12,
+                  "total": 12,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "umpireTeam": "TEAM D",
+                "outcome": "played"
+              },
+              {
+                "matchId": 340005,
+                "pool": null,
+                "bracket": "Cup",
+                "stage": "SF1",
+                "planned": {
+                  "team1": "~group:1/p:1",
+                  "team2": "~group:2/p:1",
+                  "umpireTeam": "~group:1/p:2",
+                  "scheduled": "2025-01-01T12:15:00.000Z",
+                  "pitch": "PITCH 1"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T12:15:00.000Z",
+                  "pitch": "PITCH 1",
+                  "started": "2025-06-09T11:35:23.000Z",
+                  "ended": "2025-06-09T11:35:23.000Z"
+                },
+                "team1": {
+                  "name": "TEAM A",
+                  "goals": 4,
+                  "points": 12,
+                  "total": 24,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "team2": {
+                  "name": "TEAM E",
+                  "goals": 4,
+                  "points": 16,
+                  "total": 28,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "umpireTeam": "TEAM B",
+                "outcome": "played"
+              },
+              {
+                "matchId": 340006,
+                "pool": null,
+                "bracket": "Cup",
+                "stage": "SF2",
+                "planned": {
+                  "team1": "~group:2/p:2",
+                  "team2": "~group:1/p:2",
+                  "umpireTeam": "~group:1/p:3",
+                  "scheduled": "2025-01-01T13:15:00.000Z",
+                  "pitch": "PITCH 2"
+                },
+                "actual": {
+                  "scheduled": "2025-01-01T13:15:00.000Z",
+                  "pitch": "PITCH 2",
+                  "started": "2025-06-09T11:35:23.000Z",
+                  "ended": "2025-06-09T11:35:24.000Z"
+                },
+                "team1": {
+                  "name": "TEAM D",
+                  "goals": 1,
+                  "points": 12,
+                  "total": 15,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "won"
+                },
+                "team2": {
+                  "name": "TEAM B",
+                  "goals": 3,
+                  "points": 1,
+                  "total": 10,
+                  "goalsExtra": null,
+                  "pointsExtra": null,
+                  "goalsPenalties": null,
+                  "status": "lost"
+                },
+                "umpireTeam": "TEAM C",
+                "outcome": "played"
+              }
+            ]
+          }
+        },
+        "standings": {
+          "byGroup": {
+            "GP.1": [
+              {
+                "team": "TEAM A",
+                "matchesPlayed": 2,
+                "won": 2,
+                "draw": 0,
+                "loss": 0,
+                "scoreFor": 44,
+                "scoreAgainst": 8,
+                "scoreDifference": 36,
+                "points": 4
+              },
+              {
+                "team": "TEAM B",
+                "matchesPlayed": 2,
+                "won": 1,
+                "draw": 0,
+                "loss": 1,
+                "scoreFor": 9,
+                "scoreAgainst": 24,
+                "scoreDifference": -15,
+                "points": 2
+              },
+              {
+                "team": "TEAM C",
+                "matchesPlayed": 2,
+                "won": 0,
+                "draw": 0,
+                "loss": 2,
+                "scoreFor": 8,
+                "scoreAgainst": 29,
+                "scoreDifference": -21,
+                "points": 0
+              }
+            ],
+            "GP.2": [
+              {
+                "team": "TEAM E",
+                "matchesPlayed": 1,
+                "won": 1,
+                "draw": 0,
+                "loss": 0,
+                "scoreFor": 28,
+                "scoreAgainst": 23,
+                "scoreDifference": 5,
+                "points": 2
+              },
+              {
+                "team": "TEAM D",
+                "matchesPlayed": 1,
+                "won": 0,
+                "draw": 0,
+                "loss": 1,
+                "scoreFor": 23,
+                "scoreAgainst": 28,
+                "scoreDifference": -5,
+                "points": 0
+              }
+            ]
+          },
+          "allGroups": [
+            {
+              "team": "TEAM A",
+              "matchesPlayed": 2,
+              "won": 2,
+              "draw": 0,
+              "loss": 0,
+              "scoreFor": 44,
+              "scoreAgainst": 8,
+              "scoreDifference": 36,
+              "points": 4
+            },
+            {
+              "team": "TEAM E",
+              "matchesPlayed": 1,
+              "won": 1,
+              "draw": 0,
+              "loss": 0,
+              "scoreFor": 28,
+              "scoreAgainst": 23,
+              "scoreDifference": 5,
+              "points": 2
+            },
+            {
+              "team": "TEAM B",
+              "matchesPlayed": 2,
+              "won": 1,
+              "draw": 0,
+              "loss": 1,
+              "scoreFor": 9,
+              "scoreAgainst": 24,
+              "scoreDifference": -15,
+              "points": 2
+            },
+            {
+              "team": "TEAM D",
+              "matchesPlayed": 1,
+              "won": 0,
+              "draw": 0,
+              "loss": 1,
+              "scoreFor": 23,
+              "scoreAgainst": 28,
+              "scoreDifference": -5,
+              "points": 0
+            },
+            {
+              "team": "TEAM C",
+              "matchesPlayed": 2,
+              "won": 0,
+              "draw": 0,
+              "loss": 2,
+              "scoreFor": 8,
+              "scoreAgainst": 29,
+              "scoreDifference": -21,
+              "points": 0
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

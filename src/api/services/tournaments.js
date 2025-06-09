@@ -125,6 +125,7 @@ const deleteFixtures = async (dbDelete, tournamentId) => {
 
 const deletePitches = async (dbDelete, tournamentId) => {
   try {
+    console.log('deleting piteche from tournament ', tournamentId)
     const result = await dbDelete(
       `DELETE FROM pitches WHERE tournamentId = ?`,
       [tournamentId]
@@ -178,6 +179,7 @@ module.exports = (db) => {
     },
    // Create multiple fixtures for a tournament
     createFixtures: async (tournamentId, fixtureRows) => {
+      DD(`Creating fixtures for tournament with id ${tournamentId}`);
       try {
         const pitches = fixtureRows.map(row => {
           return {
