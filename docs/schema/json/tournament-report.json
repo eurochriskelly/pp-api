@@ -79,9 +79,66 @@
                       },
                       "required": ["bracket", "teams"]
                     }
+                  },
+                  "summary": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "team": { "type": "string" },
+                        "playingTime": { "type": "number" },
+                        "matchesPlayed": { "type": "integer" },
+                        "progression": {
+                          "type": "object",
+                          "properties": {
+                            "group": { "type": ["integer", "null"] },
+                            "bracket": { "type": ["string", "null"] }
+                          },
+                          "required": ["group", "bracket"]
+                        },
+                        "totalScore": {
+                          "type": "object",
+                          "properties": {
+                            "for": {
+                              "type": "object",
+                              "properties": {
+                                "goals": { "type": "integer" },
+                                "points": { "type": "integer" },
+                                "score": { "type": "integer" }
+                              },
+                              "required": ["goals", "points", "score"]
+                            },
+                            "against": {
+                              "type": "object",
+                              "properties": {
+                                "goals": { "type": "integer" },
+                                "points": { "type": "integer" },
+                                "score": { "type": "integer" }
+                              },
+                              "required": ["goals", "points", "score"]
+                            },
+                            "scoreDifference": { "type": "integer" },
+                            "scoreGainRatePerMinute": { "type": "number" },
+                            "scoreLossRatePerMinute": { "type": "number" },
+                            "scoreNetRatePerMinute": { "type": "number" }
+                          },
+                          "required": ["for", "against", "scoreDifference", "scoreGainRatePerMinute", "scoreLossRatePerMinute", "scoreNetRatePerMinute"]
+                        },
+                        "cards": {
+                          "type": "object",
+                          "properties": {
+                            "yellow": { "type": "integer" },
+                            "red": { "type": "integer" },
+                            "black": { "type": "integer" }
+                          },
+                          "required": ["yellow", "red", "black"]
+                        }
+                      },
+                      "required": ["team", "playingTime", "matchesPlayed", "progression", "totalScore", "cards"]
+                    }
                   }
                 },
-                "required": ["allTeams", "byGroup", "byBracket"]
+                "required": ["allTeams", "byGroup", "byBracket", "summary"]
               },
               "fixtures": {
                 "type": "object",
