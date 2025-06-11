@@ -157,6 +157,7 @@ function calculateMockLifecycleStatus(mockStatus, startDateString, endDateString
 
 module.exports = () => {
   const { II } = require('../../../lib/logging'); // Ensure II is available if not already
+  const { generateFixturesForCompetition } = require('../tournaments/generate-fixtures.js');
 
   return {
     createTournament: async (tournament) => {
@@ -216,6 +217,13 @@ module.exports = () => {
           players: 120
         }
       };
+    },
+
+    generateFixtures: async (competition) => {
+      II(`Mock: Generating fixtures for competition [${competition.name}]`);
+      // The generation logic is pure, so we can reuse it directly in the mock.
+      const hydratedCompetition = generateFixturesForCompetition(competition);
+      return Promise.resolve(hydratedCompetition);
     },
 
     getFilters: async (tournamentId, role, category) => {

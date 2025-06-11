@@ -70,6 +70,12 @@ module.exports = (db, useMock) => {
       return { data: report };
     }),
 
+    generateFixtures: handleRoute(async (req) => {
+      const competitionData = req.body;
+      const hydratedCompetition = await dbSvc.generateFixtures(competitionData);
+      return { data: hydratedCompetition };
+    }, 200),
+
     getFilters: handleRoute(async (req) => {
       const { tournamentId } = req.params;
       const { role, category } = req.query;
@@ -422,5 +428,3 @@ function handleRoute(logic, successStatus = 200) {
     }
   };
 }
-
-

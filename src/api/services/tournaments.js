@@ -5,6 +5,7 @@ const { buildReport } = require('./tournaments/builld-report/index.js');
 const { sqlGroupStandings } = require('../../lib/queries');
 const TSVValidator = require('./fixtures/validate-tsv');
 const { buildFixturesInsertSQL } = require('./tournaments/import-fixtures.js');
+const { generateFixturesForCompetition } = require('./tournaments/generate-fixtures.js');
 
 // Helper function to calculate lifecycle status
 function calculateLifecycleStatus(dbStatus, startDateString, endDateString) {
@@ -391,6 +392,11 @@ module.exports = (db) => {
         `DELETE FROM tournaments WHERE id = ?`,
         [id]
       );
+    },
+
+    generateFixtures: async (competition) => {
+      // The logic is synchronous, but we wrap in async to be consistent with other service methods.
+      return Promise.resolve(generateFixturesForCompetition(competition));
     },
 
     getAllMatches: async (id) => {
