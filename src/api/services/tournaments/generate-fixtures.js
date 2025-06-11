@@ -1,7 +1,8 @@
 const { v4: uuidv4 } = require('uuid');
 
 /**
- * Generates round-robin fixtures for a single group.
+ * Generates round-robin fixtures for a single group using the circle method (Berger tables).
+ * This ensures a more balanced schedule than a simple nested loop.
  * @param {string[]} teamIds - Array of team IDs in the group.
  * @param {number} duration - Match duration.
  * @returns {object[]} Array of generated fixture objects.
@@ -12,16 +13,44 @@ function generateGroupFixtures(teamIds, duration) {
     return fixtures;
   }
 
-  for (let i = 0; i < teamIds.length; i++) {
-    for (let j = i + 1; j < teamIds.length; j++) {
-      fixtures.push({
-        id: uuidv4(),
-        team1Id: teamIds[i],
-        team2Id: teamIds[j],
-        duration: duration,
-      });
-    }
+  const teams = [...teamIds];
+  const BYE = null; // Represents a bye
+
+  // If there's an odd number of teams, add a "bye" team to make it even.
+  if (teams.length % 2 !== 0) {
+    teams.push(BYE);
   }
+
+  const n = teams.length;
+  const numRounds = n - 1;
+  const half = n / 2;
+
+  const teamList = [...teams];
+
+  for (let round = 0; round < numRounds; round++) {
+    for (let i = 0; i < half; i++) {
+      const team1 = teamList[i];
+      const team2 = teamList[n - 1 - i];
+
+      // Only create a fixture if neither team is a bye
+      if (team1 !== BYE && team2 !== BYE) {
+        fixtures.push({
+          id: uuidv4(),
+          team1Id: team1,
+          team2Id: team2,
+          duration: duration,
+        });
+      }
+    }
+
+    // Rotate teams for the next round, keeping the first team fixed.
+    // The last element moves to the second position, and the others shift down.
+    const firstTeam = teamList.shift();
+    const lastTeam = teamList.pop();
+    teamList.unshift(lastTeam);
+    teamList.unshift(firstTeam);
+  }
+
   return fixtures;
 }
 
