@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const fs = require("fs");
 const morgan = require("morgan");
+const cors = require("cors");
 const tournamentRoutes = require("./routes/tournaments");
 const fixtureRoutes = require("./routes/fixtures");
 const regionRoutes = require("./routes/regions");
@@ -15,6 +16,7 @@ app.use(bodyParser.json());
 
 module.exports = (db, ARGS) => {
   II(`Setting up API endpoints. Mock mode: ${ARGS.useMock}`);
+  app.use(cors());
   app.use(morgan('dev'));
   console.log('Serving static path: ' + ARGS.staticPath);
   app.use(express.static(ARGS.staticPath));
