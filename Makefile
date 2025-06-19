@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup
+.PHONY: help start mocks logs backup clean
 
 DEFAULT_GOAL := help
 
@@ -7,7 +7,6 @@ help:  ## Show this help menu
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-start:  ## Start server with auto-restart (usage: make start [env=production|acceptance])
 mocks:  ## Start server in mock mode (usage: make mocks [port=NUMBER])
 	port=$${port:-4000}; \
 	PP_DBN=MockTourno ./scripts/start-server.sh $$port mobile true MockTourno
@@ -34,6 +33,10 @@ start:  ## Start server with auto-restart (usage: make start [env=production|acc
 
 backup:  ## Create a database backup
 	npm run backup
+
+clean: ## Remove cache directory
+	@echo "Removing cache directory..."
+	@rm -rf ./cache
 
 logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 	@if [ -z "$(env)" ]; then \
