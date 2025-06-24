@@ -18,7 +18,16 @@ const run = async () => {
     db.connect((err) => {
       if (err) {
         // This error is expected if DB is not running or accessible.
-        console.error("Error connecting to the database: ", err);
+        console.error(
+          `Error connecting to the database.
+          Please check the following:
+          1. Is the database server running?
+          2. Are you connected to the correct network or VPN?
+          3. Are the credentials in your environment correct?
+          
+          Original error:`,
+          err
+        );
         return;
       }
       console.log("Connected to the MySQL server.");
