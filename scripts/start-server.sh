@@ -68,7 +68,7 @@ while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
   echo "-----------------------------------------"
 
   # Now start the server
-  if node src/server.js \
+  if node dist/server.js \
     --port="$PORT" \
     --app="$APP" \
     --use-mock="$USE_MOCK" \

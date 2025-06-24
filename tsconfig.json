@@ -4,12 +4,11 @@
     "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
-    "allowJs": true,
-    "checkJs": true,
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
