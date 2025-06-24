@@ -1,7 +1,7 @@
-const express = require('express');
-const tournamentController = require('../controllers/tournaments');
+import express from 'express';
+import tournamentController from '../controllers/tournaments';
 
-module.exports = (db, useMock) => {
+export default (db: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
   const ctrl = tournamentController(db, useMock);
   router.post('/', ctrl.createTournament);
