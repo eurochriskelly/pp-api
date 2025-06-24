@@ -1,7 +1,5 @@
-const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { sqlGroupStandings } = require('../../lib/queries');
-const { jsonToCsv } = require('../../lib/utils');
 
 module.exports = (db) => {
   const { select } = dbHelper(db);
@@ -13,9 +11,9 @@ module.exports = (db) => {
      * @param {string} tournamentId - The ID of the tournament.
      * @param {string} category - The category of the teams.
      * @param {string} stage - can be "group", "playoffs", "knockout"
-     * @param {number} group - 
+     * @param {number} group -
      *    For "group", this will be a number.
-     *    For "playoffs", this will be 0. 
+     *    For "playoffs", this will be 0.
      *    For "knockout", this will be one of "cup", "shield", "plate", "bowl", "spoon".
      * @returns {Promise<Array>} - A promise that resolves to an array of teams.
      */
@@ -25,11 +23,20 @@ module.exports = (db) => {
       if (stage === 'knockout' && typeof normGroup === 'string') {
         switch (normGroup.toLowerCase()) {
           case 'shield':
-          case 'sld': normGroup = 'shd'; break;
-          case 'plate': normGroup = 'plt'; break;
-          case 'bowl': normGroup = 'bwl'; break;
-          case 'spoon': normGroup = 'spn'; break;
-          default: break;
+          case 'sld':
+            normGroup = 'shd';
+            break;
+          case 'plate':
+            normGroup = 'plt';
+            break;
+          case 'bowl':
+            normGroup = 'bwl';
+            break;
+          case 'spoon':
+            normGroup = 'spn';
+            break;
+          default:
+            break;
         }
       }
       // build dynamic WHERE clause
@@ -63,7 +70,7 @@ module.exports = (db) => {
       `;
       console.log('paarms', params);
       const teams = await select(sql, [...params, ...params]);
-      return teams.map(t => t.team).sort();
+      return teams.map((t) => t.team).sort();
     },
 
     listPitches: async (tournamentId) => {
@@ -72,14 +79,13 @@ module.exports = (db) => {
         [tournamentId]
       );
       if (pitchEvents.length) return pitchEvents;
-      return await select(
-        `SELECT * FROM pitches WHERE tournamentId = ?`,
-        [tournamentId]
-      );
+      return await select(`SELECT * FROM pitches WHERE tournamentId = ?`, [
+        tournamentId,
+      ]);
     },
 
     listStandings: async (tournamentId, category) => {
-      const extra = category ? ` AND category = ?` : "";
+      const extra = category ? ` AND category = ?` : '';
       const params = category ? [tournamentId, category] : [tournamentId];
       const [groups, standings] = await Promise.all([
         select(
@@ -89,12 +95,12 @@ module.exports = (db) => {
         select(
           `SELECT * FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ? ${extra}`,
           params
-        )
+        ),
       ]);
-      return { 
-        groups: groups.map(g => g.category), 
-        data: standings 
+      return {
+        groups: groups.map((g) => g.category),
+        data: standings,
       };
-    }
+    },
   };
 };

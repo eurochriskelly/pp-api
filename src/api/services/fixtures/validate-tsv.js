@@ -31,12 +31,46 @@ const warn = (type, message, row = null, column = null) => ({
 
 /* —— main class —— */
 class TSVValidator {
-  static REQ = ['TIME', 'MATCH', 'CATEGORY', 'PITCH', 'TEAM1', 'STAGE', 'TEAM2', 'UMPIRES', 'DURATION'];
+  static REQ = [
+    'TIME',
+    'MATCH',
+    'CATEGORY',
+    'PITCH',
+    'TEAM1',
+    'STAGE',
+    'TEAM2',
+    'UMPIRES',
+    'DURATION',
+  ];
   static OPT = ['REFEREE'];
   static KO_CODES = new Set([
-    'FIN', 'SF1', 'SF2', 'QF1', 'QF2', 'QF3', 'QF4',
-    'EF1', 'EF2', 'EF3', 'EF4', 'EF5', 'EF6', 'EF7', 'EF8',
-    '3/4', '4/5', '5/6', '6/7', '7/8', '8/9', '9/10', '10/11', '11/12', '12/13', '13/14', 'P/O',
+    'FIN',
+    'SF1',
+    'SF2',
+    'QF1',
+    'QF2',
+    'QF3',
+    'QF4',
+    'EF1',
+    'EF2',
+    'EF3',
+    'EF4',
+    'EF5',
+    'EF6',
+    'EF7',
+    'EF8',
+    '3/4',
+    '4/5',
+    '5/6',
+    '6/7',
+    '7/8',
+    '8/9',
+    '9/10',
+    '10/11',
+    '11/12',
+    '12/13',
+    '13/14',
+    'P/O',
   ]);
 
   constructor(b64, options = {}) {
@@ -47,7 +81,7 @@ class TSVValidator {
       ...options,
     };
     this.raw = Buffer.from(b64, 'base64').toString('utf8');
-    this.lines = this.raw.split(/\r?\n/).filter(l => l.trim().length);
+    this.lines = this.raw.split(/\r?\n/).filter((l) => l.trim().length);
     this.rows = [];
     this.warnings = [];
     this.catMatchLetter = new Map();
@@ -73,14 +107,15 @@ class TSVValidator {
 
     // If essential headers for pre-scan are missing, some validations might be incomplete.
     // _hdr() would have already warned about missing REQ headers.
-    const essentialHeadersPresent = categoryHdrIdx !== undefined &&
-                                  stageHdrIdx !== undefined &&
-                                  matchHdrIdx !== undefined;
-                                  // TEAM1 & TEAM2 are needed for preScannedCatGroupTeams
+    const essentialHeadersPresent =
+      categoryHdrIdx !== undefined &&
+      stageHdrIdx !== undefined &&
+      matchHdrIdx !== undefined;
+    // TEAM1 & TEAM2 are needed for preScannedCatGroupTeams
 
     for (let i = 1; i < this.lines.length; i++) {
       const cols = this.lines[i].split('\t');
-      if (cols.every(c => !c.trim())) continue; // skip blank lines
+      if (cols.every((c) => !c.trim())) continue; // skip blank lines
 
       if (!essentialHeadersPresent) continue; // Cannot reliably pre-scan without these headers
 
@@ -93,11 +128,12 @@ class TSVValidator {
       if (matchParts) {
         const matchId = `${matchParts[1]}.${Number(matchParts[2])}`;
         if (!this.preScannedCatMatches.has(catVal)) {
-            this.preScannedCatMatches.set(catVal, new Map());
+          this.preScannedCatMatches.set(catVal, new Map());
         }
         const catMatchMap = this.preScannedCatMatches.get(catVal);
-        if (!catMatchMap.has(matchId)) { // Store first occurrence row index
-            catMatchMap.set(matchId, i); // i is 1-based line index from this.lines
+        if (!catMatchMap.has(matchId)) {
+          // Store first occurrence row index
+          catMatchMap.set(matchId, i); // i is 1-based line index from this.lines
         }
       }
 
@@ -127,10 +163,11 @@ class TSVValidator {
               categoryGroupTeams.set(groupNum, new Set());
             }
             const teamsInGroupSet = categoryGroupTeams.get(groupNum);
-            if (team1Val && this._isRealTeam(team1Val)) teamsInGroupSet.add(team1Val);
-            if (team2Val && this._isRealTeam(team2Val)) teamsInGroupSet.add(team2Val);
+            if (team1Val && this._isRealTeam(team1Val))
+              teamsInGroupSet.add(team1Val);
+            if (team2Val && this._isRealTeam(team2Val))
+              teamsInGroupSet.add(team2Val);
           }
-
         } else if (TSVValidator.KO_CODES.has(partB)) {
           if (!this.preScannedCatBrackets.has(catVal)) {
             this.preScannedCatBrackets.set(catVal, new Set());
@@ -147,7 +184,7 @@ class TSVValidator {
     this._preScanRows(); // Pre-scan for context
     for (let i = 1; i < this.lines.length; i++) {
       const cols = this.lines[i].split('\t');
-      if (cols.every(c => !c.trim())) continue; // skip blank
+      if (cols.every((c) => !c.trim())) continue; // skip blank
       this.rows.push(this._row(cols, i));
     }
     this._cross();
@@ -160,12 +197,17 @@ class TSVValidator {
       this.warnings.push(warn('integrity', 'Empty file'));
       return false;
     }
-    const hdr = this.lines[0].split('\t').map(h => h.trim().toUpperCase());
-    const missing = TSVValidator.REQ.filter(h => !hdr.includes(h));
+    const hdr = this.lines[0].split('\t').map((h) => h.trim().toUpperCase());
+    const missing = TSVValidator.REQ.filter((h) => !hdr.includes(h));
     if (missing.length) {
-      this.warnings.push(warn('integrity', `Missing header(s): ${missing.join(', ')}`));
+      this.warnings.push(
+        warn('integrity', `Missing header(s): ${missing.join(', ')}`)
+      );
     }
-    this.header = [...TSVValidator.REQ, ...TSVValidator.OPT.filter(o => hdr.includes(o))];
+    this.header = [
+      ...TSVValidator.REQ,
+      ...TSVValidator.OPT.filter((o) => hdr.includes(o)),
+    ];
     this.hdx = new Map();
     hdr.forEach((h, i) => this.hdx.set(h, i));
     return true;
@@ -191,16 +233,16 @@ class TSVValidator {
     put('TEAM2', this._team(c, r, 'TEAM2', cat.value, stg.value));
     put('UMPIRES', this._team(c, r, 'UMPIRES', cat.value, stg.value, true));
     put('DURATION', this._dur(c, r));
-    if (this.hdx.has('REFEREE')) put('REFEREE', this._pass('REFEREE', c, r, true));
+    if (this.hdx.has('REFEREE'))
+      put('REFEREE', this._pass('REFEREE', c, r, true));
     return out;
   }
 
   /* —— validators —— */
   _time(c, r) {
     const v = (c[this.hdx.get('TIME')] || '').trim();
-    const up = v.toUpperCase();
     return /^([01]\d|2[0-3]):[0-5]\d$/.test(v)
-      ? { value: up, warnings: [] }
+      ? { value: v.toUpperCase(), warnings: [] }
       : this._fw('TIME', r, `Invalid "${v}"`, v);
   }
 
@@ -217,13 +259,22 @@ class TSVValidator {
     if (cat) {
       const prev = this.catMatchLetter.get(cat);
       if (prev && prev !== m[1]) {
-        this.warnings.push(warn('integrity', `Category ${cat} previously ↔ ${prev}; now ${m[1]}`, r, 'MATCH'));
+        this.warnings.push(
+          warn(
+            'integrity',
+            `Category ${cat} previously ↔ ${prev}; now ${m[1]}`,
+            r,
+            'MATCH'
+          )
+        );
       }
       this.catMatchLetter.set(cat, m[1]);
       if (!this.catMatches.has(cat)) this.catMatches.set(cat, new Map());
       const map = this.catMatches.get(cat);
       if (map.has(id)) {
-        this.warnings.push(warn('integrity', `Duplicate match ${id} in ${cat}`, r, 'MATCH'));
+        this.warnings.push(
+          warn('integrity', `Duplicate match ${id} in ${cat}`, r, 'MATCH')
+        );
       }
       map.set(id, r);
     }
@@ -237,12 +288,14 @@ class TSVValidator {
     const [a, b] = p;
     let norm;
     if (a === 'GP') {
-      if (!/^\d+$/.test(b)) return this._fw('STAGE', r, 'Group id non-numeric', raw);
+      if (!/^\d+$/.test(b))
+        return this._fw('STAGE', r, 'Group id non-numeric', raw);
       norm = `GP.${Number(b)}`;
       if (!this.catGroups.has(cat)) this.catGroups.set(cat, new Set());
       this.catGroups.get(cat).add(Number(b));
     } else {
-      if (!TSVValidator.KO_CODES.has(b)) return this._fw('STAGE', r, `Unknown KO code ${b}`, raw);
+      if (!TSVValidator.KO_CODES.has(b))
+        return this._fw('STAGE', r, `Unknown KO code ${b}`, raw);
       norm = `${a}.${b}`;
       if (!this.catBrackets.has(cat)) this.catBrackets.set(cat, new Set());
       this.catBrackets.get(cat).add(a);
@@ -260,15 +313,24 @@ class TSVValidator {
       const up = raw.toUpperCase();
 
       // Check if team/umpire is valid against expectedTeams (if provided)
-      if (this.opts.expectedTeams?.has(cat) && this.opts.expectedTeams.get(cat).has(group)) {
+      if (
+        this.opts.expectedTeams?.has(cat) &&
+        this.opts.expectedTeams.get(cat).has(group)
+      ) {
         const validTeams = this.opts.expectedTeams.get(cat).get(group);
         if (!validTeams.has(up)) {
-          return this._fw(col, r, `Invalid ${isUmp ? 'umpire' : 'team'} "${raw}" for ${cat} GP.${group}`, up);
+          return this._fw(
+            col,
+            r,
+            `Invalid ${isUmp ? 'umpire' : 'team'} "${raw}" for ${cat} GP.${group}`,
+            up
+          );
         }
       }
 
       // Track team/umpire for completeness check
-      if (!isUmp) { // Only track TEAM1 and TEAM2 for team counts
+      if (!isUmp) {
+        // Only track TEAM1 and TEAM2 for team counts
         if (!this.catTeams.has(cat)) this.catTeams.set(cat, new Map());
         const groupTeams = this.catTeams.get(cat).get(group) || new Set();
         groupTeams.add(up);
@@ -285,15 +347,22 @@ class TSVValidator {
     // Check for WINNER/LOSER pattern
     const tok = up.split(/\s+/);
     if (['WINNER', 'LOSER'].includes(tok[0])) {
-      if (tok.length < 2) return this._fw(col, r, 'WINNER/LOSER needs match id', up);
+      if (tok.length < 2)
+        return this._fw(col, r, 'WINNER/LOSER needs match id', up);
       const mid = tok[1];
-      if (!/^[A-Z]+\.\d+$/.test(mid)) return this._fw(col, r, `Bad match id ${mid}`, up);
+      if (!/^[A-Z]+\.\d+$/.test(mid))
+        return this._fw(col, r, `Bad match id ${mid}`, up);
       if (!isUmp) {
         const preScannedMap = this.preScannedCatMatches.get(cat) || new Map();
         if (!preScannedMap.has(mid)) {
           // This warning is added directly to global warnings.
           // For cell-specific, it should be returned in the object.
-          const w = warn('integrity', `Unknown match ${mid} referenced in "${raw}"`, r, col);
+          const w = warn(
+            'integrity',
+            `Unknown match ${mid} referenced in "${raw}"`,
+            r,
+            col
+          );
           this.warnings.push(w);
           return { value: `${tok[0]} ${mid}`, warnings: [w] };
         }
@@ -308,32 +377,60 @@ class TSVValidator {
       const groupNum = parseInt(nthGpMatch[2], 10);
       const cellSpecificWarnings = [];
 
-      const categoryDeclaredGroups = this.preScannedCatGroups.get(cat) || new Set();
-      const categoryScannedTeamsInGroups = this.preScannedCatGroupTeams.get(cat);
+      const categoryDeclaredGroups =
+        this.preScannedCatGroups.get(cat) || new Set();
+      const categoryScannedTeamsInGroups =
+        this.preScannedCatGroupTeams.get(cat);
 
       if (!categoryDeclaredGroups.has(groupNum)) {
-        const w = warn('field', `Referenced group GP.${groupNum} in "${raw}" does not exist in category ${cat}.`, r, col);
+        const w = warn(
+          'field',
+          `Referenced group GP.${groupNum} in "${raw}" does not exist in category ${cat}.`,
+          r,
+          col
+        );
         this.warnings.push(w);
         cellSpecificWarnings.push(w);
       } else {
-        const teamsInGroupSet = categoryScannedTeamsInGroups ? categoryScannedTeamsInGroups.get(groupNum) : undefined;
+        const teamsInGroupSet = categoryScannedTeamsInGroups
+          ? categoryScannedTeamsInGroups.get(groupNum)
+          : undefined;
         const numTeamsInGroup = teamsInGroupSet ? teamsInGroupSet.size : 0;
 
-        if (pos === 0) { // Positions like "0TH" are invalid
-            const w = warn('field', `Invalid position "0TH" in "${raw}". Positions must be 1st or higher.`, r, col);
-            this.warnings.push(w);
-            cellSpecificWarnings.push(w);
+        if (pos === 0) {
+          // Positions like "0TH" are invalid
+          const w = warn(
+            'field',
+            `Invalid position "0TH" in "${raw}". Positions must be 1st or higher.`,
+            r,
+            col
+          );
+          this.warnings.push(w);
+          cellSpecificWarnings.push(w);
         } else if (numTeamsInGroup === 0 && pos > 0) {
-            const w = warn('field', `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group is declared but has no teams.`, r, col);
-            this.warnings.push(w);
-            cellSpecificWarnings.push(w);
+          const w = warn(
+            'field',
+            `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group is declared but has no teams.`,
+            r,
+            col
+          );
+          this.warnings.push(w);
+          cellSpecificWarnings.push(w);
         } else if (pos > numTeamsInGroup) {
-            const w = warn('field', `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group only has ${numTeamsInGroup} teams.`, r, col);
-            this.warnings.push(w);
-            cellSpecificWarnings.push(w);
+          const w = warn(
+            'field',
+            `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group only has ${numTeamsInGroup} teams.`,
+            r,
+            col
+          );
+          this.warnings.push(w);
+          cellSpecificWarnings.push(w);
         }
       }
-      return { value: up, warnings: cellSpecificWarnings.map(w => ({ ...w })) };
+      return {
+        value: up,
+        warnings: cellSpecificWarnings.map((w) => ({ ...w })),
+      };
     }
 
     // Check for BEST pattern (e.g., "1ST BEST 3RD")
@@ -356,20 +453,33 @@ class TSVValidator {
       const cellSpecificWarnings = [];
       const preScannedSet = this.preScannedCatGroups.get(cat) || new Set();
       if (!preScannedSet.has(g)) {
-        const w = warn('field', `Unknown group GP.${g} referenced in "${raw}" for category ${cat}.`, r, col);
+        const w = warn(
+          'field',
+          `Unknown group GP.${g} referenced in "${raw}" for category ${cat}.`,
+          r,
+          col
+        );
         this.warnings.push(w);
         cellSpecificWarnings.push(w);
       }
       // This path is taken if `up` contains GP.X but wasn't "NTH GP.X" or other specific patterns.
-      return { value: up, warnings: cellSpecificWarnings.map(w => ({ ...w })) };
+      return {
+        value: up,
+        warnings: cellSpecificWarnings.map((w) => ({ ...w })),
+      };
     }
 
-    return this._fw(col, r, 'Unrecognised token format for knock-out stage or umpire', up, false);
+    return this._fw(
+      col,
+      r,
+      'Unrecognised token format for knock-out stage or umpire',
+      up,
+      false
+    );
   }
 
   _dur(c, r) {
     const v = (c[this.hdx.get('DURATION')] || '').trim();
-    const up = v.toUpperCase();
     return /^\d+$/.test(v)
       ? { value: +v, warnings: [] } // Numeric, no uppercase needed
       : this._fw('DURATION', r, 'Non-numeric', v);
@@ -401,29 +511,51 @@ class TSVValidator {
     /* round-robin completeness */
     for (const [cat, groups] of this.catGroups.entries()) {
       for (const g of groups) {
-        const matches = this.rows.filter(r => r.CATEGORY.value === cat && r.STAGE.value === `GP.${g}`);
+        const matches = this.rows.filter(
+          (r) => r.CATEGORY.value === cat && r.STAGE.value === `GP.${g}`
+        );
         const teams = new Set();
-        matches.forEach(m => {
-          if (this._isRealTeam(m.TEAM1.value)) teams.add(m.TEAM1.value.toUpperCase());
-          if (this._isRealTeam(m.TEAM2.value)) teams.add(m.TEAM2.value.toUpperCase());
+        matches.forEach((m) => {
+          if (this._isRealTeam(m.TEAM1.value))
+            teams.add(m.TEAM1.value.toUpperCase());
+          if (this._isRealTeam(m.TEAM2.value))
+            teams.add(m.TEAM2.value.toUpperCase());
         });
         const n = teams.size;
 
         // Check expected number of teams
-        if (this.opts.expectedTeams?.has(cat) && this.opts.expectedTeams.get(cat).has(g)) {
-          const expectedTeams = this.opts.expectedTeams.get(cat).get(group);
+        if (
+          this.opts.expectedTeams?.has(cat) &&
+          this.opts.expectedTeams.get(cat).has(g)
+        ) {
+          const expectedTeams = this.opts.expectedTeams.get(cat).get(g);
           if (n !== expectedTeams.size) {
-            this.warnings.push(warn('integrity', `Category ${cat} GP.${g}: expected ${expectedTeams.size} teams, found ${n}`));
+            this.warnings.push(
+              warn(
+                'integrity',
+                `Category ${cat} GP.${g}: expected ${expectedTeams.size} teams, found ${n}`
+              )
+            );
           }
           // Check for missing or extra teams
           for (const team of teams) {
             if (!expectedTeams.has(team)) {
-              this.warnings.push(warn('integrity', `Category ${cat} GP.${g}: unexpected team ${team}`));
+              this.warnings.push(
+                warn(
+                  'integrity',
+                  `Category ${cat} GP.${g}: unexpected team ${team}`
+                )
+              );
             }
           }
           for (const team of expectedTeams) {
             if (!teams.has(team)) {
-              this.warnings.push(warn('integrity', `Category ${cat} GP.${g}: missing expected team ${team}`));
+              this.warnings.push(
+                warn(
+                  'integrity',
+                  `Category ${cat} GP.${g}: missing expected team ${team}`
+                )
+              );
             }
           }
         }
@@ -432,7 +564,12 @@ class TSVValidator {
         if (n >= 2) {
           const expected = (n * (n - 1)) / 2;
           if (matches.length !== expected) {
-            this.warnings.push(warn('integrity', `Category ${cat} GP.${g}: expected ${expected} matches for ${n} teams, found ${matches.length}`));
+            this.warnings.push(
+              warn(
+                'integrity',
+                `Category ${cat} GP.${g}: expected ${expected} matches for ${n} teams, found ${matches.length}`
+              )
+            );
           }
         }
       }
@@ -440,7 +577,7 @@ class TSVValidator {
 
     /* duplicate time+pitch */
     const timePitch = new Set();
-    this.rows.forEach(r => {
+    this.rows.forEach((r) => {
       const key = `${r.TIME.value}@${r.PITCH.value}`;
       if (timePitch.has(key)) {
         this.warnings.push(warn('integrity', `Two matches at ${key}`));
@@ -450,14 +587,16 @@ class TSVValidator {
 
     /* team concurrency (same time) */
     const teamTime = new Set();
-    this.rows.forEach(r => {
+    this.rows.forEach((r) => {
       const t = r.TIME.value;
-      [r.TEAM1, r.TEAM2].forEach(ent => {
+      [r.TEAM1, r.TEAM2].forEach((ent) => {
         const name = ent.value?.toUpperCase();
         if (!name || !this._isRealTeam(name)) return;
         const key = `${t}#${name}`;
         if (teamTime.has(key)) {
-          this.warnings.push(warn('integrity', `Team ${name} in two matches at ${t}`));
+          this.warnings.push(
+            warn('integrity', `Team ${name} in two matches at ${t}`)
+          );
         }
         teamTime.add(key);
       });
@@ -476,23 +615,37 @@ class TSVValidator {
       list.sort((a, b) => a.s - b.s);
       for (let i = 1; i < list.length; i++) {
         if (list[i].s < list[i - 1].e) {
-          this.warnings.push(warn('integrity', `Overlap on ${p}: rows ${list[i - 1].row} & ${list[i].row}`));
+          this.warnings.push(
+            warn(
+              'integrity',
+              `Overlap on ${p}: rows ${list[i - 1].row} & ${list[i].row}`
+            )
+          );
         }
       }
     }
 
     /* match-reference chronology */
     const matchMinutes = new Map();
-    this.rows.forEach(r => matchMinutes.set(r.MATCH.value, this._min(r.TIME.value)));
+    this.rows.forEach((r) =>
+      matchMinutes.set(r.MATCH.value, this._min(r.TIME.value))
+    );
     this.rows.forEach((r, row) => {
-      ['TEAM1', 'TEAM2', 'UMPIRES'].forEach(col => {
+      ['TEAM1', 'TEAM2', 'UMPIRES'].forEach((col) => {
         const val = r[col].value?.toUpperCase() || '';
         const m = /\b(?:WINNER|LOSER) ([A-Z]+\.\d+)/.exec(val);
         if (m) {
           const ref = m[1];
           const refT = matchMinutes.get(ref);
           if (refT !== undefined && this._min(r.TIME.value) <= refT) {
-            this.warnings.push(warn('integrity', `Row ${row}: ${col} references ${ref} scheduled later or same time`, row, col));
+            this.warnings.push(
+              warn(
+                'integrity',
+                `Row ${row}: ${col} references ${ref} scheduled later or same time`,
+                row,
+                col
+              )
+            );
           }
         }
       });
@@ -502,16 +655,27 @@ class TSVValidator {
     if (this.opts.checkBracketCompleteness) {
       for (const [cat, brs] of this.catBrackets.entries()) {
         for (const br of brs) {
-          const has = code => this.rows.some(r => r.CATEGORY.value === cat && r.STAGE.value === `${br}.${code}`);
+          const has = (code) =>
+            this.rows.some(
+              (r) =>
+                r.CATEGORY.value === cat && r.STAGE.value === `${br}.${code}`
+            );
           const fin = has('FIN');
           const sf1 = has('SF1');
           const sf2 = has('SF2');
           const qfs = ['QF1', 'QF2', 'QF3', 'QF4'].filter(has);
           if (fin && !(sf1 && sf2)) {
-            this.warnings.push(warn('misc', `${cat} ${br}: FIN without both SFs`));
+            this.warnings.push(
+              warn('misc', `${cat} ${br}: FIN without both SFs`)
+            );
           }
           if ((sf1 || sf2) && qfs.length < 4) {
-            this.warnings.push(warn('misc', `${cat} ${br}: semis present but ${qfs.length} of 4 QFs`));
+            this.warnings.push(
+              warn(
+                'misc',
+                `${cat} ${br}: semis present but ${qfs.length} of 4 QFs`
+              )
+            );
           }
         }
       }
@@ -523,7 +687,7 @@ class TSVValidator {
       this.rows.forEach((r, idx) => {
         const s = this._min(r.TIME.value);
         const d = r.DURATION.value || 0;
-        [r.TEAM1, r.TEAM2].forEach(ent => {
+        [r.TEAM1, r.TEAM2].forEach((ent) => {
           const name = ent.value?.toUpperCase();
           if (!name || !this._isRealTeam(name)) return;
           if (!sched.has(name)) sched.set(name, []);
@@ -537,7 +701,12 @@ class TSVValidator {
           const cur = list[i];
           const minGap = prev.d * this.opts.restGapMultiplier;
           if (cur.s < prev.s + prev.d + minGap) {
-            this.warnings.push(warn('misc', `Team ${team} row ${cur.row}: rest gap ${cur.s - (prev.s + prev.d)} min (<${minGap})`));
+            this.warnings.push(
+              warn(
+                'misc',
+                `Team ${team} row ${cur.row}: rest gap ${cur.s - (prev.s + prev.d)} min (<${minGap})`
+              )
+            );
           }
         }
       }
@@ -553,7 +722,13 @@ class TSVValidator {
         const obj = roleMap.get(key) || { play: false, ump: false };
         obj[role] = true;
         if (obj.play && obj.ump) {
-          this.warnings.push(warn('integrity', `Team ${team} both playing and umpiring at ${t}`, idx));
+          this.warnings.push(
+            warn(
+              'integrity',
+              `Team ${team} both playing and umpiring at ${t}`,
+              idx
+            )
+          );
         }
         roleMap.set(key, obj);
       };

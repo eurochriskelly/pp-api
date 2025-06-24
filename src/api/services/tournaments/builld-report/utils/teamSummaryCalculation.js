@@ -9,12 +9,22 @@ const { calculateTeamRankings } = require('./teamRankingCalculation');
  * @param {object} standings - The calculated standings object.
  * @returns {Array<object>} - An array of team summary objects.
  */
-function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket, standings) {
+function calculateTeamSummary(
+  allTeams,
+  fixtures,
+  teamsByGroup,
+  teamsByBracket,
+  standings
+) {
   const summaryMap = new Map();
-  const teamRanks = calculateTeamRankings(fixtures, teamsByBracket, standings.allGroups);
+  const teamRanks = calculateTeamRankings(
+    fixtures,
+    teamsByBracket,
+    standings.allGroups
+  );
 
   // 1. Initialize summary object for each team
-  allTeams.forEach(team => {
+  allTeams.forEach((team) => {
     summaryMap.set(team, {
       team: team,
       rank: teamRanks.get(team) || null,
@@ -38,16 +48,16 @@ function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket, 
   });
 
   // 2. Populate progression data
-  teamsByGroup.forEach(groupInfo => {
-    groupInfo.teams.forEach(teamName => {
+  teamsByGroup.forEach((groupInfo) => {
+    groupInfo.teams.forEach((teamName) => {
       if (summaryMap.has(teamName)) {
         summaryMap.get(teamName).progression.group = groupInfo.group;
       }
     });
   });
 
-  teamsByBracket.forEach(bracketInfo => {
-    bracketInfo.teams.forEach(teamName => {
+  teamsByBracket.forEach((bracketInfo) => {
+    bracketInfo.teams.forEach((teamName) => {
       if (summaryMap.has(teamName)) {
         summaryMap.get(teamName).progression.bracket = bracketInfo.bracket;
       }
@@ -57,8 +67,12 @@ function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket, 
   // 3. Iterate through all fixtures to aggregate stats
   const allFixtures = [...fixtures.stage.group, ...fixtures.stage.knockouts];
 
-  allFixtures.forEach(fixture => {
-    if (fixture.outcome === 'not played' || !fixture.team1.name || !fixture.team2.name) {
+  allFixtures.forEach((fixture) => {
+    if (
+      fixture.outcome === 'not played' ||
+      !fixture.team1.name ||
+      !fixture.team2.name
+    ) {
       return;
     }
 
@@ -99,10 +113,16 @@ function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket, 
     team2Summary.totalScore.against.points += fixture.team1.points;
 
     // Aggregate cards
-    fixture.cards.forEach(card => {
-      if (card.team === team1Name && team1Summary.cards[card.cardColor] !== undefined) {
+    fixture.cards.forEach((card) => {
+      if (
+        card.team === team1Name &&
+        team1Summary.cards[card.cardColor] !== undefined
+      ) {
         team1Summary.cards[card.cardColor]++;
-      } else if (card.team === team2Name && team2Summary.cards[card.cardColor] !== undefined) {
+      } else if (
+        card.team === team2Name &&
+        team2Summary.cards[card.cardColor] !== undefined
+      ) {
         team2Summary.cards[card.cardColor]++;
       }
     });
@@ -110,9 +130,11 @@ function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket, 
 
   // 4. Calculate derived stats
   const summaryArray = [];
-  summaryMap.forEach(summary => {
-    const scoreFor = (summary.totalScore.for.goals * 3) + summary.totalScore.for.points;
-    const scoreAgainst = (summary.totalScore.against.goals * 3) + summary.totalScore.against.points;
+  summaryMap.forEach((summary) => {
+    const scoreFor =
+      summary.totalScore.for.goals * 3 + summary.totalScore.for.points;
+    const scoreAgainst =
+      summary.totalScore.against.goals * 3 + summary.totalScore.against.points;
     const scoreDifference = scoreFor - scoreAgainst;
 
     summary.totalScore.for.score = scoreFor;
@@ -120,9 +142,12 @@ function calculateTeamSummary(allTeams, fixtures, teamsByGroup, teamsByBracket, 
     summary.totalScore.scoreDifference = scoreDifference;
 
     if (summary.playingTime > 0) {
-      summary.totalScore.scoreGainRatePerMinute = scoreFor / summary.playingTime;
-      summary.totalScore.scoreLossRatePerMinute = scoreAgainst / summary.playingTime;
-      summary.totalScore.scoreNetRatePerMinute = scoreDifference / summary.playingTime;
+      summary.totalScore.scoreGainRatePerMinute =
+        scoreFor / summary.playingTime;
+      summary.totalScore.scoreLossRatePerMinute =
+        scoreAgainst / summary.playingTime;
+      summary.totalScore.scoreNetRatePerMinute =
+        scoreDifference / summary.playingTime;
     }
 
     summaryArray.push(summary);

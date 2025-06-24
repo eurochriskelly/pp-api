@@ -1,7 +1,7 @@
 // Note: Dependencies are injected by the factory function pattern
 // Required dependencies: dbHelpers (select, update), loggers (II, DD), sqlGroupStandings, sqlGroupRankings
 
-module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) => {
+module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
   const { select, update } = dbHelpers;
   const { II, DD } = loggers;
   const winAward = 3;
@@ -17,26 +17,44 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
     const { tournamentId, stage, groupNumber, category } = fixture;
     const remainingCount = await _getRemainingFixtureCount(fixture);
     if (remainingCount === 0) {
-      II(`Stage [${stage}/${groupNumber}/${category}] for tournament [${tournamentId}] is complete.`);
+      II(
+        `Stage [${stage}/${groupNumber}/${category}] for tournament [${tournamentId}] is complete.`
+      );
 
       const standings = await _getGroupStandings(fixture);
       if (!standings || standings.length === 0) {
-        II(`No standings found for completed stage [${stage}/${groupNumber}/${category}]. Cannot update dependent fixtures.`);
+        II(
+          `No standings found for completed stage [${stage}/${groupNumber}/${category}]. Cannot update dependent fixtures.`
+        );
         return false;
       }
 
-      const { groupPositions, bestPositions } = await _getNumPositionsToUpdate(fixture);
+      const { groupPositions, bestPositions } =
+        await _getNumPositionsToUpdate(fixture);
       if (groupPositions === 0 && bestPositions === 0) {
-        II(`Determined 0 positions to update for stage [${stage}/${groupNumber}/${category}]. No dependent fixtures will be updated.`);
+        II(
+          `Determined 0 positions to update for stage [${stage}/${groupNumber}/${category}]. No dependent fixtures will be updated.`
+        );
         return false;
       }
 
-      II(`Updating positions in dependent fixtures based on stage [${stage}/${groupNumber}/${category}] standings...`);
-      const totalUpdated = await _updateDependentFixtures(fixture, standings, groupPositions, bestPositions);
-      II(`Finished updating dependent fixtures. Total rows affected: ${totalUpdated}.`);
+      II(
+        `Updating positions in dependent fixtures based on stage [${stage}/${groupNumber}/${category}] standings...`
+      );
+      const totalUpdated = await _updateDependentFixtures(
+        fixture,
+        standings,
+        groupPositions,
+        bestPositions
+      );
+      II(
+        `Finished updating dependent fixtures. Total rows affected: ${totalUpdated}.`
+      );
       return totalUpdated > 0;
     } else {
-      II(`Stage [${stage}/${groupNumber}/${category}] has ${remainingCount} remaining match(es). No updates needed yet.`);
+      II(
+        `Stage [${stage}/${groupNumber}/${category}] has ${remainingCount} remaining match(es). No updates needed yet.`
+      );
       return false;
     }
   }
@@ -57,7 +75,9 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
 
   async function _getRemainingFixtureCount(fixture) {
     const { tournamentId, stage, groupNumber, category } = fixture;
-    DD(`Checking remaining fixtures for stage [${stage}], group [${groupNumber}], category [${category}] in tournament [${tournamentId}]`);
+    DD(
+      `Checking remaining fixtures for stage [${stage}], group [${groupNumber}], category [${category}] in tournament [${tournamentId}]`
+    );
     const [result] = await select(
       `SELECT count(*) as remaining FROM fixtures
        WHERE tournamentId = ? AND stage = ? AND groupNumber = ? AND category = ? AND goals1 IS NULL`,
@@ -70,7 +90,9 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
 
   async function _getGroupStandings(fixture) {
     const { tournamentId, stage, groupNumber, category } = fixture;
-    DD(`Fetching group standings for stage [${stage}], group [${groupNumber}], category [${category}] in tournament [${tournamentId}]`);
+    DD(
+      `Fetching group standings for stage [${stage}], group [${groupNumber}], category [${category}] in tournament [${tournamentId}]`
+    );
     const standingsQuery = sqlGroupStandings(winAward);
     const standings = await select(
       `SELECT * FROM ${standingsQuery}
@@ -83,7 +105,9 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
 
   async function _getNumPositionsToUpdate(fixture) {
     const { tournamentId, stage, groupNumber, category } = fixture;
-    DD(`Determining number of positions for stage [${stage}/${groupNumber}] based on dependent fixtures`);
+    DD(
+      `Determining number of positions for stage [${stage}/${groupNumber}] based on dependent fixtures`
+    );
 
     const [groupResult] = await select(
       `SELECT MAX(CAST(SUBSTRING_INDEX(team1Planned, '/p:', -1) AS UNSIGNED)) as maxPos1,
@@ -94,10 +118,18 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
          AND (team1Planned LIKE ?
            OR team2Planned LIKE ?
            OR umpireTeamPlanned LIKE ?)`,
-      [tournamentId, category, `~${stage}:${groupNumber}/p:%`, `~${stage}:${groupNumber}/p:%`, `~${stage}:${groupNumber}/p:%`]
+      [
+        tournamentId,
+        category,
+        `~${stage}:${groupNumber}/p:%`,
+        `~${stage}:${groupNumber}/p:%`,
+        `~${stage}:${groupNumber}/p:%`,
+      ]
     );
 
-    DD(`Determining number of bests for stage [${stage}/${groupNumber}] based on dependent fixtures`);
+    DD(
+      `Determining number of bests for stage [${stage}/${groupNumber}] based on dependent fixtures`
+    );
 
     const [bestResult] = await select(
       `SELECT MAX(CAST(SUBSTRING_INDEX(team1Planned, '/p:', -1) AS UNSIGNED)) as maxPos1,
@@ -111,19 +143,36 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
       [tournamentId, category]
     );
 
-    const groupPositions = Math.max(groupResult?.maxPos1 || 0, groupResult?.maxPos2 || 0, groupResult?.maxPosUmp || 0);
-    const bestPositions = Math.max(bestResult?.maxPos1 || 0, bestResult?.maxPos2 || 0, bestResult?.maxPosUmp || 0);
+    const groupPositions = Math.max(
+      groupResult?.maxPos1 || 0,
+      groupResult?.maxPos2 || 0,
+      groupResult?.maxPosUmp || 0
+    );
+    const bestPositions = Math.max(
+      bestResult?.maxPos1 || 0,
+      bestResult?.maxPos2 || 0,
+      bestResult?.maxPosUmp || 0
+    );
 
-    DD(`Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s).`);
+    DD(
+      `Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s).`
+    );
     return { groupPositions, bestPositions };
   }
 
-  async function _updateDependentFixtures(fixture, standings, groupPositions, bestPositions) {
+  async function _updateDependentFixtures(
+    fixture,
+    standings,
+    groupPositions,
+    bestPositions
+  ) {
     const { tournamentId, stage, groupNumber, category } = fixture;
     let totalUpdated = 0;
 
     const updateTeamInFixtures = async (teamField, newValue, placeHolder) => {
-      DD(`Updating ${teamField}Id to [${newValue}] where ${teamField}Planned = '${placeHolder}' for tournament [${tournamentId}], category [${category}]`);
+      DD(
+        `Updating ${teamField}Id to [${newValue}] where ${teamField}Planned = '${placeHolder}' for tournament [${tournamentId}], category [${category}]`
+      );
       const affectedRows = await update(
         `UPDATE fixtures SET ${teamField}Id = ?
          WHERE ${teamField}Planned = ? AND tournamentId = ? AND category = ?`,
@@ -137,25 +186,39 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
       const placeHolder = `~${stage}:${groupNumber}/p:${position + 1}`;
       const newValue = standings[position]?.team ?? null;
       if (newValue === null) {
-        DD(`Skipping updates for position ${position + 1} as calculated team ID is null.`);
+        DD(
+          `Skipping updates for position ${position + 1} as calculated team ID is null.`
+        );
         continue;
       }
 
       let updatesForPosition = 0;
-      updatesForPosition += await updateTeamInFixtures("team1", newValue, placeHolder);
-      updatesForPosition += await updateTeamInFixtures("team2", newValue, placeHolder);
-      updatesForPosition += await updateTeamInFixtures("umpireTeam", newValue, placeHolder);
+      updatesForPosition += await updateTeamInFixtures(
+        'team1',
+        newValue,
+        placeHolder
+      );
+      updatesForPosition += await updateTeamInFixtures(
+        'team2',
+        newValue,
+        placeHolder
+      );
+      updatesForPosition += await updateTeamInFixtures(
+        'umpireTeam',
+        newValue,
+        placeHolder
+      );
 
-      DD(`Total updates for position ${position + 1} ('${placeHolder}' -> ${newValue}): ${updatesForPosition}`);
+      DD(
+        `Total updates for position ${position + 1} ('${placeHolder}' -> ${newValue}): ${updatesForPosition}`
+      );
       totalUpdated += updatesForPosition;
     }
 
     const bestRankCache = {};
     for (let pos = 1; pos <= bestPositions; pos++) {
       if (!bestRankCache[pos]) {
-        const query = sqlGroupRankings(pos);
-        bestRankCache[pos] = 0 // await select(query, []);
-
+        bestRankCache[pos] = 0; // await select(query, []);
       }
 
       const rankedTeams = bestRankCache[pos];
@@ -169,11 +232,25 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
         }
 
         let updatesForBest = 0;
-        updatesForBest += await updateTeamInFixtures("team1", teamId, placeHolder);
-        updatesForBest += await updateTeamInFixtures("team2", teamId, placeHolder);
-        updatesForBest += await updateTeamInFixtures("umpireTeam", teamId, placeHolder);
+        updatesForBest += await updateTeamInFixtures(
+          'team1',
+          teamId,
+          placeHolder
+        );
+        updatesForBest += await updateTeamInFixtures(
+          'team2',
+          teamId,
+          placeHolder
+        );
+        updatesForBest += await updateTeamInFixtures(
+          'umpireTeam',
+          teamId,
+          placeHolder
+        );
 
-        DD(`Best placeholder ${placeHolder} resolved to team ${teamId}, updated ${updatesForBest} rows`);
+        DD(
+          `Best placeholder ${placeHolder} resolved to team ${teamId}, updated ${updatesForBest} rows`
+        );
         totalUpdated += updatesForBest;
       }
     }
@@ -185,4 +262,3 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings }) =
     processStageCompletion,
   };
 };
-

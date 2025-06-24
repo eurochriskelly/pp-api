@@ -1,5 +1,5 @@
 module.exports = {
-  calculateRankings: async (tournamentId, category, select)  => {
+  calculateRankings: async (tournamentId, category, select) => {
     const groupData = {};
     let rankings = [];
     let q = ` select * from v_group_standings where tournamentId=${tournamentId} and category = '${category}'`;
@@ -8,7 +8,7 @@ module.exports = {
     const groups = new Set();
     standings.forEach((s) => {
       groups.add(s.grp);
-      if (!groupData.hasOwnProperty(`g${s.grp}`)) {
+      if (!Object.prototype.hasOwnProperty.call(groupData, `g${s.grp}`)) {
         groupData[`g${s.grp}`] = 1;
       } else {
         groupData[`g${s.grp}`] += 1;
@@ -49,7 +49,13 @@ module.exports = {
     goalsPoints = 3,
     pointsPoints = 1
   ) => {
-    const standingsQuery = sqlGroupStandings(winAward, drawAward, lossAward, goalsPoints, pointsPoints, order=false);
+    const standingsQuery = sqlGroupStandings(
+      winAward,
+      drawAward,
+      lossAward,
+      goalsPoints,
+      pointsPoints
+    );
     const query = `
        WITH RankedTeams AS (
         SELECT 
@@ -90,15 +96,18 @@ module.exports = {
 
     return query;
   },
-}
+};
 
 function sqlGroupStandings(
-  winAward = 2, drawAward = 1, lossAward = 0,
-  goalsPoints = 3, pointsPoints = 1,
+  winAward = 2,
+  drawAward = 1,
+  lossAward = 0,
+  goalsPoints = 3,
+  pointsPoints = 1,
   order = true
 ) {
-  const t1Score = `((f.goals1 * ${goalsPoints}) + (f.points1 * ${pointsPoints}))`
-  const t2Score = `((f.goals2 * ${goalsPoints}) + (f.points2 * ${pointsPoints}))`
+  const t1Score = `((f.goals1 * ${goalsPoints}) + (f.points1 * ${pointsPoints}))`;
+  const t2Score = `((f.goals2 * ${goalsPoints}) + (f.points2 * ${pointsPoints}))`;
   const query = `
     (
     SELECT 
@@ -163,14 +172,18 @@ function sqlGroupStandings(
         GROUP BY f.category, f.groupNumber, f.team2Id, f.tournamentId
     ) AS c
     GROUP BY c.category, c.grp, c.team, c.tournamentId
-    ${order ? `
+    ${
+      order
+        ? `
       ORDER BY 
           c.category DESC, 
           c.grp, 
           TotalPoints DESC, 
           PointsDifference DESC, 
           PointsFrom DESC
-      `: ''}
-    ) as vgs`
-  return query
+      `
+        : ''
+    }
+    ) as vgs`;
+  return query;
 }

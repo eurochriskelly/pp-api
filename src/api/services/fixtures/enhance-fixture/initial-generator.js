@@ -25,8 +25,12 @@ class InitialGenerator {
       return initial;
     }
 
-    logger(`Initial conflict for category "${categoryName}": initial "${initial}" already used.`);
-    const tokens = categoryName.split(/[\s-_]+/).filter(t => !/^\d+$/.test(t));
+    logger(
+      `Initial conflict for category "${categoryName}": initial "${initial}" already used.`
+    );
+    const tokens = categoryName
+      .split(/[\s-_]+/)
+      .filter((t) => !/^\d+$/.test(t));
     const isSingleWord = tokens.length === 1;
 
     if (initial.length === 1 && isSingleWord) {
@@ -40,19 +44,27 @@ class InitialGenerator {
     while (attemptChar <= 'Z') {
       if (!this.usedInitials.has(attemptChar)) {
         this.usedInitials.add(attemptChar);
-        this.singleLetterDisambiguationChar = String.fromCharCode(attemptChar.charCodeAt(0) + 1);
-        logger(`Resolved conflict for "${categoryName}" (was "${initial}") to "${attemptChar}" using letter fallback.`);
+        this.singleLetterDisambiguationChar = String.fromCharCode(
+          attemptChar.charCodeAt(0) + 1
+        );
+        logger(
+          `Resolved conflict for "${categoryName}" (was "${initial}") to "${attemptChar}" using letter fallback.`
+        );
         return attemptChar;
       }
       attemptChar = String.fromCharCode(attemptChar.charCodeAt(0) + 1);
     }
 
-    logger(`Letter fallback exhausted for "${categoryName}". Trying numeric append to "${initial}".`);
+    logger(
+      `Letter fallback exhausted for "${categoryName}". Trying numeric append to "${initial}".`
+    );
     return this.appendNumeric(categoryName, initial, logger);
   }
 
   resolveGeneralConflict(categoryName, baseInitial, logger) {
-    logger(`General conflict for "${categoryName}" (initial "${baseInitial}"). Using numeric append.`);
+    logger(
+      `General conflict for "${categoryName}" (initial "${baseInitial}"). Using numeric append.`
+    );
     return this.appendNumeric(categoryName, baseInitial, logger);
   }
 
@@ -61,15 +73,18 @@ class InitialGenerator {
     let tempInitial;
     do {
       const numStr = String(count++);
-      const prefix = baseInitial.length + numStr.length > 3 
-        ? baseInitial.substring(0, Math.max(0, 3 - numStr.length)) 
-        : baseInitial;
+      const prefix =
+        baseInitial.length + numStr.length > 3
+          ? baseInitial.substring(0, Math.max(0, 3 - numStr.length))
+          : baseInitial;
       tempInitial = prefix.length === 0 ? numStr : prefix + numStr;
       tempInitial = tempInitial.substring(0, 3);
     } while (this.usedInitials.has(tempInitial) && count < 100);
 
     this.usedInitials.add(tempInitial);
-    logger(`Resolved conflict for "${categoryName}" to "${tempInitial}" using numeric append.`);
+    logger(
+      `Resolved conflict for "${categoryName}" to "${tempInitial}" using numeric append.`
+    );
     return tempInitial;
   }
 }

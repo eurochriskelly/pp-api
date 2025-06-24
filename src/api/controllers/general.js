@@ -1,14 +1,12 @@
-const { II } = require("../../lib/logging");
-const { jsonToCsv, sendXsls } = require("../../lib/utils");
+const { jsonToCsv, sendXsls } = require('../../lib/utils');
 
 module.exports = (db, useMock) => {
   const serviceFactory = useMock
-    ? require("../services/mocks/general")
-    : require("../services/general");
+    ? require('../services/mocks/general')
+    : require('../services/general');
   const dbSvc = serviceFactory(db);
 
   return {
-
     listTeams: async (req, res) => {
       try {
         const phase = req.query.stage.split('_').shift();
@@ -17,7 +15,7 @@ module.exports = (db, useMock) => {
           req.params.tournamentId,
           req.query.category,
           phase,
-          groupNumber,
+          groupNumber
         );
         res.json({ data: teams });
       } catch (err) {
@@ -38,18 +36,25 @@ module.exports = (db, useMock) => {
 
     listStandings: async (req, res) => {
       const { tournamentId } = req.params;
-      const { format = "json", category } = req.query;
+      const { format = 'json', category } = req.query;
       try {
-        const { groups, data } = await dbSvc.listStandings(tournamentId, category);
+        const { groups, data } = await dbSvc.listStandings(
+          tournamentId,
+          category
+        );
         switch (format) {
-          case "csv":
+          case 'csv': {
             const csv = jsonToCsv(data);
-            res.setHeader("Content-Disposition", 'attachment; filename="standings.csv"');
-            res.set("Content-Type", "text/csv; charset=utf-8");
+            res.setHeader(
+              'Content-Disposition',
+              'attachment; filename="standings.csv"'
+            );
+            res.set('Content-Type', 'text/csv; charset=utf-8');
             res.send(csv);
             break;
-          case "xlsx":
-            sendXsls(data, res, "standings");
+          }
+          case 'xlsx':
+            sendXsls(data, res, 'standings');
             break;
           default:
             res.json({ groups, data });
@@ -62,4 +67,3 @@ module.exports = (db, useMock) => {
     },
   };
 };
-

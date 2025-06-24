@@ -30,23 +30,37 @@ class FixtureInfringementManager {
   }
 
   isPlaceholderTeam(name) {
-    return typeof name === 'string' && (name.startsWith('~') || name.toLowerCase() === 'bye');
+    return (
+      typeof name === 'string' &&
+      (name.startsWith('~') || name.toLowerCase() === 'bye')
+    );
   }
 
-  async processTeamInfringements(fixture, teamName, teamInfringementArray, currentLane) {
+  async processTeamInfringements(
+    fixture,
+    teamName,
+    teamInfringementArray,
+    currentLane
+  ) {
     this.logger('🔍 fixture fields:', Object.entries(fixture));
 
     if (!fixture.scheduled) {
-      this.logger(`Skipping infringement calculation for team [${teamName}] in fixture [${fixture.id}] because current fixture scheduled time is null.`);
+      this.logger(
+        `Skipping infringement calculation for team [${teamName}] in fixture [${fixture.id}] because current fixture scheduled time is null.`
+      );
       return;
     }
     if (!teamName || this.isPlaceholderTeam(teamName)) {
-      this.logger(`Skipping infringement calculation for placeholder or invalid team: ${teamName} in fixture [${fixture.id}]`);
+      this.logger(
+        `Skipping infringement calculation for placeholder or invalid team: ${teamName} in fixture [${fixture.id}]`
+      );
       return;
     }
 
     // Expulsions: anyone sent off today in this category sits out all fixtures today
-    this.logger(`Calculating expulsions for team [${teamName}] in fixture [${fixture.id}] on [${fixture.scheduled}] (category: ${fixture.category})`);
+    this.logger(
+      `Calculating expulsions for team [${teamName}] in fixture [${fixture.id}] on [${fixture.scheduled}] (category: ${fixture.category})`
+    );
 
     // 1) First, grab all reds *regardless* of category — just to see who’s in play
     const allToday = await this.select(
@@ -77,21 +91,26 @@ class FixtureInfringementManager {
       `,
       [fixture.tournamentId, teamName, fixture.category, fixture.scheduled]
     );
-    this.logger(`🔍 reds in category [${fixture.category}] (${expelledPlayers.length}):`, expelledPlayers);
+    this.logger(
+      `🔍 reds in category [${fixture.category}] (${expelledPlayers.length}):`,
+      expelledPlayers
+    );
 
     // 3) Mark them expelled
-    expelledPlayers.forEach(p => {
-      this.logger(`→ marking expelled: [${p.playerName} #${p.playerNumber}] (card.category=${p.category})`);
+    expelledPlayers.forEach((p) => {
+      this.logger(
+        `→ marking expelled: [${p.playerName} #${p.playerNumber}] (card.category=${p.category})`
+      );
       teamInfringementArray.push({
         playerNumber: p.playerNumber,
-        playerName:   p.playerName,
-        penalty:      'expulsion'
+        playerName: p.playerName,
+        penalty: 'expulsion',
       });
     });
 
-if (['queued', 'started'].includes(currentLane)) {
-  // 1) Find the most recent played fixture for this team
-  const sqlLast = `
+    if (['queued', 'started'].includes(currentLane)) {
+      // 1) Find the most recent played fixture for this team
+      const sqlLast = `
     SELECT f_hist.id
       FROM fixtures f_hist
      WHERE f_hist.tournamentId = ?
@@ -105,24 +124,31 @@ if (['queued', 'started'].includes(currentLane)) {
     ORDER BY f_hist.ended DESC
     LIMIT 1
   `;
-  const paramsLast = [
-    fixture.tournamentId,
-    teamName, teamName,
-    fixture.scheduled, fixture.scheduled, fixture.id
-  ];
-  this.logger('🔍 last played fixture SQL:', sqlLast.trim(), paramsLast);
-  const lastPlayed = await this.select(sqlLast, paramsLast);
+      const paramsLast = [
+        fixture.tournamentId,
+        teamName,
+        teamName,
+        fixture.scheduled,
+        fixture.scheduled,
+        fixture.id,
+      ];
+      this.logger('🔍 last played fixture SQL:', sqlLast.trim(), paramsLast);
+      const lastPlayed = await this.select(sqlLast, paramsLast);
 
-  if (lastPlayed.length === 0) {
-    this.logger(`No previous played fixture for team [${teamName}]; no suspension check.`);
-    return;
-  }
+      if (lastPlayed.length === 0) {
+        this.logger(
+          `No previous played fixture for team [${teamName}]; no suspension check.`
+        );
+        return;
+      }
 
-  const prevId = lastPlayed[0].id;
-  this.logger(`Found last played fixture [${prevId}] for team [${teamName}]`);
+      const prevId = lastPlayed[0].id;
+      this.logger(
+        `Found last played fixture [${prevId}] for team [${teamName}]`
+      );
 
-  // 2) Fetch all yellow/black cards from that fixture
-  const sqlCards = `
+      // 2) Fetch all yellow/black cards from that fixture
+      const sqlCards = `
     SELECT c.playerNumber, c.playerName, c.cardColor
       FROM cards c
      WHERE c.tournamentId = ?
@@ -130,39 +156,47 @@ if (['queued', 'started'].includes(currentLane)) {
        AND c.fixtureId   = ?
        AND (c.cardColor = 'yellow' OR c.cardColor = 'black')
   `;
-  const paramsCards = [fixture.tournamentId, teamName, prevId];
-  this.logger('🔍 cards in last fixture SQL:', sqlCards.trim(), paramsCards);
-  const cards = await this.select(sqlCards, paramsCards);
-
-  // 3) Count per player in that one match
-  const counts = cards.reduce((acc, { playerNumber, playerName }) => {
-    const key = `${playerNumber}-${playerName}`;
-    acc[key] = acc[key] || { playerNumber, playerName, count: 0 };
-    acc[key].count++;
-    return acc;
-  }, {});
-  this.logger('🔍 card counts in last fixture:', Object.values(counts));
-
-  // 4) If any player got 2+ cards in that fixture, suspend them now
-  Object.values(counts).forEach(p => {
-    if (p.count >= 2) {
-      const alreadyExpelled = teamInfringementArray.some(
-        inf => inf.playerNumber === p.playerNumber && inf.penalty === 'expulsion'
+      const paramsCards = [fixture.tournamentId, teamName, prevId];
+      this.logger(
+        '🔍 cards in last fixture SQL:',
+        sqlCards.trim(),
+        paramsCards
       );
-      if (!alreadyExpelled) {
-        this.logger(`→ suspending ${p.playerName} (#${p.playerNumber}) for next fixture`);
-        teamInfringementArray.push({
-          playerNumber: p.playerNumber,
-          playerName:   p.playerName,
-          penalty:      'suspension'
-        });
-      } else {
-        this.logger(`→ skip suspension for ${p.playerName}; already expelled`);
-      }
-    }
-  });
-}
+      const cards = await this.select(sqlCards, paramsCards);
 
+      // 3) Count per player in that one match
+      const counts = cards.reduce((acc, { playerNumber, playerName }) => {
+        const key = `${playerNumber}-${playerName}`;
+        acc[key] = acc[key] || { playerNumber, playerName, count: 0 };
+        acc[key].count++;
+        return acc;
+      }, {});
+      this.logger('🔍 card counts in last fixture:', Object.values(counts));
+
+      // 4) If any player got 2+ cards in that fixture, suspend them now
+      Object.values(counts).forEach((p) => {
+        if (p.count >= 2) {
+          const alreadyExpelled = teamInfringementArray.some(
+            (inf) =>
+              inf.playerNumber === p.playerNumber && inf.penalty === 'expulsion'
+          );
+          if (!alreadyExpelled) {
+            this.logger(
+              `→ suspending ${p.playerName} (#${p.playerNumber}) for next fixture`
+            );
+            teamInfringementArray.push({
+              playerNumber: p.playerNumber,
+              playerName: p.playerName,
+              penalty: 'suspension',
+            });
+          } else {
+            this.logger(
+              `→ skip suspension for ${p.playerName}; already expelled`
+            );
+          }
+        }
+      });
+    }
   }
 }
 

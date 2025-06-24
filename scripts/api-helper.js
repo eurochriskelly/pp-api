@@ -2,11 +2,11 @@ const readline = require('readline');
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
 });
 
 const apis = [
-  { name: 'nextup', description: 'Get next matches for a tournament' }
+  { name: 'nextup', description: 'Get next matches for a tournament' },
 ];
 
 console.log('Select an API to call:');

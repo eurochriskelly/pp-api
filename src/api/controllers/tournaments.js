@@ -1,53 +1,75 @@
-const { II } = require("../../lib/logging");
-
 module.exports = (db, useMock) => {
   const serviceFactory = useMock
-    ? require("../services/mocks/tournaments")
-    : require("../services/tournaments");
+    ? require('../services/mocks/tournaments')
+    : require('../services/tournaments');
   const dbSvc = serviceFactory(db);
 
   return {
     // Tournament CRUD
     validateTsv: handleRoute((req, res) => {
-      const { tournamentId } = req.params;
-      const tsvEncoded  = req.body.key;
-      try {
-        const { rows, warnings }= dbSvc.validateTsv(tsvEncoded);
-        res.json({ data: { rows, warnings }});
-      } catch (err) {
-        throw err;
-      }
+      const tsvEncoded = req.body.key;
+      const { rows, warnings } = dbSvc.validateTsv(tsvEncoded);
+      res.json({ data: { rows, warnings } });
     }, 201),
 
     createTournament: handleRoute(async (req, res) => {
-      const { 
-        userId, region, title, date, location, lat, lon, 
-        codeOrganizer, winPoints = 2, drawPoints =1, lossPoints = 0
+      const {
+        userId,
+        region,
+        title,
+        date,
+        location,
+        lat,
+        lon,
+        codeOrganizer,
+        winPoints = 2,
+        drawPoints = 1,
+        lossPoints = 0,
       } = req.body;
-      const tournament = await dbSvc.createTournament(userId, { 
-        region, title, date, location, lat, lon, 
-        codeOrganizer, winPoints, drawPoints, lossPoints
+      const tournament = await dbSvc.createTournament(userId, {
+        region,
+        title,
+        date,
+        location,
+        lat,
+        lon,
+        codeOrganizer,
+        winPoints,
+        drawPoints,
+        lossPoints,
       });
-      console.log('b', tournament)
+      console.log('b', tournament);
       res.json(tournament);
     }, 201),
 
     updateTournament: handleRoute(async (req, res) => {
       const { id } = req.params;
-      const { 
-        tournamentId, userId, region, title, date, location, lat, lon, 
-        codeOrganizer, winPoints = 2, drawPoints =1, lossPoints = 0
+      const {
+        region,
+        title,
+        date,
+        location,
+        lat,
+        lon,
+        codeOrganizer,
+        winPoints = 2,
+        drawPoints = 1,
+        lossPoints = 0,
       } = req.body;
-      try {
-        await dbSvc.updateTournament(id, { 
-          region, title, date, location, lat, lon, 
-          codeOrganizer, winPoints, drawPoints, lossPoints 
-        });
-        const tournament = await dbSvc.getTournament(id);
-        res.json(tournament);
-      } catch (err) {
-        throw err;
-      }
+      await dbSvc.updateTournament(id, {
+        region,
+        title,
+        date,
+        location,
+        lat,
+        lon,
+        codeOrganizer,
+        winPoints,
+        drawPoints,
+        lossPoints,
+      });
+      const tournament = await dbSvc.getTournament(id);
+      res.json(tournament);
     }, 200),
 
     getTournaments: handleRoute(async (req) => {
@@ -63,7 +85,7 @@ module.exports = (db, useMock) => {
       const report = await dbSvc.buildTournamentReport(id);
       return { data: report };
     }),
-    
+
     buildTournamentReport: handleRoute(async (req) => {
       const { id } = req.params;
       const report = await dbSvc.buildTournamentReport(id);
@@ -91,224 +113,174 @@ module.exports = (db, useMock) => {
 
     getTournament: async (req, res) => {
       const { id, uuid = null } = req.params;
-      try {
-        const tournament = await dbSvc.getTournament(id, uuid);
-        res.json({ data: tournament });
-      } catch (err) {
-        throw err;
-      }
+      const tournament = await dbSvc.getTournament(id, uuid);
+      res.json({ data: tournament });
     },
-
 
     deleteTournament: async (req, res) => {
       const { id } = req.params;
-      try {
-        await dbSvc.deleteTournament(id);
-        res.json({ message: "Tournament deleted" });
-      } catch (err) {
-        throw err;
-      }
+      await dbSvc.deleteTournament(id);
+      res.json({ message: 'Tournament deleted' });
     },
 
     resetTournament: async (req, res) => {
       const { id } = req.params;
       try {
         await dbSvc.resetTournament(id);
-        res.json({ message: "Tournament reset successfully" });
+        res.json({ message: 'Tournament reset successfully' });
       } catch (err) {
         console.log(err);
-        res.status(403).json({ message: "Only sandbox tournament (id=1) can be reset. See log for more info." });
+        res.status(403).json({
+          message:
+            'Only sandbox tournament (id=1) can be reset. See log for more info.',
+        });
       }
     },
 
     // Existing tournament endpoints
     getRecentMatches: async (req, res) => {
       const { id } = req.params;
-      try {
-        const [count, matches] = await Promise.all([
-          dbSvc.getStartedMatchCount(id),
-          dbSvc.getRecentMatches(id),
-        ]);
-        res.json({ matchCount: count, matches });
-      } catch (err) {
-        throw err;
-      }
+      const [count, matches] = await Promise.all([
+        dbSvc.getStartedMatchCount(id),
+        dbSvc.getRecentMatches(id),
+      ]);
+      res.json({ matchCount: count, matches });
     },
 
     getMatchesByPitch: async (req, res) => {
-      console.log('ok', req.params)
+      console.log('ok', req.params);
       const { tournamentId } = req.params;
-      try {
-        const matches = await dbSvc.getMatchesByPitch(tournamentId);
-        res.json(matches);
-      } catch (err) {
-        throw err;
-      }
+      const matches = await dbSvc.getMatchesByPitch(tournamentId);
+      res.json(matches);
     },
 
     getGroupFixtures: async (req, res) => {
       const { id } = req.params;
-      try {
-        const fixtures = await dbSvc.getGroupFixtures(id);
-        res.json(fixtures);
-      } catch (err) {
-        throw err;
-      }
+      const fixtures = await dbSvc.getGroupFixtures(id);
+      res.json(fixtures);
     },
 
     getGroupStandings: async (req, res) => {
       const { id } = req.params;
-      try {
-        const standings = await dbSvc.getGroupStandings(id);
-        res.json(standings);
-      } catch (err) {
-        throw err;
-      }
+      const standings = await dbSvc.getGroupStandings(id);
+      res.json(standings);
     },
 
     getKnockoutFixtures: async (req, res) => {
       const { id } = req.params;
-      try {
-        const fixtures = await dbSvc.getKnockoutFixtures(id);
-        res.json(fixtures);
-      } catch (err) {
-        throw err;
-      }
+      const fixtures = await dbSvc.getKnockoutFixtures(id);
+      res.json(fixtures);
     },
 
     getFinalsResults: async (req, res) => {
       const { id } = req.params;
-      try {
-        const results = await dbSvc.getFinalsResults(id);
-        res.json(results);
-      } catch (err) {
-        throw err;
-      }
+      const results = await dbSvc.getFinalsResults(id);
+      res.json(results);
     },
 
     getAllMatches: async (req, res) => {
       const { id } = req.params;
-      try {
-        const matches = await dbSvc.getAllMatches(id);
-        res.json(matches);
-      } catch (err) {
-        throw err;
-      }
+      const matches = await dbSvc.getAllMatches(id);
+      res.json(matches);
     },
 
     getTournamentCategories: async (req, res) => {
       const { id } = req.params;
-      try {
-        const categories = await dbSvc.getTournamentCategories(id);
-        res.json(categories);
-      } catch (err) {
-        throw err;
-      }
+      const categories = await dbSvc.getTournamentCategories(id);
+      res.json(categories);
     },
 
     getCardedPlayers: async (req, res) => {
       const { tournamentId } = req.params;
-      try {
-        const players = await dbSvc.getCardedPlayers(tournamentId);
-        res.json(players);
-      } catch (err) {
-        throw err;
-      }
+      const players = await dbSvc.getCardedPlayers(tournamentId);
+      res.json(players);
     },
 
     // Squads CRUD
     createSquad: async (req, res) => {
       const { tournamentId } = req.params;
-      const { teamName, groupLetter, category, teamSheetSubmitted, notes } = req.body;
-      try {
-        const id = await dbSvc.createSquad(tournamentId, { teamName, groupLetter, category, teamSheetSubmitted, notes });
-        const squad = await dbSvc.getSquad(tournamentId, id);
-        res.status(201).json(squad);
-      } catch (err) {
-        throw err;
-      }
+      const { teamName, groupLetter, category, teamSheetSubmitted, notes } =
+        req.body;
+      const id = await dbSvc.createSquad(tournamentId, {
+        teamName,
+        groupLetter,
+        category,
+        teamSheetSubmitted,
+        notes,
+      });
+      const squad = await dbSvc.getSquad(tournamentId, id);
+      res.status(201).json(squad);
     },
 
     getSquads: async (req, res) => {
       const { tournamentId } = req.params;
-      try {
-        const squads = await dbSvc.getSquads(tournamentId);
-        res.json({ data: squads });
-      } catch (err) {
-        throw err;
-      }
+      const squads = await dbSvc.getSquads(tournamentId);
+      res.json({ data: squads });
     },
 
     getSquad: async (req, res) => {
       const { tournamentId, id } = req.params;
-      try {
-        const squad = await dbSvc.getSquad(tournamentId, id);
-        res.json({ data: squad });
-      } catch (err) {
-        throw err;
-      }
+      const squad = await dbSvc.getSquad(tournamentId, id);
+      res.json({ data: squad });
     },
 
     updateSquad: async (req, res) => {
       const { tournamentId, id } = req.params;
-      const { teamName, groupLetter, category, teamSheetSubmitted, notes } = req.body;
-      try {
-        await dbSvc.updateSquad(id, { teamName, groupLetter, category, teamSheetSubmitted, notes });
-        const squad = await dbSvc.getSquad(tournamentId, id);
-        res.json(squad);
-      } catch (err) {
-        throw err;
-      }
+      const { teamName, groupLetter, category, teamSheetSubmitted, notes } =
+        req.body;
+      await dbSvc.updateSquad(id, {
+        teamName,
+        groupLetter,
+        category,
+        teamSheetSubmitted,
+        notes,
+      });
+      const squad = await dbSvc.getSquad(tournamentId, id);
+      res.json(squad);
     },
 
     deleteSquad: async (req, res) => {
-      const { tournamentId, id } = req.params;
-      try {
-        await dbSvc.deleteSquad(id);
-        res.json({ message: "Squad deleted" });
-      } catch (err) {
-        throw err;
-      }
+      const { id } = req.params;
+      await dbSvc.deleteSquad(id);
+      res.json({ message: 'Squad deleted' });
     },
 
     // Players CRUD
     createPlayer: async (req, res) => {
-      const { tournamentId, squadId } = req.params;
+      const { squadId } = req.params;
       const { firstName, secondName, dateOfBirth, foirreannId } = req.body;
-      try {
-        const id = await dbSvc.createPlayer(squadId, { firstName, secondName, dateOfBirth, foirreannId });
-        const player = await dbSvc.getPlayer(id);
-        res.status(201).json(player);
-      } catch (err) {
-        throw err;
-      }
+      const id = await dbSvc.createPlayer(squadId, {
+        firstName,
+        secondName,
+        dateOfBirth,
+        foirreannId,
+      });
+      const player = await dbSvc.getPlayer(id);
+      res.status(201).json(player);
     },
 
     getPlayers: async (req, res) => {
-      const { tournamentId, squadId } = req.params;
-      try {
-        const players = await dbSvc.getPlayers(squadId);
-        res.json({ data: players });
-      } catch (err) {
-        throw err;
-      }
+      const { squadId } = req.params;
+      const players = await dbSvc.getPlayers(squadId);
+      res.json({ data: players });
     },
 
     getPlayer: async (req, res) => {
-      const { tournamentId, squadId, id } = req.params;
-      try {
-        const player = await dbSvc.getPlayer(id);
-        res.json({ data: player });
-      } catch (err) {
-        throw err;
-      }
+      const { id } = req.params;
+      const player = await dbSvc.getPlayer(id);
+      res.json({ data: player });
     },
 
     updatePlayer: async (req, res) => {
-      const { tournamentId, squadId, id } = req.params;
+      const { id } = req.params;
       const { firstName, secondName, dateOfBirth, foirreannId } = req.body;
       try {
-        await dbSvc.updatePlayer(id, { firstName, secondName, dateOfBirth, foirreannId });
+        await dbSvc.updatePlayer(id, {
+          firstName,
+          secondName,
+          dateOfBirth,
+          foirreannId,
+        });
         const player = await dbSvc.getPlayer(id);
         res.json(player);
       } catch (err) {
@@ -317,13 +289,9 @@ module.exports = (db, useMock) => {
     },
 
     deletePlayer: async (req, res) => {
-      const { tournamentId, squadId, id } = req.params;
-      try {
-        await dbSvc.deletePlayer(id);
-        res.json({ message: "Player deleted" });
-      } catch (err) {
-        throw err;
-      }
+      const { id } = req.params;
+      await dbSvc.deletePlayer(id);
+      res.json({ message: 'Player deleted' });
     },
 
     deleteCards: async (req, res) => {
@@ -332,17 +300,23 @@ module.exports = (db, useMock) => {
         await dbSvc.deleteCards(id);
         res.status(200).json({ message: `Cards for tournament ${id} deleted` });
       } catch (err) {
-        res.status(500).json({ error: err.message || 'Internal server error. (deleteCards)' });
+        res.status(500).json({
+          error: err.message || 'Internal server error. (deleteCards)',
+        });
       }
-    }, 
+    },
 
     deleteFixtures: async (req, res) => {
       const { id } = req.params;
       try {
         await dbSvc.deleteFixtures(id); // Assume this deletes all fixtures for tournamentId
-        res.status(200).json({ message: `Fixtures for tournament ${id} deleted` });
+        res
+          .status(200)
+          .json({ message: `Fixtures for tournament ${id} deleted` });
       } catch (err) {
-        res.status(500).json({ error: err.message || 'Internal server error. (deleteFixtures)' });
+        res.status(500).json({
+          error: err.message || 'Internal server error. (deleteFixtures)',
+        });
       }
     },
 
@@ -350,9 +324,13 @@ module.exports = (db, useMock) => {
       const { id } = req.params;
       try {
         await dbSvc.deletePitches(id);
-        res.status(200).json({ message: `Pitches for tournament ${id} deleted` });
+        res
+          .status(200)
+          .json({ message: `Pitches for tournament ${id} deleted` });
       } catch (err) {
-        res.status(500).json({ error: err.message || 'Internal server error. (deletePitches)' });
+        res.status(500).json({
+          error: err.message || 'Internal server error. (deletePitches)',
+        });
       }
     },
 
@@ -385,15 +363,17 @@ module.exports = (db, useMock) => {
         const result = await dbSvc.codeCheck(id, code.toUpperCase(), role);
         res.status(200).json({
           authorized: result,
-          data: { role, tournamentId: id }
+          data: { role, tournamentId: id },
         });
       } catch (err) {
         // If the error has a warnings property, return it as well
         res.status(400).json({
           authorized: false,
           data: { role, tournamentId: id },
-          error: err.message || 'Invalid code or internal server error while checking pin code',
-          warnings: err.warnings || undefined
+          error:
+            err.message ||
+            'Invalid code or internal server error while checking pin code',
+          warnings: err.warnings || undefined,
         });
       }
     },
@@ -401,15 +381,18 @@ module.exports = (db, useMock) => {
     getTournamentsByStatus: handleRoute(async (req) => {
       const { status } = req.params;
       const { userId, region } = req.query; // Extract region
-      const tournaments = await dbSvc.getTournamentsByStatus(status, userId, region); // Pass region
+      const tournaments = await dbSvc.getTournamentsByStatus(
+        status,
+        userId,
+        region
+      ); // Pass region
       return { data: tournaments };
     }),
 
     getTournamentsSummary: handleRoute(async () => {
       const summary = await dbSvc.getTournamentsSummary();
       return { data: summary };
-    })
-
+    }),
   };
 };
 

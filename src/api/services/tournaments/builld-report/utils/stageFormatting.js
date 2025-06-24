@@ -8,8 +8,8 @@ function generateCategoryCode(categoryName) {
   // First uppercase letter of each word
   const letters = categoryName
     .split(/[\s-]+/) // split by space or hyphen
-    .filter(word => isNaN(parseInt(word, 10))) // filter out parts that are just numbers
-    .map(word => word.charAt(0))
+    .filter((word) => isNaN(parseInt(word, 10))) // filter out parts that are just numbers
+    .map((word) => word.charAt(0))
     .join('')
     .toUpperCase();
 
@@ -28,8 +28,9 @@ function generateMatchLabel(category, matchId) {
 function calcStage(stage, groupNumber) {
   if (stage === 'group') {
     return `GP.${groupNumber}`; // Group stage with group number
-  } {
-    const spart = stage.split('_')[1]; 
+  }
+  {
+    const spart = stage.split('_')[1];
     // spart can be 'eights', 'quarters', 'semis', 'finals', 'playoffs', '3rd4th', '5th6th', etc.
     // If it's eights to finals, return as EFn, QFn, SFn, or just FIN where n is groupNumber
     if (spart === 'eights') {
@@ -67,12 +68,12 @@ function calcStage(stage, groupNumber) {
     } else {
       return stage; // Return the original stage if no match
     }
-  } 
+  }
 }
 
 function getMatchStatus(outcome, score1, score2) {
   if (outcome === 'not played') return 'contender';
-  if (!score1) return 'contender'; 
+  if (!score1) return 'contender';
   if (score1 > score2) return 'won';
   if (score2 > score1) return 'lost';
   if (score1 === score2) return 'draw';
@@ -81,13 +82,19 @@ function getMatchStatus(outcome, score1, score2) {
 function calcBracket(stage) {
   if (stage === 'group') return stage;
   const code = stage.split('_')[0];
-  switch (code.toLowerCase()) { 
-    case 'plt': return "Plate";
-    case 'shd': return "Shield";
-    case 'cup': return "Cup";
-    case 'bwl': return "Bowl";
-    case 'spn': return "Spoon";
-    default: return 'Unknown';
+  switch (code.toLowerCase()) {
+    case 'plt':
+      return 'Plate';
+    case 'shd':
+      return 'Shield';
+    case 'cup':
+      return 'Cup';
+    case 'bwl':
+      return 'Bowl';
+    case 'spn':
+      return 'Spoon';
+    default:
+      return 'Unknown';
   }
 }
 
@@ -95,5 +102,5 @@ module.exports = {
   calcStage,
   getMatchStatus,
   calcBracket,
-  generateMatchLabel
+  generateMatchLabel,
 };

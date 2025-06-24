@@ -1,5 +1,4 @@
-const { II, DD, EE } = require('./logging');
-const { promisify } = require("util");
+const { DD, EE } = require('./logging');
 
 module.exports = (db) => {
   const execute = (type, query, params = []) => {
@@ -21,9 +20,12 @@ module.exports = (db) => {
   return {
     // Basic CRUD operations
     select: (query, params) => execute('select', query, params),
-    insert: (query, params) => execute('insert', query, params).then(r => r.insertId),
-    update: (query, params) => execute('update', query, params).then(r => r.affectedRows),
-    delete: (query, params) => execute('delete', query, params).then(r => r.affectedRows),
+    insert: (query, params) =>
+      execute('insert', query, params).then((r) => r.insertId),
+    update: (query, params) =>
+      execute('update', query, params).then((r) => r.affectedRows),
+    delete: (query, params) =>
+      execute('delete', query, params).then((r) => r.affectedRows),
 
     // Helper for transactions
     transaction: async (operations) => {
@@ -36,6 +38,6 @@ module.exports = (db) => {
         await execute('tx', 'ROLLBACK');
         throw err;
       }
-    }
+    },
   };
 };

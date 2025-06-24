@@ -1,6 +1,5 @@
 const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
-const { calculateRankings } = require('../../lib/queries');
 const { mysqlCurrentTime } = require('../../lib/utils');
 const stageCompletion = require('./fixtures/stage-completion');
 const enhanceFixtureFactory = require('./fixtures/enhance-fixture');
@@ -8,31 +7,56 @@ const TSVValidator = require('./fixtures/validate-tsv');
 
 module.exports = (db) => {
   // Destructure 'delete' from dbHelper as well
-  const { select, insert, update, transaction, query, delete: dbDelete } = dbHelper(db);
+  const {
+    select,
+    insert,
+    update,
+    transaction,
+    query,
+    delete: dbDelete,
+  } = dbHelper(db);
   // Instantiate stage completion processor with necessary dependencies
   const loggers = { II, DD };
   // Pass dbDelete to dbHelpers if stageCompletion needs it, otherwise it's available in this scope
   const dbHelpers = { select, insert, update, transaction, query };
   // Assuming sqlGroupStandings is needed and imported/available
   const { sqlGroupStandings, sqlGroupRankings } = require('../../lib/queries'); // Make sure this is imported if not already
-  const stageCompletionProcessor = stageCompletion({ dbHelpers, loggers, sqlGroupStandings, sqlGroupRankings });
+  const stageCompletionProcessor = stageCompletion({
+    dbHelpers,
+    loggers,
+    sqlGroupStandings,
+    sqlGroupRankings,
+  });
 
-  const fixtureEnhancer = enhanceFixtureFactory({ dbHelpers: { select }, loggers: { DD } });
-  const { embellishFixture, getOrCalculateTournamentCategoryCompositions } = fixtureEnhancer;
+  const fixtureEnhancer = enhanceFixtureFactory({
+    dbHelpers: { select },
+    loggers: { DD },
+  });
+  const { embellishFixture, getOrCalculateTournamentCategoryCompositions } =
+    fixtureEnhancer;
 
   return {
-    validateTsv: (tsvEncoded) => new TSVValidator(b64, { restGapMultiplier: 1 }).validate(),
+    validateTsv: (tsvEncoded) =>
+      new TSVValidator(tsvEncoded, { restGapMultiplier: 1 }).validate(),
 
     getFixture: async (tournamentId, fixtureId) => {
       const [fixture] = await select(
         `SELECT * FROM fixtures WHERE id = ? and tournamentId = ?`,
         [fixtureId, tournamentId]
       );
-      const categoryCompositions = await getOrCalculateTournamentCategoryCompositions(tournamentId);
-      return await embellishFixture(fixture, {cardedPlayers: true}, categoryCompositions);
+      const categoryCompositions =
+        await getOrCalculateTournamentCategoryCompositions(tournamentId);
+      return await embellishFixture(
+        fixture,
+        { cardedPlayers: true },
+        categoryCompositions
+      );
     },
 
-    getFixtures: async (tournamentId, { pitch, category, outcome, order = 'id' }) => {
+    getFixtures: async (
+      tournamentId,
+      { pitch, category, outcome, order = 'id' }
+    ) => {
       const conditions = ['tournamentId = ?'];
       const params = [tournamentId];
 
@@ -55,21 +79,25 @@ module.exports = (db) => {
         params
       );
 
-      const categoryCompositions = await getOrCalculateTournamentCategoryCompositions(tournamentId);
+      const categoryCompositions =
+        await getOrCalculateTournamentCategoryCompositions(tournamentId);
       return await Promise.all(
         fixtures
           .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled))
-          .map(f => embellishFixture(f, {}, categoryCompositions))
+          .map((f) => embellishFixture(f, {}, categoryCompositions))
       );
     },
 
-    getFilteredFixtures: async (tournamentId, { 
-      pitch = [], 
-      category = [], 
-      referee,        // atomic string, optional 
-      team,           // atomic string, optional 
-      order = 'id' 
-    }) => {
+    getFilteredFixtures: async (
+      tournamentId,
+      {
+        pitch = [],
+        category = [],
+        referee, // atomic string, optional
+        team, // atomic string, optional
+        order = 'id',
+      }
+    ) => {
       const conditions = ['tournamentId = ?'];
       const params = [tournamentId];
 
@@ -77,17 +105,21 @@ module.exports = (db) => {
       if (Array.isArray(pitch) && pitch.length > 0) {
         const ph = pitch.map(() => '?').join(',');
         conditions.push(`LOWER(pitch) IN (${ph})`);
-        params.push(...pitch.map(p => p.toLowerCase()));
+        params.push(...pitch.map((p) => p.toLowerCase()));
       }
 
       if (Array.isArray(category) && category.length > 0) {
         const ph = category.map(() => '?').join(',');
         conditions.push(`LOWER(category) IN (${ph})`);
-        params.push(...category.map(c => c.toLowerCase()));
+        params.push(...category.map((c) => c.toLowerCase()));
       }
 
       // atomic filters: single value
-      if (typeof referee === 'string' && referee.trim() !== '' && referee !== '*') {
+      if (
+        typeof referee === 'string' &&
+        referee.trim() !== '' &&
+        referee !== '*'
+      ) {
         conditions.push(`LOWER(referee) = ?`);
         params.push(referee.toLowerCase());
       }
@@ -103,17 +135,19 @@ module.exports = (db) => {
         params
       );
 
-      const categoryCompositions = await getOrCalculateTournamentCategoryCompositions(tournamentId);
+      const categoryCompositions =
+        await getOrCalculateTournamentCategoryCompositions(tournamentId);
       return await Promise.all(
         fixtures
           .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled))
-          .map(f => embellishFixture(f, {}, categoryCompositions))
+          .map((f) => embellishFixture(f, {}, categoryCompositions))
       );
     },
- 
+
     // Not called directly from route
     getNextFixtures: async (tournamentId) => {
-      return await select(`
+      return await select(
+        `
         WITH RankedFixtures AS (
             SELECT 
                 vfi.tournamentId, vfi.category, vfi.pitch,
@@ -164,7 +198,7 @@ module.exports = (db) => {
         [tournamentId]
       );
       if (!latest) return null;
-      
+
       await update(
         `UPDATE fixtures 
          SET goals1 = NULL, points1 = NULL, goals2 = NULL, points2 = NULL, started = NULL 
@@ -176,20 +210,20 @@ module.exports = (db) => {
 
     startFixture: async (fixtureId) => {
       const timestamp = mysqlCurrentTime();
-      await update(
-        `UPDATE fixtures SET started = ? WHERE id = ?`,
-        [timestamp, fixtureId]
-      );
+      await update(`UPDATE fixtures SET started = ? WHERE id = ?`, [
+        timestamp,
+        fixtureId,
+      ]);
       return { started: timestamp };
     },
 
     endFixture: async (fixtureId) => {
-      console.log('ok')
+      console.log('ok');
       const timestamp = mysqlCurrentTime();
-      await update(
-        `UPDATE fixtures SET ended = ? WHERE id = ?`,
-        [timestamp, fixtureId]
-      );
+      await update(`UPDATE fixtures SET ended = ? WHERE id = ?`, [
+        timestamp,
+        fixtureId,
+      ]);
       return { started: timestamp };
     },
 
@@ -198,7 +232,14 @@ module.exports = (db) => {
         `UPDATE fixtures 
          SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, outcome = ?
          WHERE id = ?`,
-        [team1.goals, team1.points, team2.goals, team2.points, outcome, fixtureId]
+        [
+          team1.goals,
+          team1.points,
+          team2.goals,
+          team2.points,
+          outcome,
+          fixtureId,
+        ]
       );
 
       // Retrieve fixture details to get the category used for updates.
@@ -210,8 +251,8 @@ module.exports = (db) => {
         const { category } = fixture;
         // Decide winner and loser based on goals (adjust logic for draws as needed).
         const winner = team1.goals > team2.goals ? team1.name : team2.name;
-        const loser  = team1.goals > team2.goals ? team2.name : team1.name;
-    
+        const loser = team1.goals > team2.goals ? team2.name : team1.name;
+
         // Update all references for the winning team.
         await update(
           `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
@@ -238,7 +279,7 @@ module.exports = (db) => {
           `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId`,
           [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
         );
-     }
+      }
       await stageCompletionProcessor.processStageCompletion(fixtureId);
       return { updated: true };
     },
@@ -247,7 +288,9 @@ module.exports = (db) => {
     cardPlayers: async (tournamentId, fixtureId, cardData) => {
       // cardData contains: id (card primary key, nullable), cardColor, team, playerNumber, playerName
       const { id, cardColor, team, playerNumber, playerName } = cardData; // Destructure new fields
-      DD(`Processing card for tournament [${tournamentId}], fixture [${fixtureId}], card ID [${id || 'NEW'}]`);
+      DD(
+        `Processing card for tournament [${tournamentId}], fixture [${fixtureId}], card ID [${id || 'NEW'}]`
+      );
 
       if (id) {
         // UPDATE existing card record based on its primary key 'id'
@@ -272,7 +315,9 @@ module.exports = (db) => {
     },
 
     deleteCard: async (tournamentId, fixtureId, cardId) => {
-      DD(`Deleting card record with ID [${cardId}] for tournament [${tournamentId}], fixture [${fixtureId}]`);
+      DD(
+        `Deleting card record with ID [${cardId}] for tournament [${tournamentId}], fixture [${fixtureId}]`
+      );
       // Use the destructured 'dbDelete' function
       const affectedRows = await dbDelete(
         `DELETE FROM cards WHERE id = ? AND tournamentId = ? AND fixtureId = ?`,
@@ -280,10 +325,14 @@ module.exports = (db) => {
       );
 
       if (affectedRows > 0) {
-        DD(`Successfully deleted card record with ID [${cardId}]. Affected rows: ${affectedRows}`);
+        DD(
+          `Successfully deleted card record with ID [${cardId}]. Affected rows: ${affectedRows}`
+        );
         return { cardDeleted: true };
       } else {
-        DD(`Card record with ID [${cardId}] not found or not associated with tournament [${tournamentId}] / fixture [${fixtureId}]. Affected rows: ${affectedRows}`);
+        DD(
+          `Card record with ID [${cardId}] not found or not associated with tournament [${tournamentId}] / fixture [${fixtureId}]. Affected rows: ${affectedRows}`
+        );
         return { cardDeleted: false }; // Indicate deletion failed (likely not found)
       }
     },
@@ -298,17 +347,26 @@ module.exports = (db) => {
       );
     },
 
-    reschedule: async ({ tournamentId, fixtureId, relativeFixtureId, placement, targetPitch }) => {
+    reschedule: async ({
+      tournamentId,
+      fixtureId,
+      relativeFixtureId,
+      placement,
+      targetPitch,
+    }) => {
       const [relFixture] = await select(
         `SELECT scheduled, pitch FROM fixtures 
          WHERE id = ? AND tournamentId = ?`,
         [relativeFixtureId, tournamentId]
       );
-      if (!relFixture) throw new Error(`Relative fixture ${relativeFixtureId} not found`);
+      if (!relFixture)
+        throw new Error(`Relative fixture ${relativeFixtureId} not found`);
 
       const relDate = new Date(relFixture.scheduled);
-      relDate.setMinutes(relDate.getMinutes() + (placement === 'before' ? -5 : 5));
-      const newScheduled = relDate.toISOString().slice(0, 19).replace("T", " ");
+      relDate.setMinutes(
+        relDate.getMinutes() + (placement === 'before' ? -5 : 5)
+      );
+      const newScheduled = relDate.toISOString().slice(0, 19).replace('T', ' ');
       const pitch = targetPitch || relFixture.pitch;
 
       await update(
@@ -317,7 +375,7 @@ module.exports = (db) => {
         [newScheduled, pitch, fixtureId, tournamentId]
       );
       return { fixtureId, newScheduled, pitch };
-    }
+    },
     // Note: embellishFixture is now defined inside the factory function scope above
   };
 };

@@ -12,10 +12,10 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
   const standingsByGroup = {};
 
   // Initialize standings for all teams in each group to include teams that haven't played.
-  teamsByGroup.forEach(group => {
+  teamsByGroup.forEach((group) => {
     const groupName = `GP.${group.group}`;
     standingsByGroup[groupName] = {};
-    group.teams.forEach(team => {
+    group.teams.forEach((team) => {
       standingsByGroup[groupName][team] = {
         team: team,
         matchesPlayed: 0,
@@ -31,8 +31,13 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
   });
 
   // Process each group fixture to calculate results
-  groupFixtures.forEach(fixture => {
-    if (fixture.outcome === 'not played' || fixture.outcome === 'skipped' || !fixture.team1.name || !fixture.team2.name) {
+  groupFixtures.forEach((fixture) => {
+    if (
+      fixture.outcome === 'not played' ||
+      fixture.outcome === 'skipped' ||
+      !fixture.team1.name ||
+      !fixture.team2.name
+    ) {
       return; // Skip unplayed, skipped, or placeholder fixtures
     }
 
@@ -46,10 +51,30 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
 
     // Ensure team entries exist
     if (!standingsByGroup[groupName][team1Name]) {
-        standingsByGroup[groupName][team1Name] = { team: team1Name, matchesPlayed: 0, won: 0, draw: 0, loss: 0, scoreFor: 0, scoreAgainst: 0, scoreDifference: 0, points: 0 };
+      standingsByGroup[groupName][team1Name] = {
+        team: team1Name,
+        matchesPlayed: 0,
+        won: 0,
+        draw: 0,
+        loss: 0,
+        scoreFor: 0,
+        scoreAgainst: 0,
+        scoreDifference: 0,
+        points: 0,
+      };
     }
     if (!standingsByGroup[groupName][team2Name]) {
-        standingsByGroup[groupName][team2Name] = { team: team2Name, matchesPlayed: 0, won: 0, draw: 0, loss: 0, scoreFor: 0, scoreAgainst: 0, scoreDifference: 0, points: 0 };
+      standingsByGroup[groupName][team2Name] = {
+        team: team2Name,
+        matchesPlayed: 0,
+        won: 0,
+        draw: 0,
+        loss: 0,
+        scoreFor: 0,
+        scoreAgainst: 0,
+        scoreDifference: 0,
+        points: 0,
+      };
     }
 
     const team1Stats = standingsByGroup[groupName][team1Name];
@@ -87,15 +112,16 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
   // Convert map to sorted array for each group and calculate final stats
   for (const groupName in standingsByGroup) {
     const groupStandings = Object.values(standingsByGroup[groupName]);
-    
-    groupStandings.forEach(s => {
+
+    groupStandings.forEach((s) => {
       s.scoreDifference = s.scoreFor - s.scoreAgainst;
     });
 
     // Sort standings: 1. points, 2. scoreDifference, 3. scoreFor
     groupStandings.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
-      if (b.scoreDifference !== a.scoreDifference) return b.scoreDifference - a.scoreDifference;
+      if (b.scoreDifference !== a.scoreDifference)
+        return b.scoreDifference - a.scoreDifference;
       if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
       return a.team.localeCompare(b.team);
     });
@@ -107,7 +133,8 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
   // Sort allGroups standings by the same criteria
   allGroupsStandings.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
-    if (b.scoreDifference !== a.scoreDifference) return b.scoreDifference - a.scoreDifference;
+    if (b.scoreDifference !== a.scoreDifference)
+      return b.scoreDifference - a.scoreDifference;
     if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
     return a.team.localeCompare(b.team);
   });
