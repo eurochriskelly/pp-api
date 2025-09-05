@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup clean follow kill dev api test-api interactive
+.PHONY: help start mocks logs backup clean follow kill watch
 
 DEFAULT_GOAL := help
 
@@ -38,17 +38,12 @@ follow:  ## Follow logs for a specific trace (usage: make follow TRACE=XXXX)
 kill:  ## Kill running server instances
 	./scripts/make/kill.sh
 
-dev:  ## Run development server with watch and auto-restart (usage: make dev [env=production|acceptance] [port=NUMBER])
-	./scripts/make/dev.sh $(env) $(port)
-
-api:  ## Host API documentation
-	npm run api
-
-test-api:  ## Test API endpoints
-	npm run test:api
-
-interactive:  ## Run interactive CLI tool
-	npm run interactive
+watch:  ## Watch for dist/ changes and restart server (usage: make watch TRACE=XXXX)
+	@if [ -z "$(TRACE)" ]; then \
+		echo "Usage: make watch TRACE=XXXX"; \
+		exit 1; \
+	fi; \
+	./scripts/make/watch.sh $(TRACE)
 
 %:
 	@:
