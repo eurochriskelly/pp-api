@@ -686,7 +686,7 @@ export default (db: any) => {
             break;
           case 'recent':
             sqlFilterConditions.push(
-              `(t.status = 'closed' AND t.Date >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH) AND t.Date < CURDATE())`
+              `(t.status = 'closed' AND t.Date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) AND t.Date < CURDATE())`
             );
             break;
           case 'archive':
