@@ -9,7 +9,7 @@
     "test": "test"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && tsc",
     "start": "npm run build && node dist/server.js",
     "dev": "tsc --watch & nodemon dist/server.js",
     "backup": "bash scripts/backup.sh",
