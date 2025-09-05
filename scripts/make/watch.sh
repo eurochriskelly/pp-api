@@ -25,7 +25,12 @@ echo -e "${BLUE}[WATCH]${RESET} Starting watch mode for TRACE $trace" | tee -a "
 
 # Check if tsc is installed
 if ! command -v tsc >/dev/null; then
-    echo -e "${RED}[ERROR]${RESET} tsc not found. Please install TypeScript globally with: npm install -g typescript"
+    echo -e "${RED}[ERROR]${RESET} The 'tsc' command is not found on your system."
+    echo "tsc is part of TypeScript, which is needed to compile the code."
+    echo "To install it, open your terminal and run:"
+    echo "    npm install -g typescript"
+    echo "If you don't have npm installed, you'll need to install Node.js first from https://nodejs.org/"
+    echo "After installation, try running this script again."
     exit 1
 fi
 
