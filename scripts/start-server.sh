@@ -41,12 +41,9 @@ echo "App: ${APP}"
 echo "Use Mock: ${USE_MOCK}"
 echo "Log File: ${LOG_FILE}"
 
-# Main loop
-RESTART_COUNT=0
-while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
-  echo "--- Starting server (attempt $((RESTART_COUNT+1)) ---"
+if [ "${WATCH:-false}" = "true" ]; then
+  echo "--- Starting server in watch mode ---"
   
-  # Source environment variables first, if not in mock mode
   if [ "$USE_MOCK" = "false" ]; then
     echo "Sourcing pp_env.sh..."
     OLD_DB=$PP_DBN
@@ -58,7 +55,6 @@ while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
     echo "Skipping pp_env.sh sourcing (mock mode)"
   fi
   
-  # Print variables *after* sourcing (if applicable) and *before* starting node
   echo "--- Variables before starting Node.js ---"
   echo "PP_DBN: ${PP_DBN}"
   echo "PORT: ${PORT}"
@@ -66,34 +62,68 @@ while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
   echo "USE_MOCK: ${USE_MOCK}"
   echo "DATABASE: ${DATABASE}"
   echo "-----------------------------------------"
-
-  # Now start the server
-  if node dist/server.js \
+  
+  npx nodemon --watch dist/ dist/server.js \
     --port="$PORT" \
     --app="$APP" \
     --use-mock="$USE_MOCK" \
     --database="$DATABASE"
-  then
-    echo "Server exited cleanly"
-    break
-  else
-    EXIT_CODE=$?
-    echo "Server crashed with exit code $EXIT_CODE"
+  
+  echo "=== Server stopped at $(date) ==="
+else
+  RESTART_COUNT=0
+  while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
+    echo "--- Starting server (attempt $((RESTART_COUNT+1)) ---"
     
-    if [ $RESTART_COUNT -eq $MAX_RESTARTS ]; then
-      echo "Max restarts reached (${MAX_RESTARTS}), giving up"
-      exit $EXIT_CODE
+    # Source environment variables first, if not in mock mode
+    if [ "$USE_MOCK" = "false" ]; then
+      echo "Sourcing pp_env.sh..."
+      OLD_DB=$PP_DBN
+      source pp_env.sh
+      if [ -n "$OLD_DB" ];then
+        PP_DBN=$OLD_DB
+      fi
+    else
+      echo "Skipping pp_env.sh sourcing (mock mode)"
     fi
     
-    echo "Restarting in ${RESTART_DELAY} seconds..."
-    sleep $RESTART_DELAY
-    ((RESTART_COUNT++))
-    
-    # Rotate log file if restarting
-    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-    LOG_FILE="${LOG_DIR}/${TIMESTAMP}.log"
-    exec > >(tee -a "$LOG_FILE") 2>&1
-  fi
-done
+    # Print variables *after* sourcing (if applicable) and *before* starting node
+    echo "--- Variables before starting Node.js ---"
+    echo "PP_DBN: ${PP_DBN}"
+    echo "PORT: ${PORT}"
+    echo "APP: ${APP}"
+    echo "USE_MOCK: ${USE_MOCK}"
+    echo "DATABASE: ${DATABASE}"
+    echo "-----------------------------------------"
 
-echo "=== Server stopped at $(date) ==="
+    # Now start the server
+    if node dist/server.js \
+      --port="$PORT" \
+      --app="$APP" \
+      --use-mock="$USE_MOCK" \
+      --database="$DATABASE"
+    then
+      echo "Server exited cleanly"
+      break
+    else
+      EXIT_CODE=$?
+      echo "Server crashed with exit code $EXIT_CODE"
+      
+      if [ $RESTART_COUNT -eq $MAX_RESTARTS ]; then
+        echo "Max restarts reached (${MAX_RESTARTS}), giving up"
+        exit $EXIT_CODE
+      fi
+      
+      echo "Restarting in ${RESTART_DELAY} seconds..."
+      sleep $RESTART_DELAY
+      ((RESTART_COUNT++))
+      
+      # Rotate log file if restarting
+      TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+      LOG_FILE="${LOG_DIR}/${TIMESTAMP}.log"
+      exec > >(tee -a "$LOG_FILE") 2>&1
+    fi
+  done
+
+  echo "=== Server stopped at $(date) ==="
+fi
