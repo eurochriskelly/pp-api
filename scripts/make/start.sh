@@ -7,7 +7,7 @@ RED='\033[1;31m'
 RESET='\033[0m'
 
 # Generate trace
-trace=$(echo -n $(date +%Y-%m-%d) | md5 | head -c4 | tr 'a-z' 'A-Z')
+trace=$(date | md5 | cut -c 1-4 | tr 'a-z' 'A-Z')
 
 echo -e "${BLUE}[INIT]${RESET} Trace ID: $trace"
 
