@@ -1,19 +1,28 @@
 const { DD, EE } = require('./logging');
+const systemService = require('../api/services/system');
 
 module.exports = (db) => {
   const execute = (type, query, params = []) => {
     return new Promise((resolve, reject) => {
-      // DD(`Executing [${type}]`);
-      // DD(`- query: ${query.split('\n').join(' ').replace(/ /g, ' ')}`);
-      //DD(`- params: ${params}`);
+      if (systemService.getPrintSqlStatements()) {
+        DD(`Executing [${type}]`);
+        DD(`- query: ${query.split('\n').join(' ').replace(/ /g, ' ')}`);
+        DD(`- params: ${JSON.stringify(params)}`);
+      }
       db.query(query, params, (err, results) => {
         if (err) {
           EE(`Query failed: ${err.message}`);
           return reject(err);
         }
-        DD(`Query succeeded, rows: ${results.length || results.affectedRows}`);
-        resolve(results);
+        if (results === undefined) {
+          EE('Error: db.query returned undefined results.');
+          resolve([]);
+        } else {
+          DD(`Query succeeded, rows: ${results.length || results.affectedRows}`);
+          resolve(results);
+        }
       });
+
     });
   };
 
