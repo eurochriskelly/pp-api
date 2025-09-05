@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup clean follow kill dev
+.PHONY: help start mocks logs backup clean follow kill dev api test-api interactive
 
 DEFAULT_GOAL := help
 
@@ -40,6 +40,15 @@ kill:  ## Kill running server instances
 
 dev:  ## Run development server with watch and auto-restart (usage: make dev [env=production|acceptance] [port=NUMBER])
 	./scripts/make/dev.sh $(env) $(port)
+
+api:  ## Host API documentation
+	npm run api
+
+test-api:  ## Test API endpoints
+	npm run test:api
+
+interactive:  ## Run interactive CLI tool
+	npm run interactive
 
 %:
 	@:
