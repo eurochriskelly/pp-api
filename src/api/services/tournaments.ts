@@ -654,7 +654,6 @@ export default (db: any) => {
     },
 
     getTournamentsByStatus: async (requestedStatusString: string, userId: number, region: string) => {
-      console.log('LLLL ok now, you')
       const requestedStatuses = requestedStatusString
         ? requestedStatusString.split(',')
         : [];
@@ -695,6 +694,8 @@ export default (db: any) => {
               `(t.status = 'closed' AND t.Date < DATE_SUB(CURDATE(), INTERVAL 3 MONTH))`
             );
             break;
+          default:
+            console.log(`Unknown status request to fn:getTournamentsByStatus: ${status}`)
         }
       });
 
