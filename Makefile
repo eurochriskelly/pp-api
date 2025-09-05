@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup clean follow kill watch
+.PHONY: help start mocks logs backup clean follow kill dev
 
 DEFAULT_GOAL := help
 
@@ -38,12 +38,8 @@ follow:  ## Follow logs for a specific trace (usage: make follow TRACE=XXXX)
 kill:  ## Kill running server instances
 	./scripts/make/kill.sh
 
-watch:  ## Watch for changes and auto-restart server (usage: make watch TRACE=XXXX)
-	@if [ -z "$(TRACE)" ]; then \
-		echo "Usage: make watch TRACE=XXXX"; \
-		exit 1; \
-	fi; \
-	./scripts/make/watch.sh $(TRACE)
+dev:  ## Run development server with watch and auto-restart (usage: make dev [env=production|acceptance] [port=NUMBER])
+	./scripts/make/dev.sh $(env) $(port)
 
 %:
 	@:
