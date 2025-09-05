@@ -48,6 +48,11 @@ echo "dbn=$dbn" >> "$pidfile"
 echo "Run \`make follow TRACE=$trace\` to follow the logs."
 echo "Log file: $logfile"
 
+if lsof -i :$port > /dev/null; then
+    echo -e "${RED}[ERROR]${RESET} Port $port is already in use. Use 'make kill' to stop existing instances."
+    exit 1
+fi
+
 while true; do
     echo -e "${GREEN}[LAUNCH]${RESET} Starting server..."
     ( PP_DBN=$dbn ./scripts/start-server.sh $port $param false $dbn >> "$logfile" 2>&1 ) || \
