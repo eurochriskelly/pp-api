@@ -21,25 +21,13 @@ export default (db: any, useMock: boolean) => {
   router.get('/:id/group-standings', ctrl.getGroupStandings);
   router.get('/:id/knockout-fixtures', ctrl.getKnockoutFixtures);
   router.get('/:id/finals-results', ctrl.getFinalsResults);
-  router.post('/:id/validate-tsv', ctrl.validateTsv);
-  router.post('/:tournamentId/generate-fixtures', ctrl.generateFixtures);
   router.get('/:id/all-matches', ctrl.getAllMatches);
-
-  router.get('/:tournamentId/filters', ctrl.getFilters);
-
-  router.get('/:id/code-check/:code', ctrl.codeCheck);
-
   router.get('/:tournamentId/matches-by-pitch', ctrl.getMatchesByPitch);
   router.get('/:tournamentId/carded-players', ctrl.getCardedPlayers);
-
-  // Squads sub-resource (replaces teams)
-  router.post('/:tournamentId/squads', ctrl.createSquad);
   router.get('/:tournamentId/squads', ctrl.getSquads);
   router.get('/:tournamentId/squads/:id', ctrl.getSquad);
   router.put('/:tournamentId/squads/:id', ctrl.updateSquad);
   router.delete('/:tournamentId/squads/:id', ctrl.deleteSquad);
-
-  // Players sub-resource (under squads)
   router.post('/:tournamentId/squads/:squadId/players', ctrl.createPlayer);
   router.get('/:tournamentId/squads/:squadId/players', ctrl.getPlayers);
   router.get('/:tournamentId/squads/:squadId/players/:id', ctrl.getPlayer);
@@ -48,8 +36,6 @@ export default (db: any, useMock: boolean) => {
     '/:tournamentId/squads/:squadId/players/:id',
     ctrl.deletePlayer
   );
-
-  // new routes to support import
   router.delete('/:id/fixtures', ctrl.deleteFixtures);
   router.delete('/:id/pitches', ctrl.deletePitches);
   router.delete('/:id/cards', ctrl.deleteCards);
