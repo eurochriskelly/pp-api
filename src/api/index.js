@@ -47,8 +47,13 @@ module.exports = (db, ARGS) => {
 
   app.get('*', (req, res) => {
     console.log(`Catch-all triggered: Requested path -> ${req.path}`);
-    console.log(`Serving [${ARGS.staticPath}]`);
-    res.sendFile(ARGS.staticPath + '/index.html');
+    const indexHtmlPath = path.join(ARGS.staticPath, 'index.html');
+    if (fs.existsSync(indexHtmlPath)) {
+      console.log(`Serving [${indexHtmlPath}]`);
+      res.sendFile(indexHtmlPath);
+    } else {
+      res.status(404).send('Not Found');
+    }
   });
 
   // Global error handler
