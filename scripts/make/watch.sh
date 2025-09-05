@@ -23,6 +23,12 @@ fi
 
 echo -e "${BLUE}[WATCH]${RESET} Starting watch mode for TRACE $trace" | tee -a "$logfile"
 
+# Check if tsc is installed
+if ! command -v tsc >/dev/null; then
+    echo -e "${RED}[ERROR]${RESET} tsc not found. Please install TypeScript globally with: npm install -g typescript"
+    exit 1
+fi
+
 # Start tsc -w in background
 echo -e "${GREEN}[BUILD]${RESET} Starting tsc --watch..." | tee -a "$logfile"
 tsc -w >> "$logfile" 2>&1 &
