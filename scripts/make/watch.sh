@@ -39,30 +39,19 @@ echo -e "${GREEN}[BUILD]${RESET} Starting tsc --watch..." | tee -a "$logfile"
 tsc -w >> "$logfile" 2>&1 &
 tsc_pid=$!
 
-# Trap to clean up tsc on exit
-trap 'kill $tsc_pid 2>/dev/null; echo -e "${YELLOW}[EXIT]${RESET} Watch mode stopped." | tee -a "$logfile"' EXIT
+# Check for nodemon
+if ! command -v nodemon >/dev/null && ! [ -f "./node_modules/.bin/nodemon" ]; then
+    echo -e "${RED}[ERROR]${RESET} nodemon not found. Install it with: npm install"
+    exit 1
+fi
 
-# Function for change detection
-has_dist_changed() {
-    current_checksum=$( (find dist/ -type f -exec md5 -q {} \; 2>/dev/null | sort) | md5 -q 2>/dev/null || echo "")
-    if [ "$current_checksum" != "$last_checksum" ]; then
-        last_checksum="$current_checksum"
-        return 0
-    fi
-    return 1
-}
+# Start nodemon to watch dist/ and kill server on changes
+echo -e "${GREEN}[WATCH]${RESET} Starting nodemon to monitor dist/..." | tee -a "$logfile"
+npx nodemon --watch dist/ --exec "bash -c 'server_pid=\$(cat \"$pidfile\" 2>/dev/null); if [ -n \"\$server_pid\" ] && kill -0 \$server_pid 2>/dev/null; then echo -e \"${YELLOW}[RESTART]${RESET} Changes detected. Killing server PID \$server_pid to trigger restart...\" | tee -a \"$logfile\"; kill \$server_pid; fi'" >> "$logfile" 2>&1 &
+nodemon_pid=$!
 
-# Initial checksum
-last_checksum=$( (find dist/ -type f -exec md5 -q {} \; 2>/dev/null | sort) | md5 -q 2>/dev/null || echo "")
+# Trap to clean up on exit
+trap 'kill $tsc_pid 2>/dev/null; kill $nodemon_pid 2>/dev/null; echo -e "${YELLOW}[EXIT]${RESET} Watch mode stopped." | tee -a "$logfile"' EXIT
 
-# Watch loop
-while true; do
-    if has_dist_changed; then
-        server_pid=$(cat "$pidfile" 2>/dev/null)
-        if [ -n "$server_pid" ] && kill -0 $server_pid 2>/dev/null; then
-            echo -e "${YELLOW}[RESTART]${RESET} Changes detected. Killing server PID $server_pid to trigger restart..." | tee -a "$logfile"
-            kill $server_pid
-        fi
-    fi
-    sleep 2
-done
+# Wait indefinitely (until interrupted)
+wait

@@ -55,6 +55,10 @@ fi
 
 while true; do
     echo -e "${GREEN}[LAUNCH]${RESET} Starting server..."
-    ( PP_DBN=$dbn ./scripts/start-server.sh $port $param false $dbn >> "$logfile" 2>&1 ) || \
-    ( echo -e "${RED}[CRASH]${RESET} Server crashed, restarting in 5 seconds..." | tee /dev/tty >> "$logfile" && sleep 5 )
+    PP_DBN=$dbn ./scripts/start-server.sh $port $param false $dbn >> "$logfile" 2>&1 &
+    server_pid=$!
+    wait $server_pid
+    exit_code=$?
+    echo -e "${RED}[STOP]${RESET} Server stopped (code $exit_code), restarting in 5 seconds..." | tee /dev/tty >> "$logfile"
+    sleep 5
 done
