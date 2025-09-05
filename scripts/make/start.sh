@@ -6,14 +6,19 @@ GREEN='\033[1;32m'
 RED='\033[1;31m'
 RESET='\033[0m'
 
+trap 'rm -f "$pidfile"' EXIT
+
 # Generate trace
-trace=$(date | md5 | cut -c 1-4 | tr 'a-z' 'A-Z')
+trace=$$
 
 echo -e "${BLUE}[INIT]${RESET} Trace ID: $trace"
 
 mkdir -p ./logs/temp
+mkdir -p ./pids
 logfile="./logs/temp/start-$trace.log"
+pidfile="./pids/start-$trace.pid"
 > "$logfile"
+echo "$trace" > "$pidfile"
 
 echo -e "${GREEN}[BUILD]${RESET} Compiling TypeScript..."
 npm run build >> "$logfile" 2>&1
@@ -37,6 +42,9 @@ else
 fi
 
 echo -e "${BLUE}[CONFIG]${RESET} Environment: $env, Port: $port, DB: $dbn"
+echo "env=$env" >> "$pidfile"
+echo "port=$port" >> "$pidfile"
+echo "dbn=$dbn" >> "$pidfile"
 echo "Run \`make follow TRACE=$trace\` to follow the logs."
 echo "Log file: $logfile"
 

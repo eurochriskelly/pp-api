@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup clean follow
+.PHONY: help start mocks logs backup clean follow kill
 
 DEFAULT_GOAL := help
 
@@ -34,6 +34,9 @@ follow:  ## Follow logs for a specific trace (usage: make follow TRACE=XXXX)
 		echo "Log file for trace $(TRACE) not found."; \
 		exit 1; \
 	fi
+
+kill:  ## Kill running server instances
+	./scripts/make/kill.sh
 
 %:
 	@:
