@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { TournamentService } from '../services/tournaments';
-import { MockTournamentService } from '../services/mocks/tournaments';
+import serviceFactory from '../services/tournaments';
+import mockServiceFactory from '../services/mocks/tournaments';
 
 type TournamentParams = {
   id: string;
@@ -16,6 +16,7 @@ type TournamentQuery = {
   userId?: string;
   role?: string;
   category?: string;
+  region?: string;
 };
 
 type TournamentBody = {
@@ -43,131 +44,149 @@ type TournamentBody = {
 };
 
 export default (db: any, useMock: boolean) => {
-  const serviceFactory = useMock
-    ? require('../services/mocks/tournaments')
-    : require('../services/tournaments');
-  const dbSvc: TournamentService | MockTournamentService = serviceFactory(db);
+  const factory = useMock ? mockServiceFactory : serviceFactory;
+  const dbSvc: any = factory(db);
 
-  const handleRoute = (
-    logic: (req: Request, res: Response, next: NextFunction) => Promise<any>,
-    successStatus = 200
-  ) => {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const result = await logic(req, res, next);
-        if (result !== undefined) {
-          return res.status(successStatus).json(result);
-        }
-      } catch (err) {
-        return next(err);
-      }
-    };
-  };
+
 
   return {
     // Tournament CRUD
-    validateTsv: handleRoute(async (req: Request, res: Response) => {
-      const tsvEncoded = req.body.key;
-      const { rows, warnings } = dbSvc.validateTsv(tsvEncoded);
-      return { data: { rows, warnings } };
-    }, 201),
-
-    createTournament: handleRoute(async (req: Request) => {
-      const {
-        userId,
-        region,
-        title,
-        date,
-        location,
-        lat,
-        lon,
-        codeOrganizer,
-        winPoints = 2,
-        drawPoints = 1,
-        lossPoints = 0,
-      } = req.body;
-      const tournament = await dbSvc.createTournament(userId, {
-        region,
-        title,
-        date,
-        location,
-        lat,
-        lon,
-        codeOrganizer,
-        winPoints,
-        drawPoints,
-        lossPoints,
-      });
-      return tournament;
-    }, 201),
-
-    updateTournament: handleRoute(async (req: Request) => {
-      const { id } = req.params as TournamentParams;
-      const {
-        region,
-        title,
-        date,
-        location,
-        lat,
-        lon,
-        codeOrganizer,
-        winPoints = 2,
-        drawPoints = 1,
-        lossPoints = 0,
-      } = req.body;
-      await dbSvc.updateTournament(id, {
-        region,
-        title,
-        date,
-        location,
-        lat,
-        lon,
-        codeOrganizer,
-        winPoints,
-        drawPoints,
-        lossPoints,
-      });
-      const tournament = await dbSvc.getTournament(id);
-      return tournament;
-    }, 200),
-
-    getTournaments: handleRoute(async (req: Request) => {
-      const status = (req.query as TournamentQuery).status || 'all';
-      const userId = (req.query as TournamentQuery).userId;
-      const role = (req.query as TournamentQuery).role;
-      const tournaments = await dbSvc.getTournaments(status, userId, role);
-      return { data: tournaments };
-    }),
-
-    getTournamentReport: handleRoute(async (req: Request) => {
-      const { id } = req.params as TournamentParams;
-      const report = await dbSvc.buildTournamentReport(id);
-      return { data: report };
-    }),
-
-    buildTournamentReport: handleRoute(async (req: Request) => {
-      const { id } = req.params as TournamentParams;
-      const report = await dbSvc.buildTournamentReport(id);
-      return { data: report };
-    }),
-
-    generateFixtures: handleRoute(async (req: Request) => {
-      const competitionData = req.body;
-      const hydratedCompetition = await dbSvc.generateFixtures(competitionData);
-      return { data: hydratedCompetition };
-    }, 200),
-
-    getFilters: handleRoute(async (req: Request) => {
-      const { tournamentId } = req.params as TournamentParams;
-      const { role, category } = req.query as TournamentQuery;
-      if (!role) {
-        const err = new Error('Role query parameter is required.');
-        (err as any).statusCode = 400;
-        throw err;
+    validateTsv: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const tsvEncoded = req.body.key;
+        const { rows, warnings } = dbSvc.validateTsv(tsvEncoded);
+        res.status(201).json({ data: { rows, warnings } });
+      } catch (err) {
+        next(err);
       }
-      const filters = await dbSvc.getFilters(tournamentId, role, category);
-      return { data: filters };
-    }),
+    },
+
+    createTournament: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const {
+          userId,
+          region,
+          title,
+          date,
+          location,
+          lat,
+          lon,
+          codeOrganizer,
+          winPoints = 2,
+          drawPoints = 1,
+          lossPoints = 0,
+        } = req.body;
+        const tournament = await dbSvc.createTournament(userId, {
+          region,
+          title,
+          date,
+          location,
+          lat,
+          lon,
+          codeOrganizer,
+          winPoints,
+          drawPoints,
+          lossPoints,
+        });
+        res.status(201).json(tournament);
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    updateTournament: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const {
+          region,
+          title,
+          date,
+          location,
+          lat,
+          lon,
+          codeOrganizer,
+          winPoints = 2,
+          drawPoints = 1,
+          lossPoints = 0,
+        } = req.body;
+        await dbSvc.updateTournament(id, {
+          region,
+          title,
+          date,
+          location,
+          lat,
+          lon,
+          codeOrganizer,
+          winPoints,
+          drawPoints,
+          lossPoints,
+        });
+        const tournament = await dbSvc.getTournament(id);
+        res.status(200).json(tournament);
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    getTournaments: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const status = (req.query as TournamentQuery).status || 'all';
+        const userId = (req.query as TournamentQuery).userId;
+        const role = (req.query as TournamentQuery).role;
+        const tournaments = await dbSvc.getTournaments(status, userId, role);
+        res.json({ data: tournaments });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    getTournamentReport: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const report = await dbSvc.buildTournamentReport(id);
+        res.json({ data: report });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    buildTournamentReport: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const report = await dbSvc.buildTournamentReport(id);
+        res.json({ data: report });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    generateFixtures: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const competitionData = req.body;
+        const hydratedCompetition = await dbSvc.generateFixtures(
+          competitionData
+        );
+        res.status(200).json({ data: hydratedCompetition });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    getFilters: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId } = req.params as TournamentParams;
+        const { role, category } = req.query as TournamentQuery;
+        if (!role) {
+          const err = new Error('Role query parameter is required.');
+          (err as any).statusCode = 400;
+          throw err;
+        }
+        const filters = await dbSvc.getFilters(tournamentId, role, category);
+        res.json({ data: filters });
+      } catch (err) {
+        next(err);
+      }
+    },
 
     getTournament: async (req: Request, res: Response) => {
       const { id, uuid } = req.params as TournamentParams;
@@ -235,20 +254,82 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
-    getTournamentsByStatus: handleRoute(async (req: Request) => {
-      const { status } = req.params as TournamentParams;
-      const { userId, region } = req.query as TournamentQuery;
-      const tournaments = await dbSvc.getTournamentsByStatus(
-        status,
-        userId,
-        region
-      );
-      return { data: tournaments };
-    }),
+    getTournamentsByStatus: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { status } = req.params as TournamentParams;
+        const { userId, region } = req.query as TournamentQuery;
+        const tournaments = await dbSvc.getTournamentsByStatus(
+          status,
+          userId,
+          region
+        );
+        res.json({ data: tournaments });
+      } catch (err) {
+        next(err);
+      }
+    },
 
-    getTournamentsSummary: handleRoute(async () => {
-      const summary = await dbSvc.getTournamentsSummary();
-      return { data: summary };
-    }),
+    getTournamentsSummary: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const summary = await dbSvc.getTournamentsSummary();
+        res.json({ data: summary });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getRecentMatches: async (req: Request, res: Response, next: NextFunction) => {},
+    getTournamentCategories: async (req: Request, res: Response, next: NextFunction) => {},
+    getGroupFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    getGroupStandings: async (req: Request, res: Response, next: NextFunction) => {},
+    getKnockoutFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    getFinalsResults: async (req: Request, res: Response, next: NextFunction) => {},
+    getAllMatches: async (req: Request, res: Response, next: NextFunction) => {},
+    getMatchesByPitch: async (req: Request, res: Response, next: NextFunction) => {},
+    getCardedPlayers: async (req: Request, res: Response, next: NextFunction) => {},
+    getSquads: async (req: Request, res: Response, next: NextFunction) => {},
+    getSquad: async (req: Request, res: Response, next: NextFunction) => {},
+    updateSquad: async (req: Request, res: Response, next: NextFunction) => {},
+    deleteSquad: async (req: Request, res: Response, next: NextFunction) => {},
+    createPlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    getPlayers: async (req: Request, res: Response, next: NextFunction) => {},
+    getPlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    updatePlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    deletePlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    deleteFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    deletePitches: async (req: Request, res: Response, next: NextFunction) => {},
+    deleteCards: async (req: Request, res: Response, next: NextFunction) => {},
+    createPitches: async (req: Request, res: Response, next: NextFunction) => {},
+    createFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    getRecentMatches: async (req: Request, res: Response, next: NextFunction) => {},
+    getTournamentCategories: async (req: Request, res: Response, next: NextFunction) => {},
+    getGroupFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    getGroupStandings: async (req: Request, res: Response, next: NextFunction) => {},
+    getKnockoutFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    getFinalsResults: async (req: Request, res: Response, next: NextFunction) => {},
+    getAllMatches: async (req: Request, res: Response, next: NextFunction) => {},
+    getMatchesByPitch: async (req: Request, res: Response, next: NextFunction) => {},
+    getCardedPlayers: async (req: Request, res: Response, next: NextFunction) => {},
+    getSquads: async (req: Request, res: Response, next: NextFunction) => {},
+    getSquad: async (req: Request, res: Response, next: NextFunction) => {},
+    updateSquad: async (req: Request, res: Response, next: NextFunction) => {},
+    deleteSquad: async (req: Request, res: Response, next: NextFunction) => {},
+    createPlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    getPlayers: async (req: Request, res: Response, next: NextFunction) => {},
+    getPlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    updatePlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    deletePlayer: async (req: Request, res: Response, next: NextFunction) => {},
+    deleteFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    deletePitches: async (req: Request, res: Response, next: NextFunction) => {},
+    deleteCards: async (req: Request, res: Response, next: NextFunction) => {},
+    createPitches: async (req: Request, res: Response, next: NextFunction) => {},
+    createFixtures: async (req: Request, res: Response, next: NextFunction) => {},
   };
 };
