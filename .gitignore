@@ -3,3 +3,4 @@ docs/api/openapi_bundle.yaml
 gg_env.sh
 logs
 pp_env.sh
+pids/
