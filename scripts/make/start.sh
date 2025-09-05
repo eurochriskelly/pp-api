@@ -20,9 +20,6 @@ pidfile="./pids/start-$trace.pid"
 > "$logfile"
 echo "$trace" > "$pidfile"
 
-echo -e "${GREEN}[BUILD]${RESET} Compiling TypeScript..."
-npm run build >> "$logfile" 2>&1
-
 if [ -z "$1" ]; then
     read -p "Which environment? [production/acceptance]: " env
 else
@@ -60,12 +57,46 @@ if [ -n "$pids" ]; then
     echo -e "${GREEN}[SUCCESS]${RESET} Port $port is now free." | tee -a "$logfile"
 fi
 
-while true; do
-    echo -e "${GREEN}[LAUNCH]${RESET} Starting server..."
+if [ "${WATCH:-false}" = "true" ]; then
+    if ! command -v tsc >/dev/null; then
+        echo -e "${RED}[ERROR]${RESET} The 'tsc' command is not found on your system."
+        echo "tsc is part of TypeScript, which is needed to compile the code."
+        echo "To install it, open your terminal and run:"
+        echo "    npm install -g typescript"
+        echo "If you don't have npm installed, you'll need to install Node.js first from https://nodejs.org/"
+        echo "After installation, try running this script again."
+        exit 1
+    fi
+
+    if ! command -v nodemon >/dev/null && ! [ -f "./node_modules/.bin/nodemon" ]; then
+        echo -e "${RED}[ERROR]${RESET} nodemon not found. Install it with: npm install"
+        exit 1
+    fi
+
+    echo -e "${GREEN}[BUILD]${RESET} Starting tsc --watch..." | tee -a "$logfile"
+    tsc -w >> "$logfile" 2>&1 &
+    tsc_pid=$!
+
+    echo -e "${GREEN}[LAUNCH]${RESET} Starting server with nodemon..." | tee -a "$logfile"
     PP_DBN=$dbn ./scripts/start-server.sh $port $param false $dbn >> "$logfile" 2>&1 &
     server_pid=$!
+
+    trap 'kill $tsc_pid 2>/dev/null; kill $server_pid 2>/dev/null; rm -f "$pidfile"; echo -e "${YELLOW}[EXIT]${RESET} Watch mode stopped." | tee -a "$logfile"' EXIT
+
     wait $server_pid
-    exit_code=$?
-    echo -e "${RED}[STOP]${RESET} Server stopped (code $exit_code), restarting in 5 seconds..." | tee /dev/tty >> "$logfile"
-    sleep 5
-done
+else
+    echo -e "${GREEN}[BUILD]${RESET} Compiling TypeScript..."
+    npm run build >> "$logfile" 2>&1
+
+    while true; do
+        echo -e "${GREEN}[LAUNCH]${RESET} Starting server..."
+        PP_DBN=$dbn ./scripts/start-server.sh $port $param false $dbn >> "$logfile" 2>&1 &
+        server_pid=$!
+        trap 'kill $server_pid 2>/dev/null; rm -f "$pidfile"; echo -e "${YELLOW}[EXIT]${RESET} Server stopped." | tee -a "$logfile"' EXIT
+        wait $server_pid
+        exit_code=$?
+        trap 'rm -f "$pidfile"' EXIT
+        echo -e "${RED}[STOP]${RESET} Server stopped (code $exit_code), restarting in 5 seconds..." | tee /dev/tty >> "$logfile"
+        sleep 5
+    done
+fi

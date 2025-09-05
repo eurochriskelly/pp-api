@@ -318,17 +318,17 @@ export default (db: any) => {
     updateTournament: async (
       id: number,
       {
-        region,
-        title,
-        date,
-        location,
-        lat,
-        lon,
+        region, title, date, 
+        location, lat, lon, 
         codeOrganizer,
-        winPoints = 3,
-        drawPoints = 1,
-        lossPoints = 0,
-      }: { region: string, title: string, date: string, location: string, lat: number, lon: number, codeOrganizer: string, winPoints?: number, drawPoints?: number, lossPoints?: number }
+        winPoints = 3, drawPoints = 1, lossPoints = 0,
+      }: 
+      { 
+        region: string, title: string, date: string, 
+        location: string, lat: number, lon: number, 
+        codeOrganizer: string, 
+        winPoints?: number, drawPoints?: number, lossPoints?: number 
+      }
     ) => {
       await update(
         `UPDATE tournaments 
@@ -654,6 +654,7 @@ export default (db: any) => {
     },
 
     getTournamentsByStatus: async (requestedStatusString: string, userId: number, region: string) => {
+      console.log('LLLL ok now, you')
       const requestedStatuses = requestedStatusString
         ? requestedStatusString.split(',')
         : [];
