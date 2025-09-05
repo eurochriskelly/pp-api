@@ -23,16 +23,15 @@ clean: ## Remove cache directory
 logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 	./scripts/make/logs.sh $(env)
 
-follow:  ## Follow logs for a specific trace (usage: make follow --trace=XXXX)
-	@trace=$(subst --trace=,,$(filter --trace=%,$(MAKECMDGOALS))); \
-	if [ -z "$$trace" ]; then \
-		echo "Usage: make follow --trace=XXXX"; \
+follow:  ## Follow logs for a specific trace (usage: make follow TRACE=XXXX)
+	@if [ -z "$(TRACE)" ]; then \
+		echo "Usage: make follow TRACE=XXXX"; \
 		exit 1; \
 	fi; \
-	if [ -f "./logs/temp/start-$$trace.log" ]; then \
-		tail -f "./logs/temp/start-$$trace.log"; \
+	if [ -f "./logs/temp/start-$(TRACE).log" ]; then \
+		tail -f "./logs/temp/start-$(TRACE).log"; \
 	else \
-		echo "Log file for trace $$trace not found."; \
+		echo "Log file for trace $(TRACE) not found."; \
 		exit 1; \
 	fi
 

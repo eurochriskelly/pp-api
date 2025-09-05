@@ -37,7 +37,7 @@ else
 fi
 
 echo -e "${BLUE}[CONFIG]${RESET} Environment: $env, Port: $port, DB: $dbn"
-echo "Run \`make follow --trace=$trace\` to follow the logs."
+echo "Run \`make follow TRACE=$trace\` to follow the logs."
 
 while true; do
     echo -e "${GREEN}[LAUNCH]${RESET} Starting server..."
