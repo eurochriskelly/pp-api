@@ -285,28 +285,235 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
-    getRecentMatches: async (req: Request, res: Response, next: NextFunction) => {},
-    getTournamentCategories: async (req: Request, res: Response, next: NextFunction) => {},
-    getGroupFixtures: async (req: Request, res: Response, next: NextFunction) => {},
-    getGroupStandings: async (req: Request, res: Response, next: NextFunction) => {},
-    getKnockoutFixtures: async (req: Request, res: Response, next: NextFunction) => {},
-    getFinalsResults: async (req: Request, res: Response, next: NextFunction) => {},
-    getAllMatches: async (req: Request, res: Response, next: NextFunction) => {},
-    getMatchesByPitch: async (req: Request, res: Response, next: NextFunction) => {},
-    getCardedPlayers: async (req: Request, res: Response, next: NextFunction) => {},
-    getSquads: async (req: Request, res: Response, next: NextFunction) => {},
-    getSquad: async (req: Request, res: Response, next: NextFunction) => {},
-    updateSquad: async (req: Request, res: Response, next: NextFunction) => {},
-    deleteSquad: async (req: Request, res: Response, next: NextFunction) => {},
-    createPlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    getPlayers: async (req: Request, res: Response, next: NextFunction) => {},
-    getPlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    updatePlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    deletePlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    deleteFixtures: async (req: Request, res: Response, next: NextFunction) => {},
-    deletePitches: async (req: Request, res: Response, next: NextFunction) => {},
-    deleteCards: async (req: Request, res: Response, next: NextFunction) => {},
-    createPitches: async (req: Request, res: Response, next: NextFunction) => {},
-    createFixtures: async (req: Request, res: Response, next: NextFunction) => {},
+    getRecentMatches: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getRecentMatches(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getTournamentCategories: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getTournamentCategories(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getGroupFixtures: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getGroupFixtures(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getGroupStandings: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getGroupStandings(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getKnockoutFixtures: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getKnockoutFixtures(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getFinalsResults: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getFinalsResults(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getAllMatches: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getAllMatches(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getMatchesByPitch: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getMatchesByPitch(tournamentId);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getCardedPlayers: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getCardedPlayers(tournamentId);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getSquads: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getSquads(tournamentId);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getSquad: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, id } = req.params as TournamentParams;
+        const data = await dbSvc.getSquad(tournamentId, id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    updateSquad: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, id } = req.params as TournamentParams;
+        await dbSvc.updateSquad(tournamentId, id, req.body);
+        const squad = await dbSvc.getSquad(tournamentId, id);
+        res.status(200).json(squad);
+      } catch (err) {
+        next(err);
+      }
+    },
+    deleteSquad: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, id } = req.params as TournamentParams;
+        await dbSvc.deleteSquad(tournamentId, id);
+        res.json({ message: 'Squad deleted' });
+      } catch (err) {
+        next(err);
+      }
+    },
+    createPlayer: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, squadId } = req.params as TournamentParams;
+        const playerId = await dbSvc.createPlayer(
+          tournamentId,
+          squadId,
+          req.body
+        );
+        const player = await dbSvc.getPlayer(tournamentId, squadId, playerId);
+        res.status(201).json(player);
+      } catch (err) {
+        next(err);
+      }
+    },
+    getPlayers: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, squadId } = req.params as TournamentParams;
+        const data = await dbSvc.getPlayers(tournamentId, squadId);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getPlayer: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, squadId, id } = req.params as any;
+        const data = await dbSvc.getPlayer(tournamentId, squadId, id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    updatePlayer: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, squadId, id } = req.params as any;
+        await dbSvc.updatePlayer(tournamentId, squadId, id, req.body);
+        const player = await dbSvc.getPlayer(tournamentId, squadId, id);
+        res.status(200).json(player);
+      } catch (err) {
+        next(err);
+      }
+    },
+    deletePlayer: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, squadId, id } = req.params as any;
+        await dbSvc.deletePlayer(tournamentId, squadId, id);
+        res.json({ message: 'Player deleted' });
+      } catch (err) {
+        next(err);
+      }
+    },
+    deleteFixtures: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        await dbSvc.deleteFixtures(id);
+        res.json({ message: 'Fixtures deleted' });
+      } catch (err) {
+        next(err);
+      }
+    },
+    deletePitches: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        await dbSvc.deletePitches(id);
+        res.json({ message: 'Pitches deleted' });
+      } catch (err) {
+        next(err);
+      }
+    },
+    deleteCards: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        await dbSvc.deleteCards(id);
+        res.json({ message: 'Cards deleted' });
+      } catch (err) {
+        next(err);
+      }
+    },
+    createPitches: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const pitches = await dbSvc.createPitches(id, req.body);
+        res.status(201).json({ data: pitches });
+      } catch (err) {
+        next(err);
+      }
+    },
+    createFixtures: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const fixtures = await dbSvc.createFixtures(id, req.body);
+        res.status(201).json({ data: fixtures });
+      } catch (err) {
+        next(err);
+      }
+    },
   };
 };
