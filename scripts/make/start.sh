@@ -13,9 +13,10 @@ trace=$$
 
 echo -e "${BLUE}[INIT]${RESET} Trace ID: $trace"
 
-mkdir -p ./logs/temp
+mkdir -p ./logs
 mkdir -p ./pids
-logfile="./logs/temp/start-$trace.log"
+# Always use the same log file
+logfile="./logs/server.log"
 pidfile="./pids/start-$trace.pid"
 > "$logfile"
 echo "$trace" > "$pidfile"
@@ -42,7 +43,7 @@ echo -e "${BLUE}[CONFIG]${RESET} Environment: $env, Port: $port, DB: $dbn"
 echo "env=$env" >> "$pidfile"
 echo "port=$port" >> "$pidfile"
 echo "dbn=$dbn" >> "$pidfile"
-echo "Run \`make follow TRACE=$trace\` to follow the logs."
+echo "Run \`make follow\` to follow the logs."
 echo "Log file: $logfile"
 
 pids=$(lsof -ti :$port)
@@ -96,7 +97,7 @@ else
         wait $server_pid
         exit_code=$?
         trap 'rm -f "$pidfile"' EXIT
-        echo -e "${RED}[STOP]${RESET} Server stopped (code $exit_code), restarting in 5 seconds..." | tee /dev/tty >> "$logfile"
+        echo -e "${RED}[STOP]${RESET} Server stopped (code $exit_code), restarting in 5 seconds..." | tee -a "$logfile"
         sleep 5
     done
 fi
