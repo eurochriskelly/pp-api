@@ -394,7 +394,11 @@ class TSVValidator {
       const pos = parseInt(posText, 10);
       const groupNum =
         nthGpMatch[2] === undefined ? 0 : parseInt(nthGpMatch[2], 10);
-      const normalizedValue = `${posText} GP.${groupNum}`;
+      const normalizedPosText = posText.replace(
+        /(ST|ND|RD|TH)$/i,
+        (s) => s.toLowerCase()
+      );
+      const normalizedValue = `${normalizedPosText} GP.${groupNum}`;
       const cellSpecificWarnings = [];
 
       const categoryScannedTeamsInGroups =
@@ -499,7 +503,11 @@ class TSVValidator {
       if (!/^(\d+)(ST|ND|RD|TH)$/.test(before)) {
         return this._fw(col, r, 'BEST needs preceding pos', up);
       }
-      return { value: up.replace(/\s+/g, ' '), warnings: [] }; // Already uppercase
+      const normalized = up.replace(
+        /(\d+)(ST|ND|RD|TH)/g,
+        (_, num, suffix) => num + suffix.toLowerCase()
+      );
+      return { value: normalized.replace(/\s+/g, ' '), warnings: [] };
     }
 
     const gpm = /GP\.(\d+)/.exec(up); // General check for other GP.X references
@@ -812,7 +820,7 @@ class TSVValidator {
           name.substring(firstWord.length)
         );
       }
-      const m = /^(\d+)(ST|ND|RD|TH)(.*)/.exec(name);
+      const m = /^(\d+)(ST|ND|RD|TH)(.*)/i.exec(name);
       if (m) {
         return m[1] + m[2].toLowerCase() + m[3];
       }
