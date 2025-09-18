@@ -634,13 +634,14 @@ class TSVValidator {
     const teamTime = new Set();
     this.rows.forEach((r) => {
       const t = r.TIME.value;
+      const cat = r.CATEGORY.value;
       [r.TEAM1, r.TEAM2].forEach((ent) => {
         const name = ent.value?.toUpperCase();
         if (!name || !this._isRealTeam(name)) return;
-        const key = `${t}#${name}`;
+        const key = `${t}#${cat}#${name}`;
         if (teamTime.has(key)) {
           this.warnings.push(
-            warn('integrity', `Team ${name} in two matches at ${t}`)
+            warn('integrity', `Team ${name} (${cat}) in two matches at ${t}`)
           );
         }
         teamTime.add(key);
@@ -732,14 +733,17 @@ class TSVValidator {
       this.rows.forEach((r, idx) => {
         const s = this._min(r.TIME.value);
         const d = r.DURATION.value || 0;
+        const cat = r.CATEGORY.value;
         [r.TEAM1, r.TEAM2].forEach((ent) => {
           const name = ent.value?.toUpperCase();
           if (!name || !this._isRealTeam(name)) return;
-          if (!sched.has(name)) sched.set(name, []);
-          sched.get(name).push({ s, d, row: idx });
+          const key = `${cat}#${name}`;
+          if (!sched.has(key)) sched.set(key, []);
+          sched.get(key).push({ s, d, row: idx });
         });
       });
-      for (const [team, list] of sched.entries()) {
+      for (const [key, list] of sched.entries()) {
+        const [cat, team] = key.split('#');
         list.sort((a, b) => a.s - b.s);
         for (let i = 1; i < list.length; i++) {
           const prev = list[i - 1];
@@ -749,7 +753,7 @@ class TSVValidator {
             this.warnings.push(
               warn(
                 'misc',
-                `Team ${team} row ${cur.row}: rest gap ${cur.s - (prev.s + prev.d)} min (<${minGap})`
+                `Team ${team} (${cat}) row ${cur.row}: rest gap ${cur.s - (prev.s + prev.d)} min (<${minGap})`
               )
             );
           }
@@ -761,16 +765,17 @@ class TSVValidator {
     const roleMap = new Map(); // key: time#team → { play, ump }
     this.rows.forEach((r, idx) => {
       const t = r.TIME.value;
+      const cat = r.CATEGORY.value;
       const add = (team, role) => {
         if (!team || !this._isRealTeam(team)) return;
-        const key = `${t}#${team}`;
+        const key = `${t}#${cat}#${team}`;
         const obj = roleMap.get(key) || { play: false, ump: false };
         obj[role] = true;
         if (obj.play && obj.ump) {
           this.warnings.push(
             warn(
               'integrity',
-              `Team ${team} both playing and umpiring at ${t}`,
+              `Team ${team} (${cat}) both playing and umpiring at ${t}`,
               idx
             )
           );
