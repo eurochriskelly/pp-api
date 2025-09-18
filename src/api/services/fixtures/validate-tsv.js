@@ -138,12 +138,15 @@ class TSVValidator {
       }
 
       // Populate preScannedCatGroups, preScannedCatBrackets, and preScannedCatGroupTeams
-      const stageVal = (cols[stageHdrIdx] || '').trim().toUpperCase();
+      let stageVal = (cols[stageHdrIdx] || '').trim().toUpperCase();
+      if (stageVal === 'GPS' || stageVal === 'GP.*') {
+        stageVal = 'GP.0';
+      }
       const stageParts = stageVal.split(/[ .]/).filter(Boolean);
 
       if (stageParts.length === 2) {
         const [partA, partB] = stageParts;
-        if (partA === 'GP' && /^[1-9]\d*$/.test(partB)) {
+        if (partA === 'GP' && /^\d+$/.test(partB)) {
           const groupNum = Number(partB);
           if (!this.preScannedCatGroups.has(catVal)) {
             this.preScannedCatGroups.set(catVal, new Set());
@@ -282,14 +285,17 @@ class TSVValidator {
   }
 
   _stage(c, r, cat) {
-    const raw = (c[this.hdx.get('STAGE')] || '').trim().toUpperCase();
+    let raw = (c[this.hdx.get('STAGE')] || '').trim().toUpperCase();
+    if (raw === 'GPS' || raw === 'GP.*') {
+      raw = 'GP.0';
+    }
     const p = raw.split(/[ .]/).filter(Boolean);
     if (p.length !== 2) return this._fw('STAGE', r, 'Need two parts', raw);
     const [a, b] = p;
     let norm;
     if (a === 'GP') {
-      if (!/^[1-9]\d*$/.test(b))
-        return this._fw('STAGE', r, 'Group id must be a positive number', raw);
+      if (!/^\d+$/.test(b))
+        return this._fw('STAGE', r, 'Group id must be numeric', raw);
       norm = `GP.${Number(b)}`;
       if (!this.catGroups.has(cat)) this.catGroups.set(cat, new Set());
       this.catGroups.get(cat).add(Number(b));
@@ -370,11 +376,15 @@ class TSVValidator {
       return { value: `${tok[0]} ${mid}`, warnings: [] };
     }
 
-    // Check for "NTH GP.X" pattern (e.g., "1ST GP.1", "4TH GP.2")
-    const nthGpMatch = /^(\d+)(?:ST|ND|RD|TH)\s+GP\.(\d+)$/i.exec(up);
+    // Check for "NTH GP.X" pattern (e.g., "1ST GP.1", "4TH GP.2", "5TH GPS")
+    const nthGpMatch =
+      /^(\d+(?:ST|ND|RD|TH))\s+GP(?:S|\.\*|(?:\.(\d+)))$/i.exec(up);
     if (nthGpMatch) {
-      const pos = parseInt(nthGpMatch[1], 10);
-      const groupNum = parseInt(nthGpMatch[2], 10);
+      const posText = nthGpMatch[1];
+      const pos = parseInt(posText, 10);
+      const groupNum =
+        nthGpMatch[2] === undefined ? 0 : parseInt(nthGpMatch[2], 10);
+      const normalizedValue = `${posText} GP.${groupNum}`;
       const cellSpecificWarnings = [];
 
       const categoryDeclaredGroups =
@@ -428,7 +438,7 @@ class TSVValidator {
         }
       }
       return {
-        value: up,
+        value: normalizedValue,
         warnings: cellSpecificWarnings.map((w) => ({ ...w })),
       };
     }
