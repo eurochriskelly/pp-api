@@ -798,14 +798,29 @@ class TSVValidator {
     });
   }
 
+  _shortenTeamName(name) {
+    if (!name) return '';
+    return name
+      .split('/')
+      .map((part) => {
+        const tokens = part.trim().split(' ');
+        const firstToken = tokens[0];
+        if (firstToken.length > 6) {
+          tokens[0] = firstToken.substring(0, 4);
+        }
+        return tokens.join(' ');
+      })
+      .join('/');
+  }
+
   _buildStagesSummary() {
     for (const row of this.rows) {
       const category = row.CATEGORY.value;
       const stage = row.STAGE.value;
       const matchId = row.MATCH.value;
-      const team1 = row.TEAM1.value;
-      const team2 = row.TEAM2.value;
-      const umpires = row.UMPIRES.value;
+      const team1 = this._shortenTeamName(row.TEAM1.value);
+      const team2 = this._shortenTeamName(row.TEAM2.value);
+      const umpires = this._shortenTeamName(row.UMPIRES.value);
 
       if (!this.stages[category]) {
         this.stages[category] = {
@@ -824,8 +839,13 @@ class TSVValidator {
             matches: [],
           };
         }
+        const matchIdParts = matchId.split('.');
+        const formattedMatchId = `${matchIdParts[0]}.${matchIdParts[1].padStart(
+          2,
+          ' '
+        )}>`;
         const matchString =
-          `${matchId}: "${team1}" vs "${team2}"`.padEnd(47) +
+          `${formattedMatchId} "${team1}" vs "${team2}"`.padEnd(47) +
           `Ump: "${umpires}"`;
         groupStage[groupName].matches.push(matchString);
       } else {
