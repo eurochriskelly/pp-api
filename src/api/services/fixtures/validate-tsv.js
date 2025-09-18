@@ -801,6 +801,17 @@ class TSVValidator {
   _shortenTeamName(name) {
     if (!name) return '';
 
+    if (!this._isRealTeam(name)) {
+      if (name.startsWith('LOSER')) {
+        return 'Loser' + name.substring(5);
+      }
+      const m = /^(\d+)(ST|ND|RD|TH)(.*)/.exec(name);
+      if (m) {
+        return m[1] + m[2].toLowerCase() + m[3];
+      }
+      return name;
+    }
+
     const shortenPart = (part) => {
       part = part.trim();
       if (part.length <= 6) return part;
