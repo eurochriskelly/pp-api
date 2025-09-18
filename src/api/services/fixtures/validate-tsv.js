@@ -232,9 +232,9 @@ class TSVValidator {
     put('PITCH', this._pass('PITCH', c, r));
     const stg = this._stage(c, r, cat.value);
     put('STAGE', stg);
-    put('TEAM1', this._team(c, r, 'TEAM1', cat.value, stg.value));
-    put('TEAM2', this._team(c, r, 'TEAM2', cat.value, stg.value));
-    put('UMPIRES', this._team(c, r, 'UMPIRES', cat.value, stg.value, true));
+    put('TEAM1', this._team(c, r, 'TEAM1', cat.value, stg.value, mt.value));
+    put('TEAM2', this._team(c, r, 'TEAM2', cat.value, stg.value, mt.value));
+    put('UMPIRES', this._team(c, r, 'UMPIRES', cat.value, stg.value, mt.value, true));
     put('DURATION', this._dur(c, r));
     if (this.hdx.has('REFEREE'))
       put('REFEREE', this._pass('REFEREE', c, r, true));
@@ -309,7 +309,7 @@ class TSVValidator {
     return { value: norm, warnings: [] };
   }
 
-  _team(c, r, col, cat, stage, isUmp = false) {
+  _team(c, r, col, cat, stage, matchId, isUmp = false) {
     const raw = (c[this.hdx.get(col)] || '').trim();
     if (!raw) return this._fw(col, r, 'Empty', '', false); // Return empty string for empty input
 
@@ -358,20 +358,28 @@ class TSVValidator {
       const mid = tok[1];
       if (!/^[A-Z]+\.\d+$/.test(mid))
         return this._fw(col, r, `Bad match id ${mid}`, up);
-      if (!isUmp) {
-        const preScannedMap = this.preScannedCatMatches.get(cat) || new Map();
-        if (!preScannedMap.has(mid)) {
-          // This warning is added directly to global warnings.
-          // For cell-specific, it should be returned in the object.
-          const w = warn(
-            'integrity',
-            `Unknown match ${mid} referenced in "${raw}"`,
-            r,
-            col
-          );
-          this.warnings.push(w);
-          return { value: `${tok[0]} ${mid}`, warnings: [w] };
-        }
+
+      if (mid === matchId) {
+        const w = warn(
+          'integrity',
+          `Match ${matchId} cannot reference itself in "${raw}"`,
+          r,
+          col
+        );
+        this.warnings.push(w);
+        return { value: `${tok[0]} ${mid}`, warnings: [w] };
+      }
+
+      const preScannedMap = this.preScannedCatMatches.get(cat) || new Map();
+      if (!preScannedMap.has(mid)) {
+        const w = warn(
+          'integrity',
+          `Unknown match ${mid} referenced in "${raw}"`,
+          r,
+          col
+        );
+        this.warnings.push(w);
+        return { value: `${tok[0]} ${mid}`, warnings: [w] };
       }
       return { value: `${tok[0]} ${mid}`, warnings: [] };
     }
