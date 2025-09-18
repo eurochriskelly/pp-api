@@ -23,16 +23,22 @@ clean: ## Remove cache directory
 logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 	./scripts/make/logs.sh $(env)
 
-follow:  ## Follow logs for a specific trace (usage: make follow TRACE=XXXX)
+follow:  ## Follow logs for a specific trace or the latest (usage: make follow [TRACE=XXXX])
 	@if [ -z "$(TRACE)" ]; then \
-		echo "Usage: make follow TRACE=XXXX"; \
-		exit 1; \
-	fi; \
-	if [ -f "./logs/temp/start-$(TRACE).log" ]; then \
-		tail -f "./logs/temp/start-$(TRACE).log"; \
+		latest_log=$$(ls -t ./logs/temp/start-*.log 2>/dev/null | head -n 1); \
+		if [ -z "$$latest_log" ]; then \
+			echo "No log files found in ./logs/temp/"; \
+			exit 1; \
+		fi; \
+		echo "Following latest log: $$latest_log"; \
+		tail -f "$$latest_log"; \
 	else \
-		echo "Log file for trace $(TRACE) not found."; \
-		exit 1; \
+		if [ -f "./logs/temp/start-$(TRACE).log" ]; then \
+			tail -f "./logs/temp/start-$(TRACE).log"; \
+		else \
+			echo "Log file for trace $(TRACE) not found."; \
+			exit 1; \
+		fi; \
 	fi
 
 kill:  ## Kill running server instances
