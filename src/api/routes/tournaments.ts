@@ -15,6 +15,7 @@ export default (db: any, useMock: boolean) => {
   router.delete('/:id', ctrl.deleteTournament);
   router.get('/by-uuid/:uuid', ctrl.getTournament);
   router.post('/:id/reset', ctrl.resetTournament);
+  router.post('/:id/validate-tsv', ctrl.validateTsv);
   router.get('/:id/recent-matches', ctrl.getRecentMatches);
   router.get('/:id/categories', ctrl.getTournamentCategories);
   router.get('/:id/group-fixtures', ctrl.getGroupFixtures);
