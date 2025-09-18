@@ -13,7 +13,10 @@ function prettyPrintStages(stages: any) {
       output += `  Group Stage:\n`;
       for (const groupName in groupStage) {
         const group = groupStage[groupName];
-        output += `    "${groupName}" (Size ${group.size}, matches ${group.matchesCount}): \n`;
+        const groupHeader =
+          `"${groupName}"`.padEnd(71) +
+          `Size=${group.size}, Matches=${group.matchesCount}`;
+        output += `    ${groupHeader}\n`;
         for (const match of group.matches) {
           output += `      ${match}\n`;
         }
