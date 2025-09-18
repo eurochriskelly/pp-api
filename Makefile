@@ -23,15 +23,19 @@ clean: ## Remove cache directory
 logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 	./scripts/make/logs.sh $(env)
 
-follow:  ## Follow logs for a specific trace or the latest (usage: make follow [TRACE=XXXX])
+follow:  ## Follow logs for a specific trace or the latest via symlink (usage: make follow [TRACE=XXXX])
 	@if [ -z "$(TRACE)" ]; then \
+		# Find the latest log file \
 		latest_log=$$(ls -t ./logs/temp/start-*.log 2>/dev/null | head -n 1); \
 		if [ -z "$$latest_log" ]; then \
 			echo "No log files found in ./logs/temp/"; \
 			exit 1; \
 		fi; \
-		echo "Following latest log: $$latest_log"; \
-		tail -f "$$latest_log"; \
+		# Remove any existing symlink and create a new one pointing to the latest log \
+		rm -f ./logs/temp/start.log; \
+		ln -s "$$(basename "$$latest_log")" ./logs/temp/start.log; \
+		echo "Following latest log via symlink: $$latest_log"; \
+		tail -f ./logs/temp/start.log; \
 	else \
 		if [ -f "./logs/temp/start-$(TRACE).log" ]; then \
 			tail -f "./logs/temp/start-$(TRACE).log"; \
