@@ -23,27 +23,13 @@ clean: ## Remove cache directory
 logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 	./scripts/make/logs.sh $(env)
 
-follow:  ## Follow logs for a specific trace or the latest via symlink (usage: make follow [TRACE=XXXX])
-	@if [ -z "$(TRACE)" ]; then \
-		# Update the symlink to point to the latest log file \
-		latest_log=$$(ls -t ./logs/temp/start-*.log 2>/dev/null | head -n 1); \
-		if [ -z "$$latest_log" ]; then \
-			echo "No log files found in ./logs/temp/"; \
-			exit 1; \
-		fi; \
-		# Remove any existing symlink and create a new one pointing to the latest log \
-		rm -f ./logs/temp/start.log; \
-		ln -s "$$(basename "$$latest_log")" ./logs/temp/start.log; \
-		echo "Following latest log: $$latest_log"; \
-		# Use awk to process the output and exit when the termination message is found \
-		tail -F "$$latest_log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'; \
+follow:  ## Follow the server log (always follows ./logs/server.log)
+	@if [ -f "./logs/server.log" ]; then \
+		tail -f "./logs/server.log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'; \
 	else \
-		if [ -f "./logs/temp/start-$(TRACE).log" ]; then \
-			tail -f "./logs/temp/start-$(TRACE).log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'; \
-		else \
-			echo "Log file for trace $(TRACE) not found."; \
-			exit 1; \
-		fi; \
+		echo "Log file ./logs/server.log not found."; \
+		echo "Start the server first using 'make start' or 'make mocks'"; \
+		exit 1; \
 	fi
 
 kill:  ## Kill running server instances
