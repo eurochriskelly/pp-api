@@ -35,31 +35,11 @@ follow:  ## Follow logs for a specific trace or the latest via symlink (usage: m
 		rm -f ./logs/temp/start.log; \
 		ln -s "$$(basename "$$latest_log")" ./logs/temp/start.log; \
 		echo "Following latest log: $$latest_log"; \
-		# Use a script to follow and exit when the termination message is found \
-		{ tail -F "$$latest_log" & echo $$! > /tmp/tail.pid; } | \
-		while read line; do \
-			echo "$$line"; \
-			if echo "$$line" | grep -q "\[EXIT\] Server stopped\."; then \
-				echo "Server stopped detected, exiting..."; \
-				kill $$(cat /tmp/tail.pid) 2>/dev/null; \
-				rm -f /tmp/tail.pid; \
-				exit 0; \
-			fi; \
-		done; \
-		rm -f /tmp/tail.pid; \
+		# Use awk to process the output and exit when the termination message is found \
+		tail -F "$$latest_log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'; \
 	else \
 		if [ -f "./logs/temp/start-$(TRACE).log" ]; then \
-			{ tail -f "./logs/temp/start-$(TRACE).log" & echo $$! > /tmp/tail.pid; } | \
-			while read line; do \
-				echo "$$line"; \
-				if echo "$$line" | grep -q "\[EXIT\] Server stopped\."; then \
-					echo "Server stopped detected, exiting..."; \
-					kill $$(cat /tmp/tail.pid) 2>/dev/null; \
-					rm -f /tmp/tail.pid; \
-					exit 0; \
-				fi; \
-			done; \
-			rm -f /tmp/tail.pid; \
+			tail -f "./logs/temp/start-$(TRACE).log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'; \
 		else \
 			echo "Log file for trace $(TRACE) not found."; \
 			exit 1; \
