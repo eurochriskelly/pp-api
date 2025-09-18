@@ -143,7 +143,7 @@ class TSVValidator {
 
       if (stageParts.length === 2) {
         const [partA, partB] = stageParts;
-        if (partA === 'GP' && /^\d+$/.test(partB)) {
+        if (partA === 'GP' && /^[1-9]\d*$/.test(partB)) {
           const groupNum = Number(partB);
           if (!this.preScannedCatGroups.has(catVal)) {
             this.preScannedCatGroups.set(catVal, new Set());
@@ -288,8 +288,8 @@ class TSVValidator {
     const [a, b] = p;
     let norm;
     if (a === 'GP') {
-      if (!/^\d+$/.test(b))
-        return this._fw('STAGE', r, 'Group id non-numeric', raw);
+      if (!/^[1-9]\d*$/.test(b))
+        return this._fw('STAGE', r, 'Group id must be a positive number', raw);
       norm = `GP.${Number(b)}`;
       if (!this.catGroups.has(cat)) this.catGroups.set(cat, new Set());
       this.catGroups.get(cat).add(Number(b));
