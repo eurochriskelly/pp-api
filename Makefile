@@ -24,13 +24,10 @@ logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 	./scripts/make/logs.sh $(env)
 
 follow:  ## Follow the server log (always follows ./logs/server.log)
-	@if [ -f "./logs/server.log" ]; then \
-		tail -f "./logs/server.log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'; \
-	else \
-		echo "Log file ./logs/server.log not found."; \
-		echo "Start the server first using 'make start' or 'make mocks'"; \
-		exit 1; \
-	fi
+	@mkdir -p ./logs
+	@touch ./logs/server.log
+	@echo "Following ./logs/server.log (press Ctrl+C to exit)"
+	@tail -f "./logs/server.log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'
 
 kill:  ## Kill running server instances
 	./scripts/make/kill.sh
