@@ -799,18 +799,28 @@ class TSVValidator {
   }
 
   _shortenTeamName(name) {
-    if (!name) return '';
-    return name
-      .split('/')
-      .map((part) => {
-        const tokens = part.trim().split(' ');
-        const firstToken = tokens[0];
-        if (firstToken.length > 6) {
-          tokens[0] = firstToken.substring(0, 4);
-        }
-        return tokens.join(' ');
-      })
-      .join('/');
+    if (!name || !name.includes('/')) {
+      return name;
+    }
+
+    const shortenPart = (part) => {
+      part = part.trim();
+      if (part.length <= 6) return part;
+
+      const words = part.split(' ');
+      const lastWord = words.length > 1 ? words.pop() : '';
+      const firstPart = words.join(' ');
+
+      if (lastWord) {
+        const available = 6 - (lastWord.length + 1);
+        if (available < 1) return part.substring(0, 6);
+        return `${firstPart.substring(0, available)} ${lastWord}`;
+      } else {
+        return firstPart.substring(0, 6);
+      }
+    };
+
+    return name.split('/').map(shortenPart).join('/');
   }
 
   _buildStagesSummary() {
@@ -820,7 +830,7 @@ class TSVValidator {
       const matchId = row.MATCH.value;
       const team1 = this._shortenTeamName(row.TEAM1.value);
       const team2 = this._shortenTeamName(row.TEAM2.value);
-      const umpires = this._shortenTeamName(row.UMPIRES.value);
+      const umpires = row.UMPIRES.value;
 
       if (!this.stages[category]) {
         this.stages[category] = {
@@ -835,6 +845,10 @@ class TSVValidator {
         ' '
       )}>`;
 
+      const team1Display = `"${team1.substring(0, 20)}"`.padEnd(22);
+      const team2Display = `"${team2.substring(0, 20)}"`.padEnd(22);
+      const teamsPart = `${team1Display} vs ${team2Display}`;
+
       if (stage.startsWith('GP.')) {
         const groupName = `Gp.${stage.split('.')[1]}`;
         const groupStage = this.stages[category]['Group Stage'];
@@ -845,9 +859,7 @@ class TSVValidator {
             matches: [],
           };
         }
-        const matchString =
-          `${formattedMatchId} "${team1}" vs "${team2}"`.padEnd(57) +
-          `Ump: "${umpires}"`;
+        const matchString = `${formattedMatchId} ${teamsPart} Ump: "${umpires}"`;
         groupStage[groupName].matches.push(matchString);
       } else {
         const [bracket, stageCode] = stage.split('.');
@@ -857,10 +869,7 @@ class TSVValidator {
             matches: [],
           };
         }
-        const koMatchString =
-          `${formattedMatchId} ${stageCode}: "${team1}" vs "${team2}"`.padEnd(
-            57
-          ) + `Ump: "${umpires}"`;
+        const koMatchString = `${formattedMatchId} ${stageCode}: ${teamsPart} Ump: "${umpires}"`;
         knockoutStage[bracket].matches.push(koMatchString);
       }
     }
