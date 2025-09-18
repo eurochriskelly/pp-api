@@ -799,9 +799,7 @@ class TSVValidator {
   }
 
   _shortenTeamName(name) {
-    if (!name || !name.includes('/')) {
-      return name;
-    }
+    if (!name) return '';
 
     const shortenPart = (part) => {
       part = part.trim();
@@ -845,8 +843,8 @@ class TSVValidator {
         ' '
       )}>`;
 
-      const team1Display = `"${team1.substring(0, 20)}"`.padEnd(22);
-      const team2Display = `"${team2.substring(0, 20)}"`.padEnd(22);
+      const team1Display = `"${team1}"`.padEnd(26);
+      const team2Display = `"${team2}"`.padEnd(26);
       const teamsPart = `${team1Display} vs ${team2Display}`;
 
       if (stage.startsWith('GP.')) {
@@ -859,7 +857,8 @@ class TSVValidator {
             matches: [],
           };
         }
-        const matchString = `${formattedMatchId} ${teamsPart} Ump: "${umpires}"`;
+        const prefix = `${formattedMatchId} `.padEnd(13);
+        const matchString = `${prefix}${teamsPart} Ump: "${umpires}"`;
         groupStage[groupName].matches.push(matchString);
       } else {
         const [bracket, stageCode] = stage.split('.');
@@ -869,7 +868,8 @@ class TSVValidator {
             matches: [],
           };
         }
-        const koMatchString = `${formattedMatchId} ${stageCode}: ${teamsPart} Ump: "${umpires}"`;
+        const prefix = `${formattedMatchId} ${stageCode}: `.padEnd(13);
+        const koMatchString = `${prefix}${teamsPart} Ump: "${umpires}"`;
         knockoutStage[bracket].matches.push(koMatchString);
       }
     }
