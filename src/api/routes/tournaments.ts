@@ -16,6 +16,7 @@ export default (db: any, useMock: boolean) => {
   router.get('/by-uuid/:uuid', ctrl.getTournament);
   router.post('/:id/reset', ctrl.resetTournament);
   router.post('/:id/validate-tsv', ctrl.validateTsv);
+  router.post('/:tournamentId/generate-fixtures', ctrl.generateFixtures);
   router.get('/:id/recent-matches', ctrl.getRecentMatches);
   router.get('/:id/categories', ctrl.getTournamentCategories);
   router.get('/:id/group-fixtures', ctrl.getGroupFixtures);
@@ -23,8 +24,11 @@ export default (db: any, useMock: boolean) => {
   router.get('/:id/knockout-fixtures', ctrl.getKnockoutFixtures);
   router.get('/:id/finals-results', ctrl.getFinalsResults);
   router.get('/:id/all-matches', ctrl.getAllMatches);
+  router.get('/:tournamentId/filters', ctrl.getFilters);
+  router.get('/:id/code-check/:code', ctrl.codeCheck);
   router.get('/:tournamentId/matches-by-pitch', ctrl.getMatchesByPitch);
   router.get('/:tournamentId/carded-players', ctrl.getCardedPlayers);
+  router.post('/:tournamentId/squads', ctrl.createSquad);
   router.get('/:tournamentId/squads', ctrl.getSquads);
   router.get('/:tournamentId/squads/:id', ctrl.getSquad);
   router.put('/:tournamentId/squads/:id', ctrl.updateSquad);
