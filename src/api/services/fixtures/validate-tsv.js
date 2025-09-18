@@ -89,6 +89,7 @@ class TSVValidator {
     this.catBrackets = new Map();
     this.catTeams = new Map();
     this.catMatches = new Map();
+    this.stages = {};
 
     // For pre-scanning results
     this.preScannedCatGroupTeams = new Map(); // Stores Map<category, Map<groupNumber, Set<teamName>>>
@@ -191,6 +192,7 @@ class TSVValidator {
       this.rows.push(this._row(cols, i));
     }
     this._cross();
+    this._buildStagesSummary();
     return this._result();
   }
 
@@ -796,9 +798,66 @@ class TSVValidator {
     });
   }
 
+  _buildStagesSummary() {
+    for (const row of this.rows) {
+      const category = row.CATEGORY.value;
+      const stage = row.STAGE.value;
+      const matchId = row.MATCH.value;
+      const team1 = row.TEAM1.value;
+      const team2 = row.TEAM2.value;
+      const umpires = row.UMPIRES.value;
+
+      if (!this.stages[category]) {
+        this.stages[category] = {
+          'Group Stage': {},
+          'Knockout Stage': {},
+        };
+      }
+
+      if (stage.startsWith('GP.')) {
+        const groupName = `Gp.${stage.split('.')[1]}`;
+        const groupStage = this.stages[category]['Group Stage'];
+        if (!groupStage[groupName]) {
+          groupStage[groupName] = {
+            size: 0,
+            matchesCount: 0,
+            matches: [],
+          };
+        }
+        const matchString =
+          `${matchId}: "${team1}" vs "${team2}"`.padEnd(47) +
+          `Ump: "${umpires}"`;
+        groupStage[groupName].matches.push(matchString);
+      } else {
+        const [bracket, stageCode] = stage.split('.');
+        const knockoutStage = this.stages[category]['Knockout Stage'];
+        if (!knockoutStage[bracket]) {
+          knockoutStage[bracket] = {
+            matches: [],
+          };
+        }
+        const koMatchString =
+          `${stageCode}: "${team1}" vs "${team2}"`.padEnd(47) +
+          `Ump: "${umpires}"`;
+        knockoutStage[bracket].matches.push(koMatchString);
+      }
+    }
+
+    // Now calculate size and matchesCount for groups
+    for (const category in this.stages) {
+      const groupStage = this.stages[category]['Group Stage'];
+      for (const groupName in groupStage) {
+        const groupNum = parseInt(groupName.split('.')[1], 10);
+        const teams = this.catTeams.get(category)?.get(groupNum) || new Set();
+        groupStage[groupName].size = teams.size;
+        groupStage[groupName].matchesCount = groupStage[groupName].matches.length;
+      }
+    }
+  }
+
   /* —— result —— */
   _result() {
-    return { rows: this.rows, warnings: this.warnings };
+    return { rows: this.rows, warnings: this.warnings, stages: this.stages };
   }
 }
 

@@ -2,6 +2,38 @@ import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/tournaments';
 import mockServiceFactory from '../services/mocks/tournaments';
 
+function prettyPrintStages(stages: any) {
+  let output = '';
+  for (const category in stages) {
+    output += `\n"${category}":\n`;
+    const { 'Group Stage': groupStage, 'Knockout Stage': knockoutStage } =
+      stages[category];
+
+    if (Object.keys(groupStage).length > 0) {
+      output += `  Group Stage:\n`;
+      for (const groupName in groupStage) {
+        const group = groupStage[groupName];
+        output += `    "${groupName}" (Size ${group.size}, matches ${group.matchesCount}): \n`;
+        for (const match of group.matches) {
+          output += `      ${match}\n`;
+        }
+      }
+    }
+
+    if (Object.keys(knockoutStage).length > 0) {
+      output += `\n  Knockout Stage:\n`;
+      for (const bracketName in knockoutStage) {
+        const bracket = knockoutStage[bracketName];
+        output += `    ${bracketName}:\n`;
+        for (const match of bracket.matches) {
+          output += `      ${match}\n`;
+        }
+      }
+    }
+  }
+  console.log(output);
+}
+
 type TournamentParams = {
   id: string;
   tournamentId: string;
@@ -54,8 +86,9 @@ export default (db: any, useMock: boolean) => {
     validateTsv: (req: Request, res: Response, next: NextFunction) => {
       try {
         const tsvEncoded = req.body.key;
-        const { rows, warnings } = dbSvc.validateTsv(tsvEncoded);
-        res.status(201).json({ data: { rows, warnings } });
+        const { rows, warnings, stages } = dbSvc.validateTsv(tsvEncoded);
+        prettyPrintStages(stages);
+        res.status(201).json({ data: { rows, warnings, stages } });
       } catch (err) {
         next(err);
       }
