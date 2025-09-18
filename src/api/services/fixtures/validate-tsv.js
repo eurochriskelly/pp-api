@@ -387,28 +387,22 @@ class TSVValidator {
       const normalizedValue = `${posText} GP.${groupNum}`;
       const cellSpecificWarnings = [];
 
-      const categoryDeclaredGroups =
-        this.preScannedCatGroups.get(cat) || new Set();
       const categoryScannedTeamsInGroups =
         this.preScannedCatGroupTeams.get(cat);
 
-      if (!categoryDeclaredGroups.has(groupNum)) {
-        const w = warn(
-          'field',
-          `Referenced group GP.${groupNum} in "${raw}" does not exist in category ${cat}.`,
-          r,
-          col
-        );
-        this.warnings.push(w);
-        cellSpecificWarnings.push(w);
-      } else {
-        const teamsInGroupSet = categoryScannedTeamsInGroups
-          ? categoryScannedTeamsInGroups.get(groupNum)
-          : undefined;
-        const numTeamsInGroup = teamsInGroupSet ? teamsInGroupSet.size : 0;
+      if (groupNum === 0) {
+        // Overall group stage position (e.g., "7th Gps")
+        const allTeams = new Set();
+        if (categoryScannedTeamsInGroups) {
+          for (const teams of categoryScannedTeamsInGroups.values()) {
+            for (const team of teams) {
+              allTeams.add(team);
+            }
+          }
+        }
+        const totalTeamsInCat = allTeams.size;
 
         if (pos === 0) {
-          // Positions like "0TH" are invalid
           const w = warn(
             'field',
             `Invalid position "0TH" in "${raw}". Positions must be 1st or higher.`,
@@ -417,24 +411,65 @@ class TSVValidator {
           );
           this.warnings.push(w);
           cellSpecificWarnings.push(w);
-        } else if (numTeamsInGroup === 0 && pos > 0) {
+        } else if (pos > totalTeamsInCat) {
           const w = warn(
             'field',
-            `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group is declared but has no teams.`,
+            `Position ${pos} in "${raw}" is invalid; category ${cat} only has ${totalTeamsInCat} teams in total across all groups.`,
             r,
             col
           );
           this.warnings.push(w);
           cellSpecificWarnings.push(w);
-        } else if (pos > numTeamsInGroup) {
+        }
+      } else {
+        // Position within a specific group (e.g., "3rd Gp.1")
+        const categoryDeclaredGroups =
+          this.preScannedCatGroups.get(cat) || new Set();
+
+        if (!categoryDeclaredGroups.has(groupNum)) {
           const w = warn(
             'field',
-            `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group only has ${numTeamsInGroup} teams.`,
+            `Referenced group GP.${groupNum} in "${raw}" does not exist in category ${cat}.`,
             r,
             col
           );
           this.warnings.push(w);
           cellSpecificWarnings.push(w);
+        } else {
+          const teamsInGroupSet = categoryScannedTeamsInGroups
+            ? categoryScannedTeamsInGroups.get(groupNum)
+            : undefined;
+          const numTeamsInGroup = teamsInGroupSet ? teamsInGroupSet.size : 0;
+
+          if (pos === 0) {
+            // Positions like "0TH" are invalid
+            const w = warn(
+              'field',
+              `Invalid position "0TH" in "${raw}". Positions must be 1st or higher.`,
+              r,
+              col
+            );
+            this.warnings.push(w);
+            cellSpecificWarnings.push(w);
+          } else if (numTeamsInGroup === 0 && pos > 0) {
+            const w = warn(
+              'field',
+              `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group is declared but has no teams.`,
+              r,
+              col
+            );
+            this.warnings.push(w);
+            cellSpecificWarnings.push(w);
+          } else if (pos > numTeamsInGroup) {
+            const w = warn(
+              'field',
+              `Position ${pos} in ${cat} GP.${groupNum} ("${raw}") is invalid; group only has ${numTeamsInGroup} teams.`,
+              r,
+              col
+            );
+            this.warnings.push(w);
+            cellSpecificWarnings.push(w);
+          }
         }
       }
       return {
