@@ -558,7 +558,9 @@ class TSVValidator {
   }
 
   _isRealTeam(v) {
-    return !/^(WINNER|LOSER|BEST|GP\.)/.test(v.toUpperCase());
+    return !/^(WINNER|LOSER|BEST|GP\.|\d+(?:ST|ND|RD|TH))/.test(
+      v.toUpperCase()
+    );
   }
 
   /* —— cross-checks —— */
@@ -802,8 +804,13 @@ class TSVValidator {
     if (!name) return '';
 
     if (!this._isRealTeam(name)) {
-      if (name.startsWith('LOSER')) {
-        return 'Loser' + name.substring(5);
+      if (name.startsWith('WINNER') || name.startsWith('LOSER')) {
+        const firstWord = name.split(' ')[0];
+        return (
+          firstWord.charAt(0) +
+          firstWord.substring(1).toLowerCase() +
+          name.substring(firstWord.length)
+        );
       }
       const m = /^(\d+)(ST|ND|RD|TH)(.*)/.exec(name);
       if (m) {
