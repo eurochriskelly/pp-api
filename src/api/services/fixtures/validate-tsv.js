@@ -829,6 +829,12 @@ class TSVValidator {
         };
       }
 
+      const matchIdParts = matchId.split('.');
+      const formattedMatchId = `${matchIdParts[0]}.${matchIdParts[1].padStart(
+        2,
+        ' '
+      )}>`;
+
       if (stage.startsWith('GP.')) {
         const groupName = `Gp.${stage.split('.')[1]}`;
         const groupStage = this.stages[category]['Group Stage'];
@@ -839,13 +845,8 @@ class TSVValidator {
             matches: [],
           };
         }
-        const matchIdParts = matchId.split('.');
-        const formattedMatchId = `${matchIdParts[0]}.${matchIdParts[1].padStart(
-          2,
-          ' '
-        )}>`;
         const matchString =
-          `${formattedMatchId} "${team1}" vs "${team2}"`.padEnd(47) +
+          `${formattedMatchId} "${team1}" vs "${team2}"`.padEnd(57) +
           `Ump: "${umpires}"`;
         groupStage[groupName].matches.push(matchString);
       } else {
@@ -857,8 +858,9 @@ class TSVValidator {
           };
         }
         const koMatchString =
-          `${stageCode}: "${team1}" vs "${team2}"`.padEnd(47) +
-          `Ump: "${umpires}"`;
+          `${formattedMatchId} ${stageCode}: "${team1}" vs "${team2}"`.padEnd(
+            57
+          ) + `Ump: "${umpires}"`;
         knockoutStage[bracket].matches.push(koMatchString);
       }
     }
