@@ -25,7 +25,7 @@ logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
 
 follow:  ## Follow logs for a specific trace or the latest via symlink (usage: make follow [TRACE=XXXX])
 	@if [ -z "$(TRACE)" ]; then \
-		# Find the latest log file \
+		# Update the symlink to point to the latest log file \
 		latest_log=$$(ls -t ./logs/temp/start-*.log 2>/dev/null | head -n 1); \
 		if [ -z "$$latest_log" ]; then \
 			echo "No log files found in ./logs/temp/"; \
@@ -34,8 +34,9 @@ follow:  ## Follow logs for a specific trace or the latest via symlink (usage: m
 		# Remove any existing symlink and create a new one pointing to the latest log \
 		rm -f ./logs/temp/start.log; \
 		ln -s "$$(basename "$$latest_log")" ./logs/temp/start.log; \
-		echo "Following latest log via symlink: $$latest_log"; \
-		tail -f ./logs/temp/start.log; \
+		echo "Following latest log: $$latest_log"; \
+		# Use tail -F to follow the filename, which works even if the file is recreated \
+		tail -F "$$latest_log"; \
 	else \
 		if [ -f "./logs/temp/start-$(TRACE).log" ]; then \
 			tail -f "./logs/temp/start-$(TRACE).log"; \
