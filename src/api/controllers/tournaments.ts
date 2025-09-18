@@ -51,7 +51,7 @@ export default (db: any, useMock: boolean) => {
 
   return {
     // Tournament CRUD
-    validateTsv: async (req: Request, res: Response, next: NextFunction) => {
+    validateTsv: (req: Request, res: Response, next: NextFunction) => {
       try {
         const tsvEncoded = req.body.key;
         const { rows, warnings } = dbSvc.validateTsv(tsvEncoded);
@@ -285,29 +285,6 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
-    getRecentMatches: async (req: Request, res: Response, next: NextFunction) => {},
-    getTournamentCategories: async (req: Request, res: Response, next: NextFunction) => {},
-    getGroupFixtures: async (req: Request, res: Response, next: NextFunction) => {},
-    getGroupStandings: async (req: Request, res: Response, next: NextFunction) => {},
-    getKnockoutFixtures: async (req: Request, res: Response, next: NextFunction) => {},
-    getFinalsResults: async (req: Request, res: Response, next: NextFunction) => {},
-    getAllMatches: async (req: Request, res: Response, next: NextFunction) => {},
-    getMatchesByPitch: async (req: Request, res: Response, next: NextFunction) => {},
-    getCardedPlayers: async (req: Request, res: Response, next: NextFunction) => {},
-    getSquads: async (req: Request, res: Response, next: NextFunction) => {},
-    getSquad: async (req: Request, res: Response, next: NextFunction) => {},
-    updateSquad: async (req: Request, res: Response, next: NextFunction) => {},
-    deleteSquad: async (req: Request, res: Response, next: NextFunction) => {},
-    createPlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    getPlayers: async (req: Request, res: Response, next: NextFunction) => {},
-    getPlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    updatePlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    deletePlayer: async (req: Request, res: Response, next: NextFunction) => {},
-    deleteFixtures: async (req: Request, res: Response, next: NextFunction) => {},
-    deletePitches: async (req: Request, res: Response, next: NextFunction) => {},
-    deleteCards: async (req: Request, res: Response, next: NextFunction) => {},
-    createPitches: async (req: Request, res: Response, next: NextFunction) => {},
-    createFixtures: async (req: Request, res: Response, next: NextFunction) => {},
     getRecentMatches: async (req: Request, res: Response, next: NextFunction) => {},
     getTournamentCategories: async (req: Request, res: Response, next: NextFunction) => {},
     getGroupFixtures: async (req: Request, res: Response, next: NextFunction) => {},
