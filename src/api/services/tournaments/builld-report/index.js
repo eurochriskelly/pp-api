@@ -7,12 +7,20 @@ module.exports = {
   buildReportCSV,
 };
 
-async function buildReport(tournamentId, select) {
+async function buildReport(tournamentId, select, category) {
   const reportBuilder = new ReportBuilder(select);
-  const reportData = await reportBuilder.build(tournamentId);
+  const reportData = await reportBuilder.build(tournamentId, category);
 
   const exporter = new JsonExporter();
-  return exporter.export(reportData);
+  const result = exporter.export(reportData);
+  
+  // If a category is specified, filter the categories array
+  if (category) {
+    result.categories = result.categories.filter(cat => 
+      cat.category.toUpperCase() === category.toUpperCase()
+    );
+  }
+  return result;
 }
 
 async function buildReportCSV(tournamentId, select) {
