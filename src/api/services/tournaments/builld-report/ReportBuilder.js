@@ -13,16 +13,23 @@ class ReportBuilder {
     this.select = select;
   }
 
-  async build(tournamentId) {
+  async build(tournamentId, category) {
     const tournament = await this.getTournamentInfo(tournamentId);
     const pitches = await this.getPitchInfo(tournamentId);
     // Get the basic category info (teams, groups)
     const categoryTeamInfo = await this.getCategoriesInfo(tournamentId);
     const cardsByFixtureId = await this.getCardsForTournament(tournamentId);
 
+    // Filter categories if a specific category is provided
+    const filteredCategoryTeamInfo = category ? 
+      categoryTeamInfo.filter(catInfo => 
+        catInfo.category.toUpperCase() === category.toUpperCase()
+      ) : 
+      categoryTeamInfo;
+
     // Now, for each category, fetch and structure its fixtures
     const categoriesWithFixtures = await Promise.all(
-      categoryTeamInfo.map(async (catInfo) => {
+      filteredCategoryTeamInfo.map(async (catInfo) => {
         const fixtures = await this.getFixturesForCategory(
           tournamentId,
           catInfo.category,
