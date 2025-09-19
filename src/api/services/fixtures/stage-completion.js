@@ -5,6 +5,80 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
   const { select, update } = dbHelpers;
   const { II, DD } = loggers;
   const winAward = 3;
+  const standingsQuery = sqlGroupStandings(winAward);
+
+  const fetchFixturesForPlaceholder = async (
+    tournamentId,
+    category,
+    teamField,
+    placeHolder
+  ) => {
+    const idColumn = `${teamField}Id`;
+    const plannedColumn = `${teamField}Planned`;
+
+    return await select(
+      `SELECT id, ${idColumn} AS teamId, ${plannedColumn} AS planned
+         FROM fixtures
+         WHERE tournamentId = ?
+           AND category = ?
+           AND ${plannedColumn} = ?`,
+      [tournamentId, category, placeHolder]
+    );
+  };
+
+  const logPlaceholderDelta = (
+    tournamentId,
+    category,
+    teamField,
+    placeHolder,
+    beforeRows,
+    afterRows
+  ) => {
+    if (beforeRows.length === 0 && afterRows.length === 0) {
+      DD(
+        `StageCompletion: no fixtures reference ${teamField} placeholder '${placeHolder}' in tournament ${tournamentId} / category ${category}.`
+      );
+      return;
+    }
+
+    const previous = new Map(beforeRows.map((row) => [row.id, row]));
+
+    if (afterRows.length === 0) {
+      II(
+        `StageCompletion: fixtures referencing ${teamField} placeholder '${placeHolder}' were removed before logging (tournament ${tournamentId}, category ${category}).`
+      );
+      return;
+    }
+
+    afterRows.forEach(({ id, teamId, planned }) => {
+      const before = previous.get(id);
+      const beforeLabel = before?.teamId ?? before?.planned ?? 'n/a';
+      if (!before) {
+        II(
+          `StageCompletion: fixture ${id} newly references ${teamField} placeholder '${placeHolder}' (resolved value '${teamId ?? 'pending'}').`
+        );
+        return;
+      }
+
+      if (teamId && teamId !== planned && teamId !== before.teamId) {
+        II(
+          `StageCompletion: fixture ${id} resolved ${teamField} placeholder '${placeHolder}' from '${beforeLabel}' to '${teamId}'.`
+        );
+      } else if (before.teamId !== teamId) {
+        II(
+          `StageCompletion: fixture ${id} ${teamField} placeholder '${placeHolder}' changed value from '${beforeLabel}' to '${teamId ?? planned}'.`
+        );
+      } else if (!teamId || teamId === planned) {
+        DD(
+          `StageCompletion: fixture ${id} still pending for ${teamField} placeholder '${placeHolder}'.`
+        );
+      } else {
+        DD(
+          `StageCompletion: fixture ${id} already had ${teamField} placeholder '${placeHolder}' resolved to '${teamId}'.`
+        );
+      }
+    });
+  };
 
   async function processStageCompletion(fixtureId) {
     II(`Processing stage completion check for fixture [${fixtureId}]...`);
@@ -29,9 +103,9 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
         return false;
       }
 
-      const { groupPositions, bestPositions } =
+      const { groupPositions, bestPositions, groupZeroPositions } =
         await _getNumPositionsToUpdate(fixture);
-      if (groupPositions === 0 && bestPositions === 0) {
+      if (groupPositions === 0 && bestPositions === 0 && groupZeroPositions === 0) {
         II(
           `Determined 0 positions to update for stage [${stage}/${groupNumber}/${category}]. No dependent fixtures will be updated.`
         );
@@ -45,7 +119,8 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
         fixture,
         standings,
         groupPositions,
-        bestPositions
+        bestPositions,
+        groupZeroPositions
       );
       II(
         `Finished updating dependent fixtures. Total rows affected: ${totalUpdated}.`
@@ -93,7 +168,6 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
     DD(
       `Fetching group standings for stage [${stage}], group [${groupNumber}], category [${category}] in tournament [${tournamentId}]`
     );
-    const standingsQuery = sqlGroupStandings(winAward);
     const standings = await select(
       `SELECT * FROM ${standingsQuery}
        WHERE tournamentId = ? AND grp = ? AND category = ?`,
@@ -101,6 +175,39 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
     );
     DD(`Fetched ${standings.length} standings rows.`);
     return standings;
+  }
+
+  async function _getCategoryStandings({ tournamentId, category }) {
+    DD(
+      `Fetching category standings for tournament [${tournamentId}], category [${category}] across all groups.`
+    );
+    const standings = await select(
+      `SELECT * FROM ${standingsQuery}
+       WHERE tournamentId = ? AND category = ?`,
+      [tournamentId, category]
+    );
+    DD(`Fetched ${standings.length} category standing rows.`);
+    return standings;
+  }
+
+  async function _getRemainingCategoryGroupMatches({
+    tournamentId,
+    category,
+  }) {
+    const [result] = await select(
+      `SELECT count(*) as remaining
+         FROM fixtures
+         WHERE tournamentId = ?
+           AND category = ?
+           AND stage = 'group'
+           AND goals1 IS NULL`,
+      [tournamentId, category]
+    );
+    const remaining = result?.remaining ?? 0;
+    DD(
+      `Remaining unresolved group fixtures for tournament [${tournamentId}], category [${category}]: ${remaining}`
+    );
+    return remaining;
   }
 
   async function _getNumPositionsToUpdate(fixture) {
@@ -143,6 +250,18 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
       [tournamentId, category]
     );
 
+    const [groupZeroResult] = await select(
+      `SELECT MAX(CAST(SUBSTRING_INDEX(team1Planned, '/p:', -1) AS UNSIGNED)) as maxPos1,
+              MAX(CAST(SUBSTRING_INDEX(team2Planned, '/p:', -1) AS UNSIGNED)) as maxPos2,
+              MAX(CAST(SUBSTRING_INDEX(umpireTeamPlanned, '/p:', -1) AS UNSIGNED)) as maxPosUmp
+       FROM fixtures
+       WHERE tournamentId = ? AND category = ?
+         AND (team1Planned LIKE '~group:0/p:%'
+           OR team2Planned LIKE '~group:0/p:%'
+           OR umpireTeamPlanned LIKE '~group:0/p:%')`,
+      [tournamentId, category]
+    );
+
     const groupPositions = Math.max(
       groupResult?.maxPos1 || 0,
       groupResult?.maxPos2 || 0,
@@ -153,32 +272,69 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
       bestResult?.maxPos2 || 0,
       bestResult?.maxPosUmp || 0
     );
+    const groupZeroPositions = Math.max(
+      groupZeroResult?.maxPos1 || 0,
+      groupZeroResult?.maxPos2 || 0,
+      groupZeroResult?.maxPosUmp || 0
+    );
 
     DD(
-      `Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s).`
+      `Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s). All-group placeholders require updating ${groupZeroPositions} position(s).`
     );
-    return { groupPositions, bestPositions };
+    return { groupPositions, bestPositions, groupZeroPositions };
   }
 
   async function _updateDependentFixtures(
     fixture,
     standings,
     groupPositions,
-    bestPositions
+    bestPositions,
+    groupZeroPositions
   ) {
     const { tournamentId, stage, groupNumber, category } = fixture;
     let totalUpdated = 0;
 
     const updateTeamInFixtures = async (teamField, newValue, placeHolder) => {
-      DD(
-        `Updating ${teamField}Id to [${newValue}] where ${teamField}Planned = '${placeHolder}' for tournament [${tournamentId}], category [${category}]`
+      const beforeRows = await fetchFixturesForPlaceholder(
+        tournamentId,
+        category,
+        teamField,
+        placeHolder
       );
+      if (beforeRows.length === 0) {
+        DD(
+          `StageCompletion: no fixtures found for ${teamField} placeholder '${placeHolder}' prior to update in tournament ${tournamentId} / category ${category}.`
+        );
+      } else {
+        DD(
+          `StageCompletion: preparing to resolve ${teamField} placeholder '${placeHolder}' for ${beforeRows.length} fixture(s).`
+        );
+      }
+
       const affectedRows = await update(
         `UPDATE fixtures SET ${teamField}Id = ?
          WHERE ${teamField}Planned = ? AND tournamentId = ? AND category = ?`,
         [newValue, placeHolder, tournamentId, category]
       );
-      DD(`Affected rows for ${teamField}Id update: ${affectedRows}`);
+      DD(
+        `StageCompletion: ${teamField} placeholder '${placeHolder}' update affected ${affectedRows} row(s).`
+      );
+
+      const afterRows = await fetchFixturesForPlaceholder(
+        tournamentId,
+        category,
+        teamField,
+        placeHolder
+      );
+
+      logPlaceholderDelta(
+        tournamentId,
+        category,
+        teamField,
+        placeHolder,
+        beforeRows,
+        afterRows
+      );
       return affectedRows;
     };
 
@@ -252,6 +408,68 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
           `Best placeholder ${placeHolder} resolved to team ${teamId}, updated ${updatesForBest} rows`
         );
         totalUpdated += updatesForBest;
+      }
+    }
+
+    if (groupZeroPositions > 0) {
+      const remainingCategoryMatches =
+        await _getRemainingCategoryGroupMatches({ tournamentId, category });
+      if (remainingCategoryMatches > 0) {
+        II(
+          `StageCompletion: skipping ~group:0 updates for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`
+        );
+      } else {
+        const categoryStandings = await _getCategoryStandings({
+          tournamentId,
+          category,
+        });
+
+        const orderedCategoryStandings = categoryStandings
+          .filter((row) => row.team)
+          .sort((a, b) => {
+            if (b.TotalPoints !== a.TotalPoints)
+              return (b.TotalPoints || 0) - (a.TotalPoints || 0);
+            if (b.PointsDifference !== a.PointsDifference)
+              return (b.PointsDifference || 0) - (a.PointsDifference || 0);
+            if (b.PointsFrom !== a.PointsFrom)
+              return (b.PointsFrom || 0) - (a.PointsFrom || 0);
+            return (a.grp || 0) - (b.grp || 0);
+          });
+
+        for (let pos = 1; pos <= groupZeroPositions; pos++) {
+          const placeHolder = `~group:0/p:${pos}`;
+          const teamId = orderedCategoryStandings[pos - 1]?.team ?? null;
+          if (!teamId) {
+            II(
+              `StageCompletion: insufficient category standings to resolve placeholder '${placeHolder}' for tournament [${tournamentId}], category [${category}].`
+            );
+            continue;
+          }
+
+          let updatesForAllGroups = 0;
+          updatesForAllGroups += await updateTeamInFixtures(
+            'team1',
+            teamId,
+            placeHolder
+          );
+          updatesForAllGroups += await updateTeamInFixtures(
+            'team2',
+            teamId,
+            placeHolder
+          );
+          updatesForAllGroups += await updateTeamInFixtures(
+            'umpireTeam',
+            teamId,
+            placeHolder
+          );
+
+          if (updatesForAllGroups === 0) {
+            DD(
+              `StageCompletion: placeholder '${placeHolder}' already resolved to team '${teamId}' across all fixtures.`
+            );
+          }
+          totalUpdated += updatesForAllGroups;
+        }
       }
     }
 
