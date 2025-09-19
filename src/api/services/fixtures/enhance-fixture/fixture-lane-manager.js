@@ -20,6 +20,16 @@ class FixtureLaneManager {
           [fixture.tournamentId, fixture.pitch]
         );
 
+        if (nextUnstartedOnPitch.length > 0) {
+          this.logger(
+            `The next scheduled fixture for pitch ${fixture.pitch} is ${nextUnstartedOnPitch[0].id}`
+          );
+        } else {
+          this.logger(
+            `No next scheduled fixture found for pitch ${fixture.pitch}`
+          );
+        }
+
         if (
           nextUnstartedOnPitch.length > 0 &&
           nextUnstartedOnPitch[0].id === fixture.id
