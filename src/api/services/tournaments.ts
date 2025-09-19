@@ -120,9 +120,7 @@ const deleteCards = async (dbDelete: (query: string, params: any[]) => Promise<a
 
 const deleteFixtures = async (dbDelete: (query: string, params?: any[]) => Promise<any>, tournamentId: number) => {
   try {
-    await dbDelete(`SET FOREIGN_KEY_CHECKS = 0`);
     await dbDelete(`DELETE FROM cards WHERE tournamentId = ?`, [tournamentId]);
-    await dbDelete(`SET FOREIGN_KEY_CHECKS = 1`);
     const result = await dbDelete(
       `DELETE FROM fixtures WHERE tournamentId = ?`,
       [tournamentId]
