@@ -808,7 +808,7 @@ class TSVValidator {
     });
   }
 
-  _shortenTeamName(name) {
+  _shortenTeamName(name, shortenRealTeams = true) {
     if (!name) return '';
 
     if (!this._isRealTeam(name)) {
@@ -824,6 +824,10 @@ class TSVValidator {
       if (m) {
         return m[1] + m[2].toLowerCase() + m[3];
       }
+      return name;
+    }
+
+    if (!shortenRealTeams) {
       return name;
     }
 
@@ -854,7 +858,7 @@ class TSVValidator {
       const matchId = row.MATCH.value;
       const team1 = this._shortenTeamName(row.TEAM1.value);
       const team2 = this._shortenTeamName(row.TEAM2.value);
-      const umpires = row.UMPIRES.value;
+      const umpires = this._shortenTeamName(row.UMPIRES.value, false);
 
       if (!this.stages[category]) {
         this.stages[category] = {
