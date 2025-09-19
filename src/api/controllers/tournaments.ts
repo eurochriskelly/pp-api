@@ -179,7 +179,8 @@ export default (db: any, useMock: boolean) => {
     getTournamentReport: async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params as TournamentParams;
-        const report = await dbSvc.buildTournamentReport(id);
+        const { category } = req.query as { category?: string };
+        const report = await dbSvc.buildTournamentReport(id, category);
         res.json({ data: report });
       } catch (err) {
         next(err);
