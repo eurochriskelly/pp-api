@@ -137,7 +137,7 @@ const deleteFixtures = async (dbDelete: (query: string, params?: any[]) => Promi
 
 const deletePitches = async (dbDelete: (query: string, params: any[]) => Promise<any>, tournamentId: number) => {
   try {
-    console.log('deleting piteche from tournament ', tournamentId);
+    console.log('deleting pitches from tournament ', tournamentId);
     const result = await dbDelete(
       `DELETE FROM pitches WHERE tournamentId = ?`,
       [tournamentId]
@@ -149,6 +149,7 @@ const deletePitches = async (dbDelete: (query: string, params: any[]) => Promise
     );
   }
 };
+
 
 export default (db: any) => {
   const { select, insert, update, delete: dbDelete } = dbHelper(db);
@@ -219,6 +220,7 @@ export default (db: any) => {
           tournamentId,
           '2025-01-01'
         );
+        await deleteCards(dbDelete, tournamentId);
         await deletePitches(dbDelete, tournamentId);
         await deleteFixtures(dbDelete, tournamentId);
         await createPitches(insert, tournamentId, pitches);
