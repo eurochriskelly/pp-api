@@ -189,14 +189,15 @@ export default (db: any) => {
     validateTsv: (tsvEncoded: string) =>
       new TSVValidator(tsvEncoded, { restGapMultiplier: 1 }).validate(),
 
-    getTournamentReport: (tournamentId: number) => {
+    getTournamentReport: (tournamentId: number, category?: string) => {
       return {
         tournamentId,
+        category,
         abc: '123',
       };
     },
-    buildTournamentReport: async (tournamentId: number) => {
-      const res = await buildReport(tournamentId, select);
+    buildTournamentReport: async (tournamentId: number, category?: string) => {
+      const res = await buildReport(tournamentId, select, category);
       return res;
     },
     // Create multiple fixtures for a tournament
