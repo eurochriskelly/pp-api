@@ -15,6 +15,7 @@ class FixtureLaneManager {
         const nextUnstartedOnPitch = await this.select(
           `SELECT id FROM fixtures 
            WHERE tournamentId = ? AND pitch = ? AND started IS NULL 
+           AND team1Id NOT LIKE '~%' AND team2Id NOT LIKE '~%'
            ORDER BY scheduled ASC, id ASC 
            LIMIT 1`,
           [fixture.tournamentId, fixture.pitch]
