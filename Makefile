@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup clean follow kill
+.PHONY: help start mocks logs backup clean follow kill diagnostics-sql-on diagnostics-sql-off
 
 DEFAULT_GOAL := help
 
@@ -31,6 +31,20 @@ follow:  ## Follow the server log (always follows ./logs/server.log)
 
 kill:  ## Kill running server instances
 	./scripts/make/kill.sh
+
+diagnostics-sql-on: ## Enable SQL statement printing (usage: make diagnostics-sql-on port=NUMBER)
+	@if [ -z "$(port)" ]; then \
+		echo "Usage: make diagnostics-sql-on port=NUMBER"; \
+		exit 1; \
+	fi
+	@curl -X PUT http://localhost:$(port)/api/system/diagnostics/print-sql-statements
+
+diagnostics-sql-off: ## Disable SQL statement printing (usage: make diagnostics-sql-off port=NUMBER)
+	@if [ -z "$(port)" ]; then \
+		echo "Usage: make diagnostics-sql-off port=NUMBER"; \
+		exit 1; \
+	fi
+	@curl -X DELETE http://localhost:$(port)/api/system/diagnostics/print-sql-statements
 
 %:
 	@:
