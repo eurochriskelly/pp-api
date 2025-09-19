@@ -629,9 +629,24 @@ export default (db: any) => {
           };
         }
         
-        // Process stage
+        // Process stage - check if it's a group stage (starts with 'GP' or 'GROUP')
+        // Handle different possible stage formats
+        let isGroupStage = false;
+        let groupNum = '';
+        
         if (stage.startsWith('GP.')) {
-          const groupNum = stage.split('.')[1];
+          isGroupStage = true;
+          groupNum = stage.split('.')[1];
+        } else if (stage.startsWith('GROUP')) {
+          isGroupStage = true;
+          // Handle 'GROUP X' format
+          const groupMatch = /GROUP\s*(\d+)/i.exec(stage);
+          if (groupMatch) {
+            groupNum = groupMatch[1];
+          }
+        }
+        
+        if (isGroupStage && groupNum) {
           const groupName = `Gp.${groupNum}`;
           const groupStage = stages[category]['Group Stage'];
           
@@ -689,6 +704,27 @@ export default (db: any) => {
             const matchObj = {
               id: matchId,
               stage: stageCode,
+              team1,
+              team2,
+              umpires
+            };
+            
+            knockoutStage[bracket].matches.push(matchObj);
+          } else {
+            // Handle cases where stage doesn't split into two parts
+            // Add to a default bracket
+            const knockoutStage = stages[category]['Knockout Stage'];
+            const bracket = 'DEFAULT';
+            
+            if (!knockoutStage[bracket]) {
+              knockoutStage[bracket] = {
+                matches: [],
+              };
+            }
+            
+            const matchObj = {
+              id: matchId,
+              stage: stage,
               team1,
               team2,
               umpires
