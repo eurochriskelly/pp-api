@@ -831,6 +831,10 @@ class TSVValidator {
       return name;
     }
 
+    if (!name.includes('/')) {
+      return name;
+    }
+
     const shortenPart = (part) => {
       part = part.trim();
       if (part.length <= 6) return part;
