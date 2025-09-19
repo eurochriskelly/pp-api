@@ -607,25 +607,21 @@ export default (db: any) => {
         throw new Error('Tournament not found');
       }
       
-      // Convert fixtures to a format that can be processed by TSVValidator
-      // We need to create a TSV-like structure
-      // For now, we'll use a simple approach to build the stages
-      const catMatchLetter = new Map();
-      const catGroups = new Map();
-      const catBrackets = new Map();
-      const catTeams = new Map();
       const stages: any = {};
+      const catTeams = new Map();
       
       // Process each fixture to build the overview
       for (const fixture of fixtures) {
         const category = fixture.category?.toUpperCase() || '';
         const stage = fixture.stage?.toUpperCase() || '';
-        const matchId = fixture.id;
+        // Get the last 2 digits of the match ID
+        const matchNumber = fixture.id % 100;
+        const matchId = `M.${matchNumber.toString().padStart(2, '0')}`;
         const team1 = fixture.team1Id || '';
         const team2 = fixture.team2Id || '';
         const umpires = fixture.umpireTeamId || '';
         
-        // Build stages structure similar to validate-tsv.js
+        // Initialize category if not present
         if (!stages[category]) {
           stages[category] = {
             'Group Stage': {},
@@ -635,8 +631,10 @@ export default (db: any) => {
         
         // Process stage
         if (stage.startsWith('GP.')) {
-          const groupName = `Gp.${stage.split('.')[1]}`;
+          const groupNum = stage.split('.')[1];
+          const groupName = `Gp.${groupNum}`;
           const groupStage = stages[category]['Group Stage'];
+          
           if (!groupStage[groupName]) {
             groupStage[groupName] = {
               size: 0,
@@ -645,44 +643,59 @@ export default (db: any) => {
             };
           }
           
-          // Add match to group
-          const formattedMatchId = `${category.charAt(0)}.${matchId.toString().padStart(2, ' ')}>`;
-          const prefix = `${formattedMatchId} `.padEnd(13);
-          const team1Display = `"${team1}"`.padEnd(26);
-          const team2Display = `"${team2}"`.padEnd(26);
-          const teamsPart = `${team1Display} vs ${team2Display}`;
-          const matchString = `${prefix}${teamsPart} Ump: "${umpires}"`;
+          // Add match to group as an object
+          const matchObj = {
+            id: matchId,
+            team1,
+            team2,
+            umpires
+          };
           
-          groupStage[groupName].matches.push(matchString);
+          groupStage[groupName].matches.push(matchObj);
           groupStage[groupName].matchesCount++;
           
-          // Track teams for size
-          if (team1 && !catTeams.has(category)) catTeams.set(category, new Map());
+          // Track teams for size calculation
+          if (!catTeams.has(category)) {
+            catTeams.set(category, new Map());
+          }
           const categoryTeams = catTeams.get(category);
-          if (!categoryTeams) continue;
-          
-          const groupNum = parseInt(stage.split('.')[1], 10);
-          if (!categoryTeams.has(groupNum)) categoryTeams.set(groupNum, new Set());
-          categoryTeams.get(groupNum)?.add(team1.toUpperCase());
-          categoryTeams.get(groupNum)?.add(team2.toUpperCase());
+          if (categoryTeams) {
+            const groupNumInt = parseInt(groupNum, 10);
+            if (!categoryTeams.has(groupNumInt)) {
+              categoryTeams.set(groupNumInt, new Set());
+            }
+            const groupTeams = categoryTeams.get(groupNumInt);
+            if (groupTeams) {
+              if (team1) groupTeams.add(team1.toUpperCase());
+              if (team2) groupTeams.add(team2.toUpperCase());
+            }
+          }
         } else {
           // Knockout stage
-          const [bracket, stageCode] = stage.split('.');
-          const knockoutStage = stages[category]['Knockout Stage'];
-          if (!knockoutStage[bracket]) {
-            knockoutStage[bracket] = {
-              matches: [],
+          // Split stage into bracket and code
+          const stageParts = stage.split('.');
+          if (stageParts.length >= 2) {
+            const bracket = stageParts[0];
+            const stageCode = stageParts[1];
+            const knockoutStage = stages[category]['Knockout Stage'];
+            
+            if (!knockoutStage[bracket]) {
+              knockoutStage[bracket] = {
+                matches: [],
+              };
+            }
+            
+            // Add match to knockout stage as an object
+            const matchObj = {
+              id: matchId,
+              stage: stageCode,
+              team1,
+              team2,
+              umpires
             };
+            
+            knockoutStage[bracket].matches.push(matchObj);
           }
-          
-          const formattedMatchId = `${category.charAt(0)}.${matchId.toString().padStart(2, ' ')}>`;
-          const prefix = `${formattedMatchId} ${stageCode}: `.padEnd(13);
-          const team1Display = `"${team1}"`.padEnd(26);
-          const team2Display = `"${team2}"`.padEnd(26);
-          const teamsPart = `${team1Display} vs ${team2Display}`;
-          const koMatchString = `${prefix}${teamsPart} Ump: "${umpires}"`;
-          
-          knockoutStage[bracket].matches.push(koMatchString);
         }
       }
       
