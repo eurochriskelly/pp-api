@@ -197,6 +197,8 @@ export default (db: any) => {
       };
     },
     buildTournamentReport: async (tournamentId: number, category?: string) => {
+      // Log to verify the category is being received
+      DD(`Building report for tournament ${tournamentId}, category: ${category || 'all'}`);
       const res = await buildReport(tournamentId, select, category);
       return res;
     },
