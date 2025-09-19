@@ -46,6 +46,7 @@ export default (db: any, useMock: boolean) => {
   router.delete('/:id/cards', ctrl.deleteCards);
   router.post('/:id/pitches', ctrl.createPitches);
   router.post('/:id/fixtures', ctrl.createFixtures);
+  router.get('/:id/overview', ctrl.getTournamentOverview);
 
   return router;
 };
