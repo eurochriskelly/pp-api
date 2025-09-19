@@ -418,6 +418,16 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
+
+    getTournamentOverview: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const data = await dbSvc.getTournamentOverview(id);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
     getSquads: async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { tournamentId } = req.params as TournamentParams;

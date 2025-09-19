@@ -590,6 +590,115 @@ export default (db: any) => {
         tournamentId,
       ]);
     },
+    getTournamentOverview: async (tournamentId: number) => {
+      // Get all fixtures for the tournament
+      const fixtures = await select(
+        `SELECT * FROM fixtures WHERE tournamentId = ? ORDER BY scheduled`,
+        [tournamentId]
+      );
+      
+      // Get tournament details
+      const [tournament] = await select(
+        `SELECT * FROM tournaments WHERE id = ?`,
+        [tournamentId]
+      );
+      
+      if (!tournament) {
+        throw new Error('Tournament not found');
+      }
+      
+      // Convert fixtures to a format that can be processed by TSVValidator
+      // We need to create a TSV-like structure
+      // For now, we'll use a simple approach to build the stages
+      const catMatchLetter = new Map();
+      const catGroups = new Map();
+      const catBrackets = new Map();
+      const catTeams = new Map();
+      const stages: any = {};
+      
+      // Process each fixture to build the overview
+      for (const fixture of fixtures) {
+        const category = fixture.category?.toUpperCase() || '';
+        const stage = fixture.stage?.toUpperCase() || '';
+        const matchId = fixture.id;
+        const team1 = fixture.team1Id || '';
+        const team2 = fixture.team2Id || '';
+        const umpires = fixture.umpireTeamId || '';
+        
+        // Build stages structure similar to validate-tsv.js
+        if (!stages[category]) {
+          stages[category] = {
+            'Group Stage': {},
+            'Knockout Stage': {},
+          };
+        }
+        
+        // Process stage
+        if (stage.startsWith('GP.')) {
+          const groupName = `Gp.${stage.split('.')[1]}`;
+          const groupStage = stages[category]['Group Stage'];
+          if (!groupStage[groupName]) {
+            groupStage[groupName] = {
+              size: 0,
+              matchesCount: 0,
+              matches: [],
+            };
+          }
+          
+          // Add match to group
+          const formattedMatchId = `${category.charAt(0)}.${matchId.toString().padStart(2, ' ')}>`;
+          const prefix = `${formattedMatchId} `.padEnd(13);
+          const team1Display = `"${team1}"`.padEnd(26);
+          const team2Display = `"${team2}"`.padEnd(26);
+          const teamsPart = `${team1Display} vs ${team2Display}`;
+          const matchString = `${prefix}${teamsPart} Ump: "${umpires}"`;
+          
+          groupStage[groupName].matches.push(matchString);
+          groupStage[groupName].matchesCount++;
+          
+          // Track teams for size
+          if (team1 && !catTeams.has(category)) catTeams.set(category, new Map());
+          const categoryTeams = catTeams.get(category);
+          if (!categoryTeams) continue;
+          
+          const groupNum = parseInt(stage.split('.')[1], 10);
+          if (!categoryTeams.has(groupNum)) categoryTeams.set(groupNum, new Set());
+          categoryTeams.get(groupNum)?.add(team1.toUpperCase());
+          categoryTeams.get(groupNum)?.add(team2.toUpperCase());
+        } else {
+          // Knockout stage
+          const [bracket, stageCode] = stage.split('.');
+          const knockoutStage = stages[category]['Knockout Stage'];
+          if (!knockoutStage[bracket]) {
+            knockoutStage[bracket] = {
+              matches: [],
+            };
+          }
+          
+          const formattedMatchId = `${category.charAt(0)}.${matchId.toString().padStart(2, ' ')}>`;
+          const prefix = `${formattedMatchId} ${stageCode}: `.padEnd(13);
+          const team1Display = `"${team1}"`.padEnd(26);
+          const team2Display = `"${team2}"`.padEnd(26);
+          const teamsPart = `${team1Display} vs ${team2Display}`;
+          const koMatchString = `${prefix}${teamsPart} Ump: "${umpires}"`;
+          
+          knockoutStage[bracket].matches.push(koMatchString);
+        }
+      }
+      
+      // Calculate sizes for groups
+      for (const category in stages) {
+        const groupStage = stages[category]['Group Stage'];
+        for (const groupName in groupStage) {
+          const groupNum = parseInt(groupName.split('.')[1], 10);
+          const teams = catTeams.get(category)?.get(groupNum) || new Set();
+          groupStage[groupName].size = teams.size;
+        }
+      }
+      
+      return stages;
+    },
+
     getTournament: async (id: number, uuid: string) => {
       let tournamentRows;
       const baseQueryFields = `id, Date, endDate, Title, Location, region, season, eventUuid, status, code, Lat, Lon`;
