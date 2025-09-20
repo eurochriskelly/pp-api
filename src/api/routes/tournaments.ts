@@ -47,6 +47,7 @@ export default (db: any, useMock: boolean) => {
   router.post('/:id/pitches', ctrl.createPitches);
   router.post('/:id/fixtures', ctrl.createFixtures);
   router.get('/:id/overview', ctrl.getTournamentOverview);
+  router.get('/:id/integrity-check', ctrl.integrityCheck);
 
   return router;
 };

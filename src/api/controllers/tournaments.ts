@@ -82,8 +82,6 @@ export default (db: any, useMock: boolean) => {
   const factory = useMock ? mockServiceFactory : serviceFactory;
   const dbSvc: any = factory(db);
 
-
-
   return {
     // Tournament CRUD
     validateTsv: (req: Request, res: Response, next: NextFunction) => {
@@ -97,7 +95,11 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
-    createTournament: async (req: Request, res: Response, next: NextFunction) => {
+    createTournament: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const {
           userId,
@@ -130,7 +132,11 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
-    updateTournament: async (req: Request, res: Response, next: NextFunction) => {
+    updateTournament: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { id } = req.params as TournamentParams;
         const {
@@ -176,7 +182,11 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
-    getTournamentReport: async (req: Request, res: Response, next: NextFunction) => {
+    getTournamentReport: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { id } = req.params as TournamentParams;
         const { category } = req.query as { category?: string };
@@ -187,7 +197,11 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
-    buildTournamentReport: async (req: Request, res: Response, next: NextFunction) => {
+    buildTournamentReport: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { id } = req.params as TournamentParams;
         const report = await dbSvc.buildTournamentReport(id);
@@ -197,12 +211,15 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
-    generateFixtures: async (req: Request, res: Response, next: NextFunction) => {
+    generateFixtures: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const competitionData = req.body;
-        const hydratedCompetition = await dbSvc.generateFixtures(
-          competitionData
-        );
+        const hydratedCompetition =
+          await dbSvc.generateFixtures(competitionData);
         res.status(200).json({ data: hydratedCompetition });
       } catch (err) {
         next(err);
@@ -256,7 +273,8 @@ export default (db: any, useMock: boolean) => {
     // Squads CRUD
     createSquad: async (req: Request, res: Response) => {
       const { tournamentId } = req.params as TournamentParams;
-      const { teamName, groupLetter, category, teamSheetSubmitted, notes } = req.body;
+      const { teamName, groupLetter, category, teamSheetSubmitted, notes } =
+        req.body;
       const id = await dbSvc.createSquad(tournamentId, {
         teamName,
         groupLetter,
@@ -322,7 +340,11 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
-    getRecentMatches: async (req: Request, res: Response, next: NextFunction) => {
+    getRecentMatches: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { id } = req.params as TournamentParams;
         const data = await dbSvc.getRecentMatches(id);
@@ -344,7 +366,11 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
-    getGroupFixtures: async (req: Request, res: Response, next: NextFunction) => {
+    getGroupFixtures: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { id } = req.params as TournamentParams;
         const data = await dbSvc.getGroupFixtures(id);
@@ -379,7 +405,11 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
-    getFinalsResults: async (req: Request, res: Response, next: NextFunction) => {
+    getFinalsResults: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { id } = req.params as TournamentParams;
         const data = await dbSvc.getFinalsResults(id);
@@ -410,7 +440,11 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
-    getCardedPlayers: async (req: Request, res: Response, next: NextFunction) => {
+    getCardedPlayers: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { tournamentId } = req.params as TournamentParams;
         const data = await dbSvc.getCardedPlayers(tournamentId);
@@ -420,7 +454,11 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
-    getTournamentOverview: async (req: Request, res: Response, next: NextFunction) => {
+    getTournamentOverview: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
       try {
         const { id } = req.params as TournamentParams;
         const data = await dbSvc.getTournamentOverview(id);
@@ -517,6 +555,18 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
+
+    integrityCheck: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        console.log('icheck')
+        const { id } = req.params as TournamentParams;
+        const result = await dbSvc.integrityCheck(parseInt(id, 10));
+        res.json(result);
+      } catch (err) {
+        next(err);
+      }
+    },
+
     deleteFixtures: async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { id } = req.params as TournamentParams;
