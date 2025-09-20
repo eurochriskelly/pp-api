@@ -6,6 +6,7 @@ const {
   deriveCategoryPlaceholderAssignments,
   sortCategoryStandings,
   evaluatePlaceholderDelta,
+  deriveBestPlaceholderAssignments,
 } = require('../../src/api/services/fixtures/stage-completion-utils');
 
 test('deriveGroupPlaceholderAssignments maps ordered standings to placeholders', () => {
@@ -68,6 +69,30 @@ test('deriveCategoryPlaceholderAssignments orders standings before mapping place
     { placeholder: '~group:0/p:2', teamId: 'C' },
     { placeholder: '~group:0/p:3', teamId: 'A' },
   ]);
+});
+
+test('deriveBestPlaceholderAssignments ranks teams for a given position', () => {
+  const standings = [
+    { team: 'G1', TotalPoints: 9, PointsDifference: 20, PointsFrom: 40, grp: 1 },
+    { team: 'G2', TotalPoints: 6, PointsDifference: 18, PointsFrom: 42, grp: 2 },
+    { team: 'G3', TotalPoints: 6, PointsDifference: 12, PointsFrom: 39, grp: 3 },
+  ];
+
+  const assignments = deriveBestPlaceholderAssignments({
+    position: 2,
+    standings,
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~best:1/p:2', teamId: 'G1' },
+    { placeholder: '~best:2/p:2', teamId: 'G2' },
+    { placeholder: '~best:3/p:2', teamId: 'G3' },
+  ]);
+});
+
+test('deriveBestPlaceholderAssignments returns empty list when position invalid', () => {
+  const assignments = deriveBestPlaceholderAssignments({ position: 0, standings: [] });
+  assert.deepEqual(assignments, []);
 });
 
 test('evaluatePlaceholderDelta returns debug entry when no fixtures reference placeholder', () => {

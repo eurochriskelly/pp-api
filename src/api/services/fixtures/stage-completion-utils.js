@@ -5,6 +5,20 @@ const DEFAULT_TIE_BREAKERS = {
   groupNumber: (row) => Number(row?.grp) || 0,
 };
 
+function deriveBestPlaceholderAssignments({
+  position,
+  standings = [],
+  tieBreakers,
+}) {
+  if (!position || position <= 0) return [];
+
+  const ordered = sortCategoryStandings(standings, tieBreakers);
+  return ordered.map((row, index) => ({
+    placeholder: `~best:${index + 1}/p:${position}`,
+    teamId: row?.team ?? null,
+  }));
+}
+
 function evaluatePlaceholderDelta({
   tournamentId,
   category,
@@ -143,4 +157,5 @@ module.exports = {
   deriveCategoryPlaceholderAssignments,
   sortCategoryStandings,
   evaluatePlaceholderDelta,
+  deriveBestPlaceholderAssignments,
 };
