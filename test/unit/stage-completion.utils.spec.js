@@ -5,6 +5,7 @@ const {
   deriveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
   sortCategoryStandings,
+  evaluatePlaceholderDelta,
 } = require('../../src/api/services/fixtures/stage-completion-utils');
 
 test('deriveGroupPlaceholderAssignments maps ordered standings to placeholders', () => {
@@ -69,3 +70,127 @@ test('deriveCategoryPlaceholderAssignments orders standings before mapping place
   ]);
 });
 
+test('evaluatePlaceholderDelta returns debug entry when no fixtures reference placeholder', () => {
+  const entries = evaluatePlaceholderDelta({
+    tournamentId: 1,
+    category: 'cup',
+    teamField: 'team1',
+    placeholder: '~match:10/p:1',
+    beforeRows: [],
+    afterRows: [],
+  });
+
+  assert.deepEqual(entries, [
+    {
+      level: 'debug',
+      message:
+        "StageCompletion: no fixtures reference team1 placeholder '~match:10/p:1' in tournament 1 / category cup.",
+    },
+  ]);
+});
+
+test('evaluatePlaceholderDelta returns info entry when fixtures removed before logging', () => {
+  const entries = evaluatePlaceholderDelta({
+    tournamentId: 1,
+    category: 'cup',
+    teamField: 'team1',
+    placeholder: '~match:10/p:1',
+    beforeRows: [{ id: 5, teamId: 'A', planned: '~match:10/p:1' }],
+    afterRows: [],
+  });
+
+  assert.deepEqual(entries, [
+    {
+      level: 'info',
+      message:
+        "StageCompletion: fixtures referencing team1 placeholder '~match:10/p:1' were removed before logging (tournament 1, category cup).",
+    },
+  ]);
+});
+
+test('evaluatePlaceholderDelta flags newly referenced placeholder', () => {
+  const entries = evaluatePlaceholderDelta({
+    tournamentId: 2,
+    category: 'shield',
+    teamField: 'team2',
+    placeholder: '~match:99/p:2',
+    beforeRows: [],
+    afterRows: [{ id: 7, teamId: 'TEAM-X', planned: '~match:99/p:2' }],
+  });
+
+  assert.deepEqual(entries, [
+    {
+      level: 'info',
+      message:
+        "StageCompletion: fixture 7 newly references team2 placeholder '~match:99/p:2' (resolved value 'TEAM-X').",
+    },
+  ]);
+});
+
+test('evaluatePlaceholderDelta records resolution for existing fixture', () => {
+  const entries = evaluatePlaceholderDelta({
+    tournamentId: 3,
+    category: 'champ',
+    teamField: 'team1',
+    placeholder: '~match:88/p:1',
+    beforeRows: [{ id: 4, teamId: null, planned: '~match:88/p:1' }],
+    afterRows: [{ id: 4, teamId: 'WINNER', planned: '~match:88/p:1' }],
+  });
+
+  assert.deepEqual(entries, [
+    {
+      level: 'info',
+      message:
+        "StageCompletion: fixture 4 resolved team1 placeholder '~match:88/p:1' from '~match:88/p:1' to 'WINNER'.",
+    },
+  ]);
+});
+
+test('evaluatePlaceholderDelta records placeholder value changes', () => {
+  const entries = evaluatePlaceholderDelta({
+    tournamentId: 4,
+    category: 'plate',
+    teamField: 'umpireTeam',
+    placeholder: '~match:77/p:2',
+    beforeRows: [{ id: 9, teamId: 'OLD', planned: '~match:77/p:2' }],
+    afterRows: [{ id: 9, teamId: null, planned: '~match:77/p:2' }],
+  });
+
+  assert.deepEqual(entries, [
+    {
+      level: 'info',
+      message:
+        "StageCompletion: fixture 9 umpireTeam placeholder '~match:77/p:2' changed value from 'OLD' to '~match:77/p:2'.",
+    },
+  ]);
+});
+
+test('evaluatePlaceholderDelta notes pending and already resolved states', () => {
+  const entries = evaluatePlaceholderDelta({
+    tournamentId: 5,
+    category: 'junior',
+    teamField: 'team1',
+    placeholder: '~match:22/p:1',
+    beforeRows: [
+      { id: 11, teamId: null, planned: '~match:22/p:1' },
+      { id: 12, teamId: 'TEAM-Z', planned: '~match:22/p:1' },
+    ],
+    afterRows: [
+      { id: 11, teamId: null, planned: '~match:22/p:1' },
+      { id: 12, teamId: 'TEAM-Z', planned: '~match:22/p:1' },
+    ],
+  });
+
+  assert.deepEqual(entries, [
+    {
+      level: 'debug',
+      message:
+        "StageCompletion: fixture 11 still pending for team1 placeholder '~match:22/p:1'.",
+    },
+    {
+      level: 'debug',
+      message:
+        "StageCompletion: fixture 12 already had team1 placeholder '~match:22/p:1' resolved to 'TEAM-Z'.",
+    },
+  ]);
+});

@@ -5,6 +5,78 @@ const DEFAULT_TIE_BREAKERS = {
   groupNumber: (row) => Number(row?.grp) || 0,
 };
 
+function evaluatePlaceholderDelta({
+  tournamentId,
+  category,
+  teamField,
+  placeholder,
+  beforeRows = [],
+  afterRows = [],
+}) {
+  const entries = [];
+
+  if (beforeRows.length === 0 && afterRows.length === 0) {
+    entries.push({
+      level: 'debug',
+      message: `StageCompletion: no fixtures reference ${teamField} placeholder '${placeholder}' in tournament ${tournamentId} / category ${category}.`,
+    });
+    return entries;
+  }
+
+  const previous = new Map(beforeRows.map((row) => [row.id, row]));
+
+  if (afterRows.length === 0) {
+    entries.push({
+      level: 'info',
+      message: `StageCompletion: fixtures referencing ${teamField} placeholder '${placeholder}' were removed before logging (tournament ${tournamentId}, category ${category}).`,
+    });
+    return entries;
+  }
+
+  afterRows.forEach(({ id, teamId, planned }) => {
+    const before = previous.get(id);
+    const beforeLabel = before?.teamId ?? before?.planned ?? 'n/a';
+
+    if (!before) {
+      entries.push({
+        level: 'info',
+        message: `StageCompletion: fixture ${id} newly references ${teamField} placeholder '${placeholder}' (resolved value '${teamId ?? 'pending'}').`,
+      });
+      return;
+    }
+
+    if (teamId && teamId !== planned && teamId !== before.teamId) {
+      entries.push({
+        level: 'info',
+        message: `StageCompletion: fixture ${id} resolved ${teamField} placeholder '${placeholder}' from '${beforeLabel}' to '${teamId}'.`,
+      });
+      return;
+    }
+
+    if (before.teamId !== teamId) {
+      entries.push({
+        level: 'info',
+        message: `StageCompletion: fixture ${id} ${teamField} placeholder '${placeholder}' changed value from '${beforeLabel}' to '${teamId ?? planned}'.`,
+      });
+      return;
+    }
+
+    if (!teamId || teamId === planned) {
+      entries.push({
+        level: 'debug',
+        message: `StageCompletion: fixture ${id} still pending for ${teamField} placeholder '${placeholder}'.`,
+      });
+    } else {
+      entries.push({
+        level: 'debug',
+        message: `StageCompletion: fixture ${id} already had ${teamField} placeholder '${placeholder}' resolved to '${teamId}'.`,
+      });
+    }
+  });
+
+  return entries;
+}
+
 function deriveGroupPlaceholderAssignments({
   stage,
   groupNumber,
@@ -70,4 +142,5 @@ module.exports = {
   deriveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
   sortCategoryStandings,
+  evaluatePlaceholderDelta,
 };

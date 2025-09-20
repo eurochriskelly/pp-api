@@ -13,6 +13,9 @@ mocks:  ## Start server in mock mode (usage: make mocks [port=NUMBER])
 start:  ## Start server with auto-restart (usage: make start [env=production|acceptance] [port=NUMBER])
 	./scripts/make/start.sh $(env) $(port)
 
+test:  ## Run unit tests
+	npm run test:unit
+
 backup:  ## Create a database backup
 	npm run backup
 
