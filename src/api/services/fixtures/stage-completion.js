@@ -1,6 +1,7 @@
 const {
   deriveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
+  evaluatePlaceholderDelta,
 } = require('./stage-completion-utils');
 
 // Note: Dependencies are injected by the factory function pattern
@@ -29,60 +30,6 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
            AND ${plannedColumn} = ?`,
       [tournamentId, category, placeHolder]
     );
-  };
-
-  const logPlaceholderDelta = (
-    tournamentId,
-    category,
-    teamField,
-    placeHolder,
-    beforeRows,
-    afterRows
-  ) => {
-    if (beforeRows.length === 0 && afterRows.length === 0) {
-      DD(
-        `StageCompletion: no fixtures reference ${teamField} placeholder '${placeHolder}' in tournament ${tournamentId} / category ${category}.`
-      );
-      return;
-    }
-
-    const previous = new Map(beforeRows.map((row) => [row.id, row]));
-
-    if (afterRows.length === 0) {
-      II(
-        `StageCompletion: fixtures referencing ${teamField} placeholder '${placeHolder}' were removed before logging (tournament ${tournamentId}, category ${category}).`
-      );
-      return;
-    }
-
-    afterRows.forEach(({ id, teamId, planned }) => {
-      const before = previous.get(id);
-      const beforeLabel = before?.teamId ?? before?.planned ?? 'n/a';
-      if (!before) {
-        II(
-          `StageCompletion: fixture ${id} newly references ${teamField} placeholder '${placeHolder}' (resolved value '${teamId ?? 'pending'}').`
-        );
-        return;
-      }
-
-      if (teamId && teamId !== planned && teamId !== before.teamId) {
-        II(
-          `StageCompletion: fixture ${id} resolved ${teamField} placeholder '${placeHolder}' from '${beforeLabel}' to '${teamId}'.`
-        );
-      } else if (before.teamId !== teamId) {
-        II(
-          `StageCompletion: fixture ${id} ${teamField} placeholder '${placeHolder}' changed value from '${beforeLabel}' to '${teamId ?? planned}'.`
-        );
-      } else if (!teamId || teamId === planned) {
-        DD(
-          `StageCompletion: fixture ${id} still pending for ${teamField} placeholder '${placeHolder}'.`
-        );
-      } else {
-        DD(
-          `StageCompletion: fixture ${id} already had ${teamField} placeholder '${placeHolder}' resolved to '${teamId}'.`
-        );
-      }
-    });
   };
 
   async function processStageCompletion(fixtureId) {
@@ -332,14 +279,22 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
         placeHolder
       );
 
-      logPlaceholderDelta(
+      const logEntries = evaluatePlaceholderDelta({
         tournamentId,
         category,
         teamField,
-        placeHolder,
+        placeholder: placeHolder,
         beforeRows,
-        afterRows
-      );
+        afterRows,
+      });
+
+      logEntries.forEach(({ level, message }) => {
+        if (level === 'info') {
+          II(message);
+        } else {
+          DD(message);
+        }
+      });
       return affectedRows;
     };
 
