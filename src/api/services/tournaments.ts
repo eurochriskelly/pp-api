@@ -192,7 +192,6 @@ export default (db: any) => {
       return {
         tournamentId,
         category,
-        abc: '123',
       };
     },
     buildTournamentReport: async (tournamentId: number, category?: string) => {
@@ -277,7 +276,7 @@ export default (db: any) => {
         lat,
         lon,
         codeOrganizer,
-        winPoints = 3,
+        winPoints = 2,
         drawPoints = 1,
         lossPoints = 0,
       }: { region: string, title: string, date: string, location: string, lat: number, lon: number, codeOrganizer: string, winPoints?: number, drawPoints?: number, lossPoints?: number }
