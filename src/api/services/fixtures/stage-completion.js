@@ -1,13 +1,19 @@
 const {
   deriveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
+  deriveBestPlaceholderAssignments,
   evaluatePlaceholderDelta,
 } = require('./stage-completion-utils');
 
 // Note: Dependencies are injected by the factory function pattern
 // Required dependencies: dbHelpers (select, update), loggers (II, DD), sqlGroupStandings, sqlGroupRankings
 
-module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
+module.exports = ({
+  dbHelpers,
+  loggers,
+  sqlGroupStandings,
+  sqlGroupRankings,
+}) => {
   const { select, update } = dbHelpers;
   const { II, DD } = loggers;
   const winAward = 3;
@@ -339,19 +345,34 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
       totalUpdated += updatesForPosition;
     }
 
-    const bestRankCache = {};
+    const bestRankCache = new Map();
     for (let pos = 1; pos <= bestPositions; pos++) {
-      if (!bestRankCache[pos]) {
-        bestRankCache[pos] = 0; // await select(query, []);
+      if (!bestRankCache.has(pos)) {
+        const rankedQuery = `
+          SELECT *
+          FROM (${sqlGroupRankings(pos)}) AS ranked
+          WHERE tournamentId = ? AND category = ?
+        `;
+        const rankedTeams = await select(rankedQuery, [tournamentId, category]);
+        bestRankCache.set(pos, rankedTeams || []);
       }
 
-      const rankedTeams = bestRankCache[pos];
+      const rankedTeams = bestRankCache.get(pos);
+      if (!Array.isArray(rankedTeams) || rankedTeams.length === 0) {
+        DD(
+          `Skipping ~best:/p:${pos} placeholders — no ranked teams available for tournament [${tournamentId}], category [${category}].`
+        );
+        continue;
+      }
 
-      for (let x = 1; x <= rankedTeams.length; x++) {
-        const placeHolder = `~best:${x}/p:${pos}`;
-        const teamId = rankedTeams[x - 1]?.team ?? null;
+      const bestAssignments = deriveBestPlaceholderAssignments({
+        position: pos,
+        standings: rankedTeams,
+      });
+
+      for (const { placeholder, teamId } of bestAssignments) {
         if (!teamId) {
-          DD(`Skipping best placeholder ${placeHolder} — not enough teams`);
+          DD(`Skipping best placeholder ${placeholder} — not enough teams`);
           continue;
         }
 
@@ -359,21 +380,21 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
         updatesForBest += await updateTeamInFixtures(
           'team1',
           teamId,
-          placeHolder
+          placeholder
         );
         updatesForBest += await updateTeamInFixtures(
           'team2',
           teamId,
-          placeHolder
+          placeholder
         );
         updatesForBest += await updateTeamInFixtures(
           'umpireTeam',
           teamId,
-          placeHolder
+          placeholder
         );
 
         DD(
-          `Best placeholder ${placeHolder} resolved to team ${teamId}, updated ${updatesForBest} rows`
+          `Best placeholder ${placeholder} resolved to team ${teamId}, updated ${updatesForBest} rows`
         );
         totalUpdated += updatesForBest;
       }
