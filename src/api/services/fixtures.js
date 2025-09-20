@@ -249,9 +249,19 @@ module.exports = (db) => {
       );
       if (fixture) {
         const { category } = fixture;
-        // Decide winner and loser based on goals (adjust logic for draws as needed).
-        const winner = team1.goals > team2.goals ? team1.name : team2.name;
-        const loser = team1.goals > team2.goals ? team2.name : team1.name;
+        // Decide winner and loser using Gaelic scoring: 3 per goal, 1 per point.
+        const scoreValue = (team) =>
+          (Number(team?.goals) || 0) * 3 + (Number(team?.points) || 0);
+        const team1Aggregate = scoreValue(team1);
+        const team2Aggregate = scoreValue(team2);
+
+        let winner = team1.name;
+        let loser = team2.name;
+
+        if (team1Aggregate < team2Aggregate) {
+          winner = team2.name;
+          loser = team1.name;
+        }
 
         // Update all references for the winning team.
         await update(
