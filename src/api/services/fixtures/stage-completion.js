@@ -1,3 +1,8 @@
+const {
+  deriveGroupPlaceholderAssignments,
+  deriveCategoryPlaceholderAssignments,
+} = require('./stage-completion-utils');
+
 // Note: Dependencies are injected by the factory function pattern
 // Required dependencies: dbHelpers (select, update), loggers (II, DD), sqlGroupStandings, sqlGroupRankings
 
@@ -338,12 +343,20 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
       return affectedRows;
     };
 
-    for (let position = 0; position < groupPositions; position++) {
-      const placeHolder = `~${stage}:${groupNumber}/p:${position + 1}`;
-      const newValue = standings[position]?.team ?? null;
-      if (newValue === null) {
+    const groupAssignments = deriveGroupPlaceholderAssignments({
+      stage,
+      groupNumber,
+      totalPositions: groupPositions,
+      standings,
+    });
+
+    for (let index = 0; index < groupAssignments.length; index += 1) {
+      const { placeholder, teamId } = groupAssignments[index];
+      const positionNumber = index + 1;
+
+      if (!teamId) {
         DD(
-          `Skipping updates for position ${position + 1} as calculated team ID is null.`
+          `Skipping updates for position ${positionNumber} as calculated team ID is null.`
         );
         continue;
       }
@@ -351,22 +364,22 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
       let updatesForPosition = 0;
       updatesForPosition += await updateTeamInFixtures(
         'team1',
-        newValue,
-        placeHolder
+        teamId,
+        placeholder
       );
       updatesForPosition += await updateTeamInFixtures(
         'team2',
-        newValue,
-        placeHolder
+        teamId,
+        placeholder
       );
       updatesForPosition += await updateTeamInFixtures(
         'umpireTeam',
-        newValue,
-        placeHolder
+        teamId,
+        placeholder
       );
 
       DD(
-        `Total updates for position ${position + 1} ('${placeHolder}' -> ${newValue}): ${updatesForPosition}`
+        `Total updates for position ${positionNumber} ('${placeholder}' -> ${teamId}): ${updatesForPosition}`
       );
       totalUpdated += updatesForPosition;
     }
@@ -424,24 +437,17 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
           category,
         });
 
-        const orderedCategoryStandings = categoryStandings
-          .filter((row) => row.team)
-          .sort((a, b) => {
-            if (b.TotalPoints !== a.TotalPoints)
-              return (b.TotalPoints || 0) - (a.TotalPoints || 0);
-            if (b.PointsDifference !== a.PointsDifference)
-              return (b.PointsDifference || 0) - (a.PointsDifference || 0);
-            if (b.PointsFrom !== a.PointsFrom)
-              return (b.PointsFrom || 0) - (a.PointsFrom || 0);
-            return (a.grp || 0) - (b.grp || 0);
-          });
+        const categoryAssignments = deriveCategoryPlaceholderAssignments({
+          standings: categoryStandings,
+          totalPositions: groupZeroPositions,
+        });
 
-        for (let pos = 1; pos <= groupZeroPositions; pos++) {
-          const placeHolder = `~group:0/p:${pos}`;
-          const teamId = orderedCategoryStandings[pos - 1]?.team ?? null;
+        for (let index = 0; index < categoryAssignments.length; index += 1) {
+          const { placeholder, teamId } = categoryAssignments[index];
+
           if (!teamId) {
             II(
-              `StageCompletion: insufficient category standings to resolve placeholder '${placeHolder}' for tournament [${tournamentId}], category [${category}].`
+              `StageCompletion: insufficient category standings to resolve placeholder '${placeholder}' for tournament [${tournamentId}], category [${category}].`
             );
             continue;
           }
@@ -450,22 +456,22 @@ module.exports = ({ dbHelpers, loggers, sqlGroupStandings }) => {
           updatesForAllGroups += await updateTeamInFixtures(
             'team1',
             teamId,
-            placeHolder
+            placeholder
           );
           updatesForAllGroups += await updateTeamInFixtures(
             'team2',
             teamId,
-            placeHolder
+            placeholder
           );
           updatesForAllGroups += await updateTeamInFixtures(
             'umpireTeam',
             teamId,
-            placeHolder
+            placeholder
           );
 
           if (updatesForAllGroups === 0) {
             DD(
-              `StageCompletion: placeholder '${placeHolder}' already resolved to team '${teamId}' across all fixtures.`
+              `StageCompletion: placeholder '${placeholder}' already resolved to team '${teamId}' across all fixtures.`
             );
           }
           totalUpdated += updatesForAllGroups;
