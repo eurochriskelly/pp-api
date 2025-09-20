@@ -5,12 +5,14 @@ import { buildReport } from './tournaments/builld-report/index.js';
 import { sqlGroupStandings } from '../../lib/queries';
 import TSVValidator from './fixtures/validate-tsv';
 import { buildFixturesInsertSQL } from './tournaments/import-fixtures.js';
-import {
-  generateFixturesForCompetition,
-} from './tournaments/generate-fixtures.js';
+import { generateFixturesForCompetition } from './tournaments/generate-fixtures.js';
 
 // Helper function to calculate lifecycle status
-function calculateLifecycleStatus(dbStatus: string, startDateString: string, endDateString: string | null): string {
+function calculateLifecycleStatus(
+  dbStatus: string,
+  startDateString: string,
+  endDateString: string | null
+): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -77,7 +79,11 @@ function calculateLifecycleStatus(dbStatus: string, startDateString: string, end
   return 'archive';
 }
 
-const createPitches = async (insert: (query: string, params: any[]) => Promise<any>, tournamentId: number, pitches: any[]) => {
+const createPitches = async (
+  insert: (query: string, params: any[]) => Promise<any>,
+  tournamentId: number,
+  pitches: any[]
+) => {
   try {
     const values = pitches.map((pitch) => [
       pitch.pitch,
@@ -104,7 +110,10 @@ const createPitches = async (insert: (query: string, params: any[]) => Promise<a
   }
 };
 
-const deleteCards = async (dbDelete: (query: string, params: any[]) => Promise<any>, tournamentId: number) => {
+const deleteCards = async (
+  dbDelete: (query: string, params: any[]) => Promise<any>,
+  tournamentId: number
+) => {
   try {
     const result = await dbDelete(`DELETE FROM cards WHERE tournamentId = ?`, [
       tournamentId,
@@ -118,7 +127,10 @@ const deleteCards = async (dbDelete: (query: string, params: any[]) => Promise<a
   }
 };
 
-const deleteFixtures = async (dbDelete: (query: string, params?: any[]) => Promise<any>, tournamentId: number) => {
+const deleteFixtures = async (
+  dbDelete: (query: string, params?: any[]) => Promise<any>,
+  tournamentId: number
+) => {
   try {
     await dbDelete(`DELETE FROM cards WHERE tournamentId = ?`, [tournamentId]);
     const result = await dbDelete(
@@ -133,7 +145,10 @@ const deleteFixtures = async (dbDelete: (query: string, params?: any[]) => Promi
   }
 };
 
-const deletePitches = async (dbDelete: (query: string, params: any[]) => Promise<any>, tournamentId: number) => {
+const deletePitches = async (
+  dbDelete: (query: string, params: any[]) => Promise<any>,
+  tournamentId: number
+) => {
   try {
     console.log('deleting pitches from tournament ', tournamentId);
     const result = await dbDelete(
@@ -147,7 +162,6 @@ const deletePitches = async (dbDelete: (query: string, params: any[]) => Promise
     );
   }
 };
-
 
 export default (db: any) => {
   const { select, insert, update, delete: dbDelete } = dbHelper(db);
@@ -196,7 +210,9 @@ export default (db: any) => {
     },
     buildTournamentReport: async (tournamentId: number, category?: string) => {
       // Log to verify the category is being received
-      DD(`Building report for tournament ${tournamentId}, category: ${category || 'all'}`);
+      DD(
+        `Building report for tournament ${tournamentId}, category: ${category || 'all'}`
+      );
       const res = await buildReport(tournamentId, select, category);
       return res;
     },
@@ -232,16 +248,27 @@ export default (db: any) => {
     },
 
     // Create multiple pitches for a tournament
-    createPitches: (pitches: any[], tournamentId: number) => createPitches(insert, tournamentId, pitches),
+    createPitches: (pitches: any[], tournamentId: number) =>
+      createPitches(insert, tournamentId, pitches),
 
     // Players CRUD (New)
     createPlayer: async (
       squadId: number,
-      { firstName, secondName, dateOfBirth, foirreannId }: { firstName: string, secondName: string, dateOfBirth: string, foirreannId: string }
+      {
+        firstName,
+        secondName,
+        dateOfBirth,
+        foirreannId,
+      }: {
+        firstName: string;
+        secondName: string;
+        dateOfBirth: string;
+        foirreannId: string;
+      }
     ) => {
       const result = await insert(
         `INSERT INTO players (firstName, secondName, dateOfBirth, foirreannId, teamId) 
-         VALUES (?, ?, ?, ?, ?)`, 
+         VALUES (?, ?, ?, ?, ?)`,
         [firstName, secondName, dateOfBirth, foirreannId, squadId]
       );
       return result.insertId;
@@ -258,7 +285,17 @@ export default (db: any) => {
 
     updatePlayer: async (
       id: number,
-      { firstName, secondName, dateOfBirth, foirreannId }: { firstName: string, secondName: string, dateOfBirth: string, foirreannId: string }
+      {
+        firstName,
+        secondName,
+        dateOfBirth,
+        foirreannId,
+      }: {
+        firstName: string;
+        secondName: string;
+        dateOfBirth: string;
+        foirreannId: string;
+      }
     ) => {
       await update(
         `UPDATE players SET firstName = ?, secondName = ?, dateOfBirth = ?, foirreannId = ? WHERE id = ?`,
@@ -279,7 +316,18 @@ export default (db: any) => {
         winPoints = 2,
         drawPoints = 1,
         lossPoints = 0,
-      }: { region: string, title: string, date: string, location: string, lat: number, lon: number, codeOrganizer: string, winPoints?: number, drawPoints?: number, lossPoints?: number }
+      }: {
+        region: string;
+        title: string;
+        date: string;
+        location: string;
+        lat: number;
+        lon: number;
+        codeOrganizer: string;
+        winPoints?: number;
+        drawPoints?: number;
+        lossPoints?: number;
+      }
     ) => {
       const eventUuid = uuidv4();
       await insert(
@@ -287,7 +335,7 @@ export default (db: any) => {
            region, Title, Date, Location, Lat, Lon, eventUuid, code,
            pointsForWin, pointsForDraw, pointsForLoss
          ) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           region,
           title,
@@ -311,7 +359,7 @@ export default (db: any) => {
       }
       const newTournamentId = newTournament.id;
       await insert(
-        `INSERT INTO sec_roles (UserId, RoleName, tournamentId) VALUES (?, ?, ?)`, 
+        `INSERT INTO sec_roles (UserId, RoleName, tournamentId) VALUES (?, ?, ?)`,
         [userId, 'organizer', newTournamentId]
       );
       return newTournament;
@@ -320,23 +368,34 @@ export default (db: any) => {
     updateTournament: async (
       id: number,
       {
-        region, title, date, 
-        location, lat, lon, 
+        region,
+        title,
+        date,
+        location,
+        lat,
+        lon,
         codeOrganizer,
-        winPoints = 3, drawPoints = 1, lossPoints = 0,
-      }: 
-      { 
-        region: string, title: string, date: string, 
-        location: string, lat: number, lon: number, 
-        codeOrganizer: string, 
-        winPoints?: number, drawPoints?: number, lossPoints?: number 
+        winPoints = 3,
+        drawPoints = 1,
+        lossPoints = 0,
+      }: {
+        region: string;
+        title: string;
+        date: string;
+        location: string;
+        lat: number;
+        lon: number;
+        codeOrganizer: string;
+        winPoints?: number;
+        drawPoints?: number;
+        lossPoints?: number;
       }
     ) => {
       await update(
         `UPDATE tournaments 
          SET Region = ?, Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ?, 
          code = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
-         WHERE id = ?`, 
+         WHERE id = ?`,
         [
           region,
           title,
@@ -411,11 +470,23 @@ export default (db: any) => {
     // Squads CRUD (Updated from teams)
     createSquad: async (
       tournamentId: number,
-      { teamName, groupLetter, category, teamSheetSubmitted, notes }: { teamName: string, groupLetter: string, category: string, teamSheetSubmitted: boolean, notes: string }
+      {
+        teamName,
+        groupLetter,
+        category,
+        teamSheetSubmitted,
+        notes,
+      }: {
+        teamName: string;
+        groupLetter: string;
+        category: string;
+        teamSheetSubmitted: boolean;
+        notes: string;
+      }
     ) => {
       const result = await insert(
         `INSERT INTO squads (teamName, groupLetter, category, teamSheetSubmitted, notes, tournamentId) 
-         VALUES (?, ?, ?, ?, ?, ?)`, 
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           teamName,
           groupLetter,
@@ -429,8 +500,10 @@ export default (db: any) => {
     },
 
     deleteCards: (tournamentId: number) => deleteCards(dbDelete, tournamentId),
-    deleteFixtures: (tournamentId: number) => deleteFixtures(dbDelete, tournamentId),
-    deletePitches: (tournamentId: number) => deletePitches(dbDelete, tournamentId),
+    deleteFixtures: (tournamentId: number) =>
+      deleteFixtures(dbDelete, tournamentId),
+    deletePitches: (tournamentId: number) =>
+      deletePitches(dbDelete, tournamentId),
 
     deletePlayer: async (id: number) => {
       await dbDelete(`DELETE FROM players WHERE id = ?`, [id]);
@@ -598,20 +671,20 @@ export default (db: any) => {
         `SELECT * FROM fixtures WHERE tournamentId = ? ORDER BY scheduled`,
         [tournamentId]
       );
-      
+
       // Get tournament details
       const [tournament] = await select(
         `SELECT * FROM tournaments WHERE id = ?`,
         [tournamentId]
       );
-      
+
       if (!tournament) {
         throw new Error('Tournament not found');
       }
-      
+
       const stages: any = {};
       const catTeams = new Map();
-      
+
       // Process each fixture to build the overview
       for (const fixture of fixtures) {
         const category = fixture.category?.toUpperCase() || '';
@@ -622,7 +695,7 @@ export default (db: any) => {
         const team1 = fixture.team1Id || '';
         const team2 = fixture.team2Id || '';
         const umpires = fixture.umpireTeamId || '';
-        
+
         // Initialize category if not present
         if (!stages[category]) {
           stages[category] = {
@@ -630,12 +703,12 @@ export default (db: any) => {
             'Knockout Stage': {},
           };
         }
-        
+
         // Process stage - check if it's a group stage (starts with 'GP' or 'GROUP')
         // Handle different possible stage formats
         let isGroupStage = false;
         let groupNum = '';
-        
+
         if (stage.startsWith('GP.')) {
           isGroupStage = true;
           groupNum = stage.split('.')[1];
@@ -647,11 +720,11 @@ export default (db: any) => {
             groupNum = groupMatch[1];
           }
         }
-        
+
         if (isGroupStage && groupNum) {
           const groupName = `Gp.${groupNum}`;
           const groupStage = stages[category]['Group Stage'];
-          
+
           if (!groupStage[groupName]) {
             groupStage[groupName] = {
               size: 0,
@@ -659,18 +732,18 @@ export default (db: any) => {
               matches: [],
             };
           }
-          
+
           // Add match to group as an object
           const matchObj = {
             id: matchId,
             team1,
             team2,
-            umpires
+            umpires,
           };
-          
+
           groupStage[groupName].matches.push(matchObj);
           groupStage[groupName].matchesCount++;
-          
+
           // Track teams for size calculation
           if (!catTeams.has(category)) {
             catTeams.set(category, new Map());
@@ -695,48 +768,48 @@ export default (db: any) => {
             const bracket = stageParts[0];
             const stageCode = stageParts[1];
             const knockoutStage = stages[category]['Knockout Stage'];
-            
+
             if (!knockoutStage[bracket]) {
               knockoutStage[bracket] = {
                 matches: [],
               };
             }
-            
+
             // Add match to knockout stage as an object
             const matchObj = {
               id: matchId,
               stage: stageCode,
               team1,
               team2,
-              umpires
+              umpires,
             };
-            
+
             knockoutStage[bracket].matches.push(matchObj);
           } else {
             // Handle cases where stage doesn't split into two parts
             // Add to a default bracket
             const knockoutStage = stages[category]['Knockout Stage'];
             const bracket = 'DEFAULT';
-            
+
             if (!knockoutStage[bracket]) {
               knockoutStage[bracket] = {
                 matches: [],
               };
             }
-            
+
             const matchObj = {
               id: matchId,
               stage: stage,
               team1,
               team2,
-              umpires
+              umpires,
             };
-            
+
             knockoutStage[bracket].matches.push(matchObj);
           }
         }
       }
-      
+
       // Calculate sizes for groups
       for (const category in stages) {
         const groupStage = stages[category]['Group Stage'];
@@ -746,7 +819,7 @@ export default (db: any) => {
           groupStage[groupName].size = teams.size;
         }
       }
-      
+
       return stages;
     },
 
@@ -813,7 +886,11 @@ export default (db: any) => {
       }));
     },
 
-    getTournamentsByStatus: async (requestedStatusString: string, userId: number, region: string) => {
+    getTournamentsByStatus: async (
+      requestedStatusString: string,
+      userId: number,
+      region: string
+    ) => {
       const requestedStatuses = requestedStatusString
         ? requestedStatusString.split(',')
         : [];
@@ -855,7 +932,9 @@ export default (db: any) => {
             );
             break;
           default:
-            console.log(`Unknown status request to fn:getTournamentsByStatus: ${status}`)
+            console.log(
+              `Unknown status request to fn:getTournamentsByStatus: ${status}`
+            );
         }
       });
 
@@ -977,7 +1056,11 @@ export default (db: any) => {
       }));
     },
 
-    getFilters: async (tournamentId: number, queryRole: string, queryCategory: string) => {
+    getFilters: async (
+      tournamentId: number,
+      queryRole: string,
+      queryCategory: string
+    ) => {
       II(
         `Fetching filters for tournament [${tournamentId}], role [${queryRole}], category [${queryCategory || 'N/A'}]`
       );
@@ -1076,12 +1159,26 @@ export default (db: any) => {
         return [];
       }
 
-      return roleFilterKeys.map((key) => allFilterDefinitions[key as keyof typeof allFilterDefinitions]);
+      return roleFilterKeys.map(
+        (key) => allFilterDefinitions[key as keyof typeof allFilterDefinitions]
+      );
     },
 
     updateSquad: async (
       id: number,
-      { teamName, groupLetter, category, teamSheetSubmitted, notes }: { teamName: string, groupLetter: string, category: string, teamSheetSubmitted: boolean, notes: string }
+      {
+        teamName,
+        groupLetter,
+        category,
+        teamSheetSubmitted,
+        notes,
+      }: {
+        teamName: string;
+        groupLetter: string;
+        category: string;
+        teamSheetSubmitted: boolean;
+        notes: string;
+      }
     ) => {
       await update(
         `UPDATE squads SET teamName = ?, groupLetter = ?, category = ?, teamSheetSubmitted = ?, notes = ? WHERE id = ?`,
@@ -1094,6 +1191,13 @@ export default (db: any) => {
           id,
         ]
       );
+    },
+
+    integrityCheck: async (tournamentId: number) => {
+      const {
+        checkIntegrity,
+      } = require('./tournaments/integrity-check/index.js');
+      return await checkIntegrity(tournamentId, select);
     },
   };
 };
