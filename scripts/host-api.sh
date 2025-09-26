@@ -22,15 +22,15 @@ if [ ! -f "openapi.yaml" ];then
   exit 1
 fi
 
-npx @redocly/cli bundle openapi.yaml -o openapi_bundle.yaml
+npx @redocly/cli@1.0.0 bundle openapi.yaml -o openapi_bundle.yaml
 
 if [ ! -f "openapi_bundle.yaml" ];then
   echo "Something went wrong. Could not bundle openai yaml. Check spec!"
   ls
-  exit 1  
+  exit 1
 fi
 
-npx @redocly/cli build-docs openapi_bundle.yaml 
+npx @redocly/cli@1.0.0 build-docs openapi_bundle.yaml 
 
 if [ ! -f "redoc-static.html" ];then
   echo "Something went wrong. Could not build static api docs. Check spec!"
