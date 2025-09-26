@@ -25,6 +25,7 @@
 
 - **Auto-generation**: Run `node scripts/generate-api-docs.js` to regenerate docs from routes
 - **Manual updates**: Edit individual YAML files in `docs/api/paths/{resource}/` for customizations
-- **Build process**: `npm run api` generates docs, bundles, and serves HTML documentation
+- **Build process**: `npm run api` generates docs, bundles, and serves HTML documentation at http://localhost:4444
 - **JSDoc**: Add JSDoc comments to controller methods for better generated documentation
 - **Schema references**: Use existing schemas in `docs/api/components/schemas/` for request/response bodies
+- **Redocly version**: Uses `@redocly/cli@1.0.0` (pinned to avoid dependency conflicts)
