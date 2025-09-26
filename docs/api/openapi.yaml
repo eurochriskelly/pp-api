@@ -9,20 +9,114 @@ servers:
     description: Local development server
 
 paths:
-  /tournaments:
-    $ref: './paths/tournaments.yaml'
-  /tournaments/{tournamentId}/squads:
-    $ref: './paths/squads.yaml'
-  /tournaments/{tournamentId}/squads/{squadId}/players:
-    $ref: './paths/players.yaml'
-  /tournaments/{tournamentId}/fixtures:
-    $ref: './paths/fixtures.yaml'
-  /regions:
-    $ref: './paths/regions.yaml'
+  /auth/signup:
+    $ref: './paths/auth/auth-signup.yaml'
   /auth/login:
-    $ref: './paths/auth.yaml'
-  /upload:
-    $ref: './paths/uploads.yaml'
+    $ref: './paths/auth/auth-login.yaml'
+  /auth/logout:
+    $ref: './paths/auth/auth-logout.yaml'
+  /auth/me:
+    $ref: './paths/auth/auth-me.yaml'
+  /tournaments/{tournamentId}/fixtures:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures.yaml'
+  /tournaments/{tournamentId}/fixtures/nextup:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-nextup.yaml'
+  /tournaments/{tournamentId}/fixtures/pitches/{pitch}/fixtures:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-pitches-pitch-fixtures.yaml'
+  /tournaments/{tournamentId}/fixtures/{fixtureId}/rewind:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid-rewind.yaml'
+  /tournaments/{tournamentId}/fixtures/{fixtureId}/carded-players:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid-carded-players.yaml'
+  /tournaments/{tournamentId}/fixtures/{fixtureId}:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid.yaml'
+  /tournaments/{tournamentId}/fixtures/filtered:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-filtered.yaml'
+  /tournaments/{tournamentId}/fixtures/update-calculated-fixtures:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-update-calculated-fixtures.yaml'
+  /tournaments/{tournamentId}/fixtures/{fixtureId}/update-calculated-fixtures:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid-update-calculated-fixtures.yaml'
+  /tournaments/{tournamentId}/fixtures/{id}/start:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-start.yaml'
+  /tournaments/{tournamentId}/fixtures/{id}/end:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-end.yaml'
+  /tournaments/{tournamentId}/fixtures/{id}/reschedule:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-reschedule.yaml'
+  /tournaments/{tournamentId}/fixtures/{id}/score:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-score.yaml'
+  /tournaments/{tournamentId}/fixtures/{id}/carded:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-carded.yaml'
+  /tournaments/{tournamentId}/fixtures/{id}/carded/{cardId}:
+    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-carded-cardid.yaml'
+  /general/tournaments/{tournamentId}/pitches:
+    $ref: './paths/general/general-tournaments-tournamentid-pitches.yaml'
+  /general/tournaments/{tournamentId}/teams:
+    $ref: './paths/general/general-tournaments-tournamentid-teams.yaml'
+  /general/tournaments/{tournamentId}/standings:
+    $ref: './paths/general/general-tournaments-tournamentid-standings.yaml'
+  /regions:
+    $ref: './paths/regions/regions.yaml'
+  /regions/{region}:
+    $ref: './paths/regions/regions-region.yaml'
+  /api/system/diagnostics/print-sql-statements:
+    $ref: './paths/system/api-system-diagnostics-print-sql-statements.yaml'
+  /tournaments:
+    $ref: './paths/tournaments/tournaments.yaml'
+  /tournaments/summary:
+    $ref: './paths/tournaments/tournaments-summary.yaml'
+  /tournaments/by-status/{status}:
+    $ref: './paths/tournaments/tournaments-by-status-status.yaml'
+  /tournaments/{id}:
+    $ref: './paths/tournaments/tournaments-id.yaml'
+  /tournaments/{id}/report:
+    $ref: './paths/tournaments/tournaments-id-report.yaml'
+  /tournaments/by-uuid/{uuid}:
+    $ref: './paths/tournaments/tournaments-by-uuid-uuid.yaml'
+  /tournaments/{id}/reset:
+    $ref: './paths/tournaments/tournaments-id-reset.yaml'
+  /tournaments/{id}/validate-tsv:
+    $ref: './paths/tournaments/tournaments-id-validate-tsv.yaml'
+  /tournaments/{tournamentId}/generate-fixtures:
+    $ref: './paths/tournaments/tournaments-tournamentid-generate-fixtures.yaml'
+  /tournaments/{id}/recent-matches:
+    $ref: './paths/tournaments/tournaments-id-recent-matches.yaml'
+  /tournaments/{id}/categories:
+    $ref: './paths/tournaments/tournaments-id-categories.yaml'
+  /tournaments/{id}/group-fixtures:
+    $ref: './paths/tournaments/tournaments-id-group-fixtures.yaml'
+  /tournaments/{id}/group-standings:
+    $ref: './paths/tournaments/tournaments-id-group-standings.yaml'
+  /tournaments/{id}/knockout-fixtures:
+    $ref: './paths/tournaments/tournaments-id-knockout-fixtures.yaml'
+  /tournaments/{id}/finals-results:
+    $ref: './paths/tournaments/tournaments-id-finals-results.yaml'
+  /tournaments/{id}/all-matches:
+    $ref: './paths/tournaments/tournaments-id-all-matches.yaml'
+  /tournaments/{tournamentId}/filters:
+    $ref: './paths/tournaments/tournaments-tournamentid-filters.yaml'
+  /tournaments/{id}/code-check/{code}:
+    $ref: './paths/tournaments/tournaments-id-code-check-code.yaml'
+  /tournaments/{tournamentId}/matches-by-pitch:
+    $ref: './paths/tournaments/tournaments-tournamentid-matches-by-pitch.yaml'
+  /tournaments/{tournamentId}/carded-players:
+    $ref: './paths/tournaments/tournaments-tournamentid-carded-players.yaml'
+  /tournaments/{tournamentId}/squads:
+    $ref: './paths/tournaments/tournaments-tournamentid-squads.yaml'
+  /tournaments/{tournamentId}/squads/{id}:
+    $ref: './paths/tournaments/tournaments-tournamentid-squads-id.yaml'
+  /tournaments/{tournamentId}/squads/{squadId}/players:
+    $ref: './paths/tournaments/tournaments-tournamentid-squads-squadid-players.yaml'
+  /tournaments/{tournamentId}/squads/{squadId}/players/{id}:
+    $ref: './paths/tournaments/tournaments-tournamentid-squads-squadid-players-id.yaml'
+  /tournaments/{id}/fixtures:
+    $ref: './paths/tournaments/tournaments-id-fixtures.yaml'
+  /tournaments/{id}/pitches:
+    $ref: './paths/tournaments/tournaments-id-pitches.yaml'
+  /tournaments/{id}/cards:
+    $ref: './paths/tournaments/tournaments-id-cards.yaml'
+  /tournaments/{id}/overview:
+    $ref: './paths/tournaments/tournaments-id-overview.yaml'
+  /tournaments/{id}/integrity-check:
+    $ref: './paths/tournaments/tournaments-id-integrity-check.yaml'
 
 components:
   schemas:

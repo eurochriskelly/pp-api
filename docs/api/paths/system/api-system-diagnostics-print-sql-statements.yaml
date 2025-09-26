@@ -1,0 +1,50 @@
+---
+put:
+  summary: "Update System diagnostics print-sql-statements"
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+
+  responses:
+    "200":
+      description: "Success"
+      content:
+        application/json:
+          schema:
+            type: object
+    "400":
+      description: "Bad Request"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
+    "500":
+      description: "Internal Server Error"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
+delete:
+  summary: "Delete System diagnostics print-sql-statements"
+  responses:
+    "200":
+      description: "Success"
+      content:
+        application/json:
+          schema:
+            type: object
+    "400":
+      description: "Bad Request"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
+    "500":
+      description: "Internal Server Error"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
