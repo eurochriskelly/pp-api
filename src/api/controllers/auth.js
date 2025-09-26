@@ -5,8 +5,17 @@ module.exports = (db, useMock) => {
   const dbSvc = serviceFactory(db);
 
   return {
+    /**
+     * Create a new user account
+     * @param {Object} req - Express request object
+     * @param {Object} req.body - Request body
+     * @param {string} req.body.email - User email address
+     * @param {string} req.body.password - User password
+     * @param {string} [req.body.role] - User role (optional)
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>} JSON response with user data or error
+     */
     signup: async (req, res) => {
-      // Service now expects email, password, role
       const { email, password, role } = req.body;
       try {
         if (!email || !password) {
@@ -17,12 +26,20 @@ module.exports = (db, useMock) => {
         const result = await dbSvc.signup(email, password, role);
         res.status(201).json(result);
       } catch (err) {
-        res.status(400).json({ error: err.message }); // e.g., email exists
+        res.status(400).json({ error: err.message });
       }
     },
 
+    /**
+     * Authenticate a user and return a token
+     * @param {Object} req - Express request object
+     * @param {Object} req.body - Request body
+     * @param {string} req.body.email - User email address
+     * @param {string} req.body.password - User password
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>} JSON response with authentication token or error
+     */
     login: async (req, res) => {
-      // Service now expects email, password
       const { email, password } = req.body;
       try {
         if (!email || !password) {
@@ -37,20 +54,26 @@ module.exports = (db, useMock) => {
       }
     },
 
+    /**
+     * Logout a user by invalidating their token
+     * @param {Object} req - Express request object
+     * @param {Object} req.headers - Request headers
+     * @param {string} [req.headers.authorization] - Bearer token in Authorization header
+     * @param {Object} req.body - Request body (fallback for token)
+     * @param {string} [req.body.token] - Token in request body
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>} JSON response confirming logout
+     */
     logout: async (req, res) => {
-      // Mock logout: client should send token in header or body
-      // For simplicity, let's assume token is in Authorization header: Bearer <token>
       const authHeader = req.headers.authorization;
       let token;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7, authHeader.length);
       } else {
-        // Fallback or alternative: check body if your client sends it there
         token = req.body.token;
       }
 
       try {
-        // Even if token is not provided, mock logout can be considered successful
         // as client is responsible for discarding it.
         const result = await dbSvc.logout(token);
         res.json(result);
@@ -62,8 +85,15 @@ module.exports = (db, useMock) => {
       }
     },
 
+    /**
+     * Get current authenticated user information
+     * @param {Object} req - Express request object
+     * @param {Object} req.headers - Request headers
+     * @param {string} req.headers.authorization - Bearer token in Authorization header
+     * @param {Object} res - Express response object
+     * @returns {Promise<void>} JSON response with user data or error
+     */
     getCurrentUser: async (req, res) => {
-      // For GET /api/auth/me
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7, authHeader.length);

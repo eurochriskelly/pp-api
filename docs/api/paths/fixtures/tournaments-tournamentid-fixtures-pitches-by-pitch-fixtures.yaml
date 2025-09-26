@@ -1,0 +1,28 @@
+---
+get:
+  summary: "Get Fixtures pitches :pitch fixtures"
+  parameters:
+      - name: pitch
+        in: path
+        required: true
+        schema:
+          type: string
+  responses:
+    "200":
+      description: "Success"
+      content:
+        application/json:
+          schema:
+            type: object
+    "400":
+      description: "Bad Request"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
+    "500":
+      description: "Internal Server Error"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
