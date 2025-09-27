@@ -12,6 +12,7 @@ export default (db: any, useMock: boolean) => {
   router.get('/:id/report', ctrl.getTournamentReport);
   router.put('/:id/report', ctrl.buildTournamentReport);
   router.put('/:id', ctrl.updateTournament);
+  router.put('/:tournamentId/status/:status', ctrl.updateTournamentStatus);
   router.delete('/:id', ctrl.deleteTournament);
   router.get('/by-uuid/:uuid', ctrl.getTournament);
   router.post('/:id/reset', ctrl.resetTournament);
