@@ -69,6 +69,8 @@ paths:
     $ref: './paths/tournaments/tournaments-id.yaml'
   /tournaments/{id}/report:
     $ref: './paths/tournaments/tournaments-id-report.yaml'
+  /tournaments/{tournamentId}/status/{status}:
+    $ref: './paths/tournaments/tournaments-tournamentid-status-status.yaml'
   /tournaments/by-uuid/{uuid}:
     $ref: './paths/tournaments/tournaments-by-uuid-uuid.yaml'
   /tournaments/{id}/reset:

@@ -170,6 +170,21 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
+    updateTournamentStatus: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { tournamentId, status } = req.params as TournamentParams;
+        await dbSvc.updateTournamentStatus(parseInt(tournamentId, 10), status);
+        const tournament = await dbSvc.getTournament(tournamentId);
+        res.status(200).json(tournament);
+      } catch (err) {
+        next(err);
+      }
+    },
+
     getTournaments: async (req: Request, res: Response, next: NextFunction) => {
       try {
         const status = (req.query as TournamentQuery).status || 'all';
@@ -558,7 +573,7 @@ export default (db: any, useMock: boolean) => {
 
     integrityCheck: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        console.log('icheck')
+        console.log('icheck');
         const { id } = req.params as TournamentParams;
         const result = await dbSvc.integrityCheck(parseInt(id, 10));
         res.json(result);

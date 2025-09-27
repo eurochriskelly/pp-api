@@ -420,6 +420,21 @@ export default (db: any) => {
       return updatedTournament;
     },
 
+    updateTournamentStatus: async (id: number, status: string) => {
+      await update(`UPDATE tournaments SET status = ? WHERE id = ?`, [
+        status,
+        id,
+      ]);
+      const [updatedTournament] = await select(
+        `SELECT * FROM tournaments WHERE id = ?`,
+        [id]
+      );
+      if (!updatedTournament) {
+        throw new Error('Failed to retrieve the updated tournament.');
+      }
+      return updatedTournament;
+    },
+
     getTournaments: async (status: string, userId: number, role: string) => {
       DD(
         `Getting tournaments with status=[${status}], userId=[${userId}], role=[${role}]`
