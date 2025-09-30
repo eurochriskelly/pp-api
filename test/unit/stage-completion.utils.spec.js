@@ -49,7 +49,10 @@ test('sortCategoryStandings applies tie-breakers TotalPoints, PointsDifference, 
   ];
 
   const ordered = sortCategoryStandings(standings);
-  assert.deepEqual(ordered.map((row) => row.team), ['C', 'B', 'D', 'A']);
+  assert.deepEqual(
+    ordered.map((row) => row.team),
+    ['C', 'B', 'D', 'A']
+  );
 });
 
 test('deriveCategoryPlaceholderAssignments orders standings before mapping placeholders', () => {
@@ -73,9 +76,27 @@ test('deriveCategoryPlaceholderAssignments orders standings before mapping place
 
 test('deriveBestPlaceholderAssignments ranks teams for a given position', () => {
   const standings = [
-    { team: 'G1', TotalPoints: 9, PointsDifference: 20, PointsFrom: 40, grp: 1 },
-    { team: 'G2', TotalPoints: 6, PointsDifference: 18, PointsFrom: 42, grp: 2 },
-    { team: 'G3', TotalPoints: 6, PointsDifference: 12, PointsFrom: 39, grp: 3 },
+    {
+      team: 'G1',
+      TotalPoints: 9,
+      PointsDifference: 20,
+      PointsFrom: 40,
+      grp: 1,
+    },
+    {
+      team: 'G2',
+      TotalPoints: 6,
+      PointsDifference: 18,
+      PointsFrom: 42,
+      grp: 2,
+    },
+    {
+      team: 'G3',
+      TotalPoints: 6,
+      PointsDifference: 12,
+      PointsFrom: 39,
+      grp: 3,
+    },
   ];
 
   const assignments = deriveBestPlaceholderAssignments({
@@ -91,7 +112,10 @@ test('deriveBestPlaceholderAssignments ranks teams for a given position', () => 
 });
 
 test('deriveBestPlaceholderAssignments returns empty list when position invalid', () => {
-  const assignments = deriveBestPlaceholderAssignments({ position: 0, standings: [] });
+  const assignments = deriveBestPlaceholderAssignments({
+    position: 0,
+    standings: [],
+  });
   assert.deepEqual(assignments, []);
 });
 

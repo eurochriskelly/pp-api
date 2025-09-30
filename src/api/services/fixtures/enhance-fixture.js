@@ -77,14 +77,12 @@ module.exports = ({ dbHelpers, loggers }) => {
     await infringementManager.processTeamInfringements(
       baseEmbellished,
       baseEmbellished.team1,
-      baseEmbellished.infringements.team1,
-      currentLane
+      baseEmbellished.infringements.team1
     );
     await infringementManager.processTeamInfringements(
       baseEmbellished,
       baseEmbellished.team2,
-      baseEmbellished.infringements.team2,
-      currentLane
+      baseEmbellished.infringements.team2
     );
 
     const finalEmbellished = {

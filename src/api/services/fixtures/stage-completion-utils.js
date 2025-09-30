@@ -110,7 +110,10 @@ function deriveGroupPlaceholderAssignments({
   return placeholders;
 }
 
-function sortCategoryStandings(standings = [], tieBreakers = DEFAULT_TIE_BREAKERS) {
+function sortCategoryStandings(
+  standings = [],
+  tieBreakers = DEFAULT_TIE_BREAKERS
+) {
   const byTotalPoints = tieBreakers.totalPoints;
   const byPointsDiff = tieBreakers.pointsDifference;
   const byPointsFrom = tieBreakers.pointsFrom;

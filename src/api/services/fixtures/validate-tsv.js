@@ -236,7 +236,10 @@ class TSVValidator {
     put('STAGE', stg);
     put('TEAM1', this._team(c, r, 'TEAM1', cat.value, stg.value, mt.value));
     put('TEAM2', this._team(c, r, 'TEAM2', cat.value, stg.value, mt.value));
-    put('UMPIRES', this._team(c, r, 'UMPIRES', cat.value, stg.value, mt.value, true));
+    put(
+      'UMPIRES',
+      this._team(c, r, 'UMPIRES', cat.value, stg.value, mt.value, true)
+    );
     put('DURATION', this._dur(c, r));
     if (this.hdx.has('REFEREE'))
       put('REFEREE', this._pass('REFEREE', c, r, true));
@@ -394,9 +397,8 @@ class TSVValidator {
       const pos = parseInt(posText, 10);
       const groupNum =
         nthGpMatch[2] === undefined ? 0 : parseInt(nthGpMatch[2], 10);
-      const normalizedPosText = posText.replace(
-        /(ST|ND|RD|TH)$/i,
-        (s) => s.toLowerCase()
+      const normalizedPosText = posText.replace(/(ST|ND|RD|TH)$/i, (s) =>
+        s.toLowerCase()
       );
       const normalizedValue = `${normalizedPosText} GP.${groupNum}`;
       const cellSpecificWarnings = [];
@@ -915,7 +917,8 @@ class TSVValidator {
         const groupNum = parseInt(groupName.split('.')[1], 10);
         const teams = this.catTeams.get(category)?.get(groupNum) || new Set();
         groupStage[groupName].size = teams.size;
-        groupStage[groupName].matchesCount = groupStage[groupName].matches.length;
+        groupStage[groupName].matchesCount =
+          groupStage[groupName].matches.length;
       }
     }
   }
