@@ -19,6 +19,44 @@ function deriveBestPlaceholderAssignments({
   }));
 }
 
+function planGroupZeroAssignments({
+  remainingMatches,
+  standings = [],
+  totalPositions,
+  tieBreakers,
+}) {
+  if (!totalPositions || totalPositions <= 0) {
+    return {
+      shouldSkip: true,
+      reason: 'no-positions',
+      remainingMatches: remainingMatches || 0,
+      assignments: [],
+    };
+  }
+
+  if ((remainingMatches || 0) > 0) {
+    return {
+      shouldSkip: true,
+      reason: 'remaining-matches',
+      remainingMatches,
+      assignments: [],
+    };
+  }
+
+  const assignments = deriveCategoryPlaceholderAssignments({
+    standings,
+    totalPositions,
+    tieBreakers,
+  });
+
+  return {
+    shouldSkip: false,
+    reason: 'assign',
+    remainingMatches: 0,
+    assignments,
+  };
+}
+
 function evaluatePlaceholderDelta({
   tournamentId,
   category,
@@ -161,4 +199,5 @@ module.exports = {
   sortCategoryStandings,
   evaluatePlaceholderDelta,
   deriveBestPlaceholderAssignments,
+  planGroupZeroAssignments,
 };
