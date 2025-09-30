@@ -90,7 +90,7 @@ else
     npm run build >> "$logfile" 2>&1
 
     while true; do
-        echo -e "${GREEN}[LAUNCH]${RESET} Starting server..."
+        echo -e "${GREEN}[LAUNCH]${RESET} Starting server at time [$(date)] ..."
         PP_DBN=$dbn ./scripts/start-server.sh $port $param false $dbn >> "$logfile" 2>&1 &
         server_pid=$!
         trap 'kill $server_pid 2>/dev/null; rm -f "$pidfile"; echo -e "${YELLOW}[EXIT]${RESET} Server stopped." | tee -a "$logfile"' EXIT
