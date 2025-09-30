@@ -63,7 +63,11 @@ module.exports = ({
 
       const { groupPositions, bestPositions, groupZeroPositions } =
         await _getNumPositionsToUpdate(fixture);
-      if (groupPositions === 0 && bestPositions === 0 && groupZeroPositions === 0) {
+      if (
+        groupPositions === 0 &&
+        bestPositions === 0 &&
+        groupZeroPositions === 0
+      ) {
         II(
           `Determined 0 positions to update for stage [${stage}/${groupNumber}/${category}]. No dependent fixtures will be updated.`
         );
@@ -148,10 +152,7 @@ module.exports = ({
     return standings;
   }
 
-  async function _getRemainingCategoryGroupMatches({
-    tournamentId,
-    category,
-  }) {
+  async function _getRemainingCategoryGroupMatches({ tournamentId, category }) {
     const [result] = await select(
       `SELECT count(*) as remaining
          FROM fixtures
@@ -401,8 +402,10 @@ module.exports = ({
     }
 
     if (groupZeroPositions > 0) {
-      const remainingCategoryMatches =
-        await _getRemainingCategoryGroupMatches({ tournamentId, category });
+      const remainingCategoryMatches = await _getRemainingCategoryGroupMatches({
+        tournamentId,
+        category,
+      });
       if (remainingCategoryMatches > 0) {
         II(
           `StageCompletion: skipping ~group:0 updates for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`

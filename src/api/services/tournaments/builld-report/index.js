@@ -13,11 +13,11 @@ async function buildReport(tournamentId, select, category) {
 
   const exporter = new JsonExporter();
   const result = exporter.export(reportData);
-  
+
   // If a category is specified, filter the categories array
   if (category) {
-    result.categories = result.categories.filter(cat => 
-      cat.category.toUpperCase() === category.toUpperCase()
+    result.categories = result.categories.filter(
+      (cat) => cat.category.toUpperCase() === category.toUpperCase()
     );
   }
   return result;

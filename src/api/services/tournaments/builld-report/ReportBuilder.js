@@ -21,11 +21,11 @@ class ReportBuilder {
     const cardsByFixtureId = await this.getCardsForTournament(tournamentId);
 
     // Filter categories if a specific category is provided
-    const filteredCategoryTeamInfo = category ? 
-      categoryTeamInfo.filter(catInfo => 
-        catInfo.category.toUpperCase() === category.toUpperCase()
-      ) : 
-      categoryTeamInfo;
+    const filteredCategoryTeamInfo = category
+      ? categoryTeamInfo.filter(
+          (catInfo) => catInfo.category.toUpperCase() === category.toUpperCase()
+        )
+      : categoryTeamInfo;
 
     // Now, for each category, fetch and structure its fixtures
     const categoriesWithFixtures = await Promise.all(
