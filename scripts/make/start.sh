@@ -78,7 +78,7 @@ if [ "${WATCH:-false}" = "true" ]; then
     tsc -w >> "$logfile" 2>&1 &
     tsc_pid=$!
 
-    echo -e "${GREEN}[LAUNCH]${RESET} Starting server with nodemon..." | tee -a "$logfile"
+    echo -e "${GREEN}[LAUNCH]${RESET} Starting server with nodemon... at time [$(date)]" | tee -a "$logfile"
     PP_DBN=$dbn ./scripts/start-server.sh $port $param false $dbn >> "$logfile" 2>&1 &
     server_pid=$!
 
@@ -97,7 +97,7 @@ else
         wait $server_pid
         exit_code=$?
         trap 'rm -f "$pidfile"' EXIT
-        echo -e "${RED}[STOP]${RESET} Server stopped (code $exit_code), restarting in 5 seconds..." | tee -a "$logfile"
+        echo -e "${RED}[STOP]${RESET} Server stopped (code $exit_code) at time [$(date)], restarting in 5 seconds..." | tee -a "$logfile"
         sleep 5
     done
 fi
