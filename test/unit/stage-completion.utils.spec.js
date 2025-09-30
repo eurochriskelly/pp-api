@@ -7,6 +7,7 @@ const {
   sortCategoryStandings,
   evaluatePlaceholderDelta,
   deriveBestPlaceholderAssignments,
+  planGroupZeroAssignments,
 } = require('../../src/api/services/fixtures/stage-completion-utils');
 
 test('deriveGroupPlaceholderAssignments maps ordered standings to placeholders', () => {
@@ -117,6 +118,40 @@ test('deriveBestPlaceholderAssignments returns empty list when position invalid'
     standings: [],
   });
   assert.deepEqual(assignments, []);
+});
+
+test('planGroupZeroAssignments skips when matches remain', () => {
+  const plan = planGroupZeroAssignments({
+    remainingMatches: 2,
+    standings: [],
+    totalPositions: 3,
+  });
+
+  assert.deepEqual(plan, {
+    shouldSkip: true,
+    reason: 'remaining-matches',
+    remainingMatches: 2,
+    assignments: [],
+  });
+});
+
+test('planGroupZeroAssignments returns assignments when no matches remain', () => {
+  const standings = [
+    { team: 'G1', TotalPoints: 9, PointsDifference: 20, PointsFrom: 40, grp: 1 },
+    { team: 'G2', TotalPoints: 6, PointsDifference: 18, PointsFrom: 42, grp: 2 },
+  ];
+
+  const plan = planGroupZeroAssignments({
+    remainingMatches: 0,
+    standings,
+    totalPositions: 2,
+  });
+
+  assert.equal(plan.shouldSkip, false);
+  assert.deepEqual(plan.assignments, [
+    { placeholder: '~group:0/p:1', teamId: 'G1' },
+    { placeholder: '~group:0/p:2', teamId: 'G2' },
+  ]);
 });
 
 test('evaluatePlaceholderDelta returns debug entry when no fixtures reference placeholder', () => {

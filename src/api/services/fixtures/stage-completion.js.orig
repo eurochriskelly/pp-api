@@ -403,6 +403,7 @@ module.exports = ({
     }
 
     if (groupZeroPositions > 0) {
+<<<<<<< Updated upstream
       const remainingCategoryMatches = await _getRemainingCategoryGroupMatches({
         tournamentId,
         category,
@@ -416,6 +417,14 @@ module.exports = ({
           tournamentId,
           category,
         });
+=======
+      const remainingCategoryMatches =
+        await _getRemainingCategoryGroupMatches({ tournamentId, category });
+      const categoryStandings = await _getCategoryStandings({
+        tournamentId,
+        category,
+      });
+>>>>>>> Stashed changes
 
       const { shouldSkip, remainingMatches, assignments } =
         planGroupZeroAssignments({
