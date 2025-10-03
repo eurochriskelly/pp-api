@@ -1,9 +1,10 @@
-const { II, DD } = require('../../lib/logging');
 const dbHelper = require('../../lib/db-helper');
 const { mysqlCurrentTime } = require('../../lib/utils');
 const stageCompletion = require('./fixtures/stage-completion');
 const enhanceFixtureFactory = require('./fixtures/enhance-fixture');
 const TSVValidator = require('./fixtures/validate-tsv');
+
+const { II, DD } = require('../../lib/logging');
 
 module.exports = (db) => {
   // Destructure 'delete' from dbHelper as well
