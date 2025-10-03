@@ -22,12 +22,26 @@ module.exports = (db) => {
   const dbHelpers = { select, insert, update, transaction, query };
   // Assuming sqlGroupStandings is needed and imported/available
   const { sqlGroupStandings, sqlGroupRankings } = require('../../lib/queries'); // Make sure this is imported if not already
-  const stageCompletionProcessor = stageCompletion({
-    dbHelpers,
-    loggers,
-    sqlGroupStandings,
-    sqlGroupRankings,
-  });
+  console.log('sqlGroupStandings:', sqlGroupStandings);
+  console.log('sqlGroupRankings:', sqlGroupRankings);
+  console.log('loggers:', loggers);
+  let stageCompletionProcessor;
+  try {
+    stageCompletionProcessor = stageCompletion({
+      dbHelpers,
+      loggers,
+      sqlGroupStandings,
+      sqlGroupRankings,
+    });
+    console.log(
+      'stageCompletionProcessor created successfully:',
+      stageCompletionProcessor
+    );
+  } catch (error) {
+    console.error('Error creating stageCompletionProcessor:', error);
+    stageCompletionProcessor = null;
+  }
+  console.log('stageCompletionProcessor:', stageCompletionProcessor);
 
   const fixtureEnhancer = enhanceFixtureFactory({
     dbHelpers: { select },
@@ -291,7 +305,9 @@ module.exports = (db) => {
           [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
         );
       }
-      await stageCompletionProcessor.processStageCompletion(fixtureId);
+      if (stageCompletionProcessor?.processStageCompletion) {
+        await stageCompletionProcessor.processStageCompletion(fixtureId);
+      }
       return { updated: true };
     },
 

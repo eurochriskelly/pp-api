@@ -1,9 +1,7 @@
 const { z } = require('zod'); // Import Zod
 
 module.exports = (db, useMock) => {
-  const serviceFactory = useMock
-    ? require('../services/mocks/fixtures')
-    : require('../services/fixtures');
+  const serviceFactory = require('../services/fixtures'); // temporarily use real
   const dbSvc = serviceFactory(db);
 
   // Define Zod schema for a single card object in the request body
