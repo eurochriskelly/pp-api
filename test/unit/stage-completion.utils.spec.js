@@ -137,8 +137,20 @@ test('planGroupZeroAssignments skips when matches remain', () => {
 
 test('planGroupZeroAssignments returns assignments when no matches remain', () => {
   const standings = [
-    { team: 'G1', TotalPoints: 9, PointsDifference: 20, PointsFrom: 40, grp: 1 },
-    { team: 'G2', TotalPoints: 6, PointsDifference: 18, PointsFrom: 42, grp: 2 },
+    {
+      team: 'G1',
+      TotalPoints: 9,
+      PointsDifference: 20,
+      PointsFrom: 40,
+      grp: 1,
+    },
+    {
+      team: 'G2',
+      TotalPoints: 6,
+      PointsDifference: 18,
+      PointsFrom: 42,
+      grp: 2,
+    },
   ];
 
   const plan = planGroupZeroAssignments({

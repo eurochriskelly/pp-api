@@ -417,59 +417,60 @@ module.exports = ({
           category,
         });
 
-      const { shouldSkip, remainingMatches, assignments } =
-        planGroupZeroAssignments({
-          remainingMatches: remainingCategoryMatches,
-          standings: categoryStandings,
-          totalPositions: groupZeroPositions,
-        });
+        const { shouldSkip, remainingMatches, assignments } =
+          planGroupZeroAssignments({
+            remainingMatches: remainingCategoryMatches,
+            standings: categoryStandings,
+            totalPositions: groupZeroPositions,
+          });
 
-      if (shouldSkip && remainingMatches > 0) {
-        II(
-          `StageCompletion: skipping ~group:0 updates for tournament [${tournamentId}], category [${category}] because ${remainingMatches} group match(es) remain.`
-        );
-      }
+        if (shouldSkip && remainingMatches > 0) {
+          II(
+            `StageCompletion: skipping ~group:0 updates for tournament [${tournamentId}], category [${category}] because ${remainingMatches} group match(es) remain.`
+          );
+        }
 
-      if (!shouldSkip) {
-        for (const { placeholder, teamId } of assignments) {
-          if (!teamId) {
-            II(
-              `StageCompletion: insufficient category standings to resolve placeholder '${placeholder}' for tournament [${tournamentId}], category [${category}].`
+        if (!shouldSkip) {
+          for (const { placeholder, teamId } of assignments) {
+            if (!teamId) {
+              II(
+                `StageCompletion: insufficient category standings to resolve placeholder '${placeholder}' for tournament [${tournamentId}], category [${category}].`
+              );
+              continue;
+            }
+
+            let updatesForAllGroups = 0;
+            updatesForAllGroups += await updateTeamInFixtures(
+              'team1',
+              teamId,
+              placeholder
             );
-            continue;
-          }
-
-          let updatesForAllGroups = 0;
-          updatesForAllGroups += await updateTeamInFixtures(
-            'team1',
-            teamId,
-            placeholder
-          );
-          updatesForAllGroups += await updateTeamInFixtures(
-            'team2',
-            teamId,
-            placeholder
-          );
-          updatesForAllGroups += await updateTeamInFixtures(
-            'umpireTeam',
-            teamId,
-            placeholder
-          );
-
-          if (updatesForAllGroups === 0) {
-            DD(
-              `StageCompletion: placeholder '${placeholder}' already resolved to team '${teamId}' across all fixtures.`
+            updatesForAllGroups += await updateTeamInFixtures(
+              'team2',
+              teamId,
+              placeholder
             );
+            updatesForAllGroups += await updateTeamInFixtures(
+              'umpireTeam',
+              teamId,
+              placeholder
+            );
+
+            if (updatesForAllGroups === 0) {
+              DD(
+                `StageCompletion: placeholder '${placeholder}' already resolved to team '${teamId}' across all fixtures.`
+              );
+            }
+            totalUpdated += updatesForAllGroups;
           }
-          totalUpdated += updatesForAllGroups;
         }
       }
+
+      return totalUpdated;
     }
 
-    return totalUpdated;
+    return {
+      processStageCompletion,
+    };
   }
-
-  return {
-    processStageCompletion,
-  };
 };

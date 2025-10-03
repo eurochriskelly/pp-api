@@ -870,7 +870,7 @@ export default (db: any) => {
           [tId]
         ),
         select(
-          `SELECT id, pitch, location FROM pitches WHERE tournamentId = ?`,
+          `SELECT MAX(id) AS id, pitch, location FROM pitches WHERE tournamentId = ? GROUP BY pitch, location`,
           [tId]
         ),
       ]);

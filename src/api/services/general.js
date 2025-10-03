@@ -75,13 +75,14 @@ module.exports = (db) => {
 
     listPitches: async (tournamentId) => {
       const pitchEvents = await select(
-        `SELECT * FROM v_pitch_events WHERE tournamentId = ?`,
+        `SELECT DISTINCT * FROM v_pitch_events WHERE tournamentId = ?`,
         [tournamentId]
       );
       if (pitchEvents.length) return pitchEvents;
-      return await select(`SELECT * FROM pitches WHERE tournamentId = ?`, [
-        tournamentId,
-      ]);
+      return await select(
+        `SELECT MAX(id) AS id, pitch, location FROM pitches WHERE tournamentId = ? GROUP BY pitch, location`,
+        [tournamentId]
+      );
     },
 
     listStandings: async (tournamentId, category) => {
