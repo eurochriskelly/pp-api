@@ -15,6 +15,7 @@ module.exports = ({
   sqlGroupStandings,
   sqlGroupRankings,
 }) => {
+  console.log('stageCompletion module.exports called');
   const { select, update } = dbHelpers;
   const { II, DD } = loggers;
   const winAward = 3;
@@ -466,11 +467,11 @@ module.exports = ({
         }
       }
 
-      return totalUpdated;
     }
 
-    return {
-      processStageCompletion,
-    };
+    return totalUpdated;
   }
+  return {
+    processStageCompletion,
+  };
 };
