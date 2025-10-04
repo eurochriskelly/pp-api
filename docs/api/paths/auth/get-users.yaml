@@ -1,0 +1,33 @@
+---
+get:
+  summary: 'Get Users with optional name filter'
+  parameters:
+    - name: filter
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 2
+  responses:
+    '200':
+      description: 'Success'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: integer
+                    name:
+                      type: string
+    '500':
+      description: 'Internal Server Error'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'

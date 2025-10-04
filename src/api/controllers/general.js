@@ -65,5 +65,15 @@ module.exports = (db, useMock) => {
         res.status(500).json({ code: 500, message: 'Internal Server Error' });
       }
     },
+
+    getUsers: async (req, res) => {
+      const { filter } = req.query;
+      try {
+        const users = await dbSvc.getUsers(filter);
+        res.json({ data: users });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    },
   };
 };

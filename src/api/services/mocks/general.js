@@ -48,6 +48,11 @@ module.exports = () => {
     },
   ];
   const mockGroups = [{ category: 'mens' }];
+  const mockUsers = [
+    { userId: 1, name: 'John Doe' },
+    { userId: 2, name: 'Jane Smith' },
+    { userId: 3, name: 'Bob Johnson' },
+  ];
 
   return {
     listTeams: async (tournamentId, category, stage, group) => {
@@ -84,6 +89,18 @@ module.exports = () => {
         : mockGroups;
       DD('Mock: Returning standings:', { groups, data });
       return Promise.resolve({ groups, data });
+    },
+
+    getUsers: async (filter) => {
+      II(`Mock: getUsers called with filter [${filter}]`);
+      const users =
+        filter && filter.length >= 2
+          ? mockUsers.filter((u) =>
+              u.name.toLowerCase().includes(filter.toLowerCase())
+            )
+          : mockUsers;
+      DD('Mock: Returning users:', users);
+      return Promise.resolve(users);
     },
   };
 };
