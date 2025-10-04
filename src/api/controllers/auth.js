@@ -107,5 +107,15 @@ module.exports = (db, useMock) => {
         res.status(401).json({ error: 'Authorization token required' });
       }
     },
+
+    getUsers: async (req, res) => {
+      const { filter } = req.query;
+      try {
+        const users = await dbSvc.getUsers(filter);
+        res.json({ data: users });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    },
   };
 };

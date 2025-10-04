@@ -9,6 +9,7 @@ module.exports = (db, useMock) => {
   router.post('/login', ctrl.login);
   router.post('/logout', ctrl.logout); // POST is common for logout to allow sending token in body
   router.get('/me', ctrl.getCurrentUser); // Endpoint to verify token and get user info
+  router.get('/users', ctrl.getUsers);
 
   return router;
 };

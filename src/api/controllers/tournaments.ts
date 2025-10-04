@@ -627,5 +627,31 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
+
+    getOrganizers: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId } = req.params as TournamentParams;
+        const organizers = await dbSvc.getOrganizers(tournamentId);
+        res.json({ data: organizers });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    assignOrganizer: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { tournamentId, userId } = req.params as TournamentParams & {
+          userId: string;
+        };
+        await dbSvc.assignOrganizer(tournamentId, userId);
+        res.status(200).json({ message: 'Organizer assigned successfully' });
+      } catch (err) {
+        next(err);
+      }
+    },
   };
 };

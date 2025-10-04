@@ -36,5 +36,16 @@ module.exports = (db) => {
         token,
       };
     },
+
+    getUsers: async (filter) => {
+      let query = `SELECT id as userId, Name as name FROM sec_users WHERE IsActive = 1`;
+      let params = [];
+      if (filter && filter.length >= 2) {
+        query += ` AND LOWER(Name) LIKE LOWER(?)`;
+        params.push(`%${filter}%`);
+      }
+      const users = await select(query, params);
+      return users;
+    },
   };
 };

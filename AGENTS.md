@@ -1,31 +1,39 @@
-# Agent Guidelines for pp-api
+# Repository Guidelines
 
-## Build/Lint/Test Commands
+## Project Structure & Module Organization
+- `src/api/routes`, `src/api/controllers`, and `src/api/services` implement the HTTP surface; keep new endpoints aligned with this flow.
+- `src/services/` houses reusable domain logic; prefer composing services over duplicating controller code.
+- `docs/api/` contains OpenAPI fragments; regenerate via scripts when changing routes.
+- Tests live in `test/unit`; mirror the runtime path (e.g., `test/unit/services/foo.spec.js`).
+- Build artifacts land in `dist/`; never edit files there directly.
 
-- **Build**: `npm run build` (TypeScript to dist/)
-- **Start**: `npm run start` (production), `npm run dev` (watch mode)
-- **Lint**: `npm run lint`, `npm run lint:fix`
-- **Unit tests**: `npm run test:unit`, single test: `node --test path/to/test.spec.js`
-- **API tests**: `npm run test:api`, interactive: `npm run interactive`
-- **Make**: `make start env=acceptance`, `make mocks`, `make logs`
+## Build, Test, and Development Commands
+- `npm run build` compiles TypeScript into `dist/`.
+- `npm run start` performs a clean build, then runs the compiled server.
+- `npm run dev` watches TypeScript and restarts the compiled server via nodemon.
+- `npm run lint` / `npm run lint:fix` enforce formatting and lint rules.
+- `npm run test:unit` executes the current unit suite with Node's test runner; add specific specs using `node --test path/to/spec.js`.
+- `npm run test:api` and `npm run interactive` drive the integration harness; use `make start env=acceptance` to bring up acceptance dependencies when needed.
 
-## Code Style Guidelines
+## Coding Style & Naming Conventions
+- Code in TypeScript targeting ES2020, using CommonJS `require`/`module.exports` semantics.
+- Follow Prettier defaults: single quotes, trailing commas, and 2-space indentation.
+- Use `camelCase` for variables and functions, `PascalCase` for classes/types, and `lower-kebab-case` for filenames.
+- Add focused JSDoc on controllers and services when the signature is not obvious; keep files under ~200 lines by extracting helpers into `src/services`.
 
-- **Language**: TypeScript + CommonJS, target ES2020, strict: false
-- **Formatting**: Prettier (single quotes, ES5 trailing commas, 2-space indent)
-- **Naming**: camelCase vars/functions, lower-kebab-case files
-- **Types**: Use interfaces/types, JSDoc comments
-- **Imports**: Relative from src/, require() for CommonJS
-- **Error handling**: try/catch, throw Error objects
-- **Architecture**: Routes → Controllers → Services, keep files <200 lines
-- **Database**: Prefer schema changes over service logic, use API not direct DB
-- **Documentation**: Update docs/schema/_.sql for DB, docs/api/_.yaml for API changes
+## Testing Guidelines
+- Place unit specs under `test/unit` using `*.spec.js`; structure describe blocks after the module path (e.g., `services/tournaments`).
+- Mock external integrations rather than hitting real services; rely on existing fixtures under `test/`.
+- Run `npm run test:unit` and, for API surface changes, `npm run test:api` before opening a PR.
+- Document uncovered edge cases in the PR if coverage cannot be achieved immediately.
 
-## API Documentation Maintenance
+## Commit & Pull Request Guidelines
+- Favor short, descriptive commit subjects following the observed `type: detail` pattern (e.g., `refactor: trim stage payload`).
+- Squash experimental commits before review; keep history readable by grouping logical changes.
+- Pull requests should summarize intent, list relevant commands run, and reference tickets or issues.
+- Include screenshots or sample responses for API-affecting work and regenerate API docs (`node scripts/generate-api-docs.js`) when endpoints change.
 
-- **Auto-generation**: Run `node scripts/generate-api-docs.js` to regenerate docs from routes
-- **Manual updates**: Edit individual YAML files in `docs/api/paths/{resource}/` for customizations
-- **Build process**: `npm run api` generates docs, bundles, and serves HTML documentation at http://localhost:4444
-- **JSDoc**: Add JSDoc comments to controller methods for better generated documentation
-- **Schema references**: Use existing schemas in `docs/api/components/schemas/` for request/response bodies
-- **Redocly version**: Uses `@redocly/cli@1.0.0` (pinned to avoid dependency conflicts)
+## Environment & Operations
+- Source `pp_env.sh` or use Make targets (`make start-production`, `make mocks`) to load connection details instead of exporting secrets manually.
+- Logs rotate under `logs/`; review them when diagnosing local issues and avoid committing them.
+- Keep dependencies current; if a new package is required, add pinned versions and run `npm install` before committing `package-lock.json`.

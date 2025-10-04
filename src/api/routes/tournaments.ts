@@ -49,6 +49,8 @@ export default (db: any, useMock: boolean) => {
   router.post('/:id/fixtures', ctrl.createFixtures);
   router.get('/:id/overview', ctrl.getTournamentOverview);
   router.get('/:id/integrity-check', ctrl.integrityCheck);
+  router.get('/:tournamentId/organizers', ctrl.getOrganizers);
+  router.put('/:tournamentId/organizers/:userId', ctrl.assignOrganizer);
 
   return router;
 };

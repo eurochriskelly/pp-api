@@ -1214,5 +1214,23 @@ export default (db: any) => {
       } = require('./tournaments/integrity-check/index.js');
       return await checkIntegrity(tournamentId, select);
     },
+
+    getOrganizers: async (tournamentId: string) => {
+      const organizers = await select(
+        `SELECT sr.UserId as userId, su.Name as name
+         FROM sec_roles sr
+         JOIN sec_users su ON sr.UserId = su.id
+         WHERE sr.tournamentId = ? AND sr.RoleName = 'organizer'`,
+        [tournamentId]
+      );
+      return organizers;
+    },
+
+    assignOrganizer: async (tournamentId: string, userId: string) => {
+      await insert(
+        `INSERT INTO sec_roles (UserId, RoleName, tournamentId) VALUES (?, ?, ?)`,
+        [userId, 'organizer', tournamentId]
+      );
+    },
   };
 };
