@@ -926,10 +926,10 @@ export default (db: any) => {
             break;
           case 'active':
             sqlFilterConditions.push(`(
-              (t.status = 'new' AND t.Date < CURDATE()) OR
-              ( (t.status = 'published' OR t.status = 'started') AND
-                t.Date <= CURDATE() AND (t.endDate IS NULL OR t.endDate >= CURDATE()) )
-            )`);
+               (t.status = 'new' AND t.Date < CURDATE()) OR
+               (t.status = 'published' AND t.Date <= CURDATE() AND (t.endDate IS NULL OR t.endDate >= CURDATE())) OR
+               (t.status = 'started')
+             )`);
             break;
           case 'past':
             sqlFilterConditions.push(
