@@ -96,6 +96,7 @@ class TSVValidator {
     this.preScannedCatGroups = new Map();
     this.preScannedCatBrackets = new Map();
     this.preScannedCatMatches = new Map();
+    this.preScannedCatStages = new Map(); // Map<category, Map<stageName, matchId>>
   }
 
   /* —— pre-scan all rows for context —— */
@@ -123,6 +124,8 @@ class TSVValidator {
       const catVal = (cols[categoryHdrIdx] || '').trim().toUpperCase();
       if (!catVal) continue; // Skip if category is empty
 
+      const stageVal = (cols[stageHdrIdx] || '').trim().toUpperCase();
+
       // Populate preScannedCatMatches
       const matchVal = (cols[matchHdrIdx] || '').trim().toUpperCase();
       const matchParts = /^([A-Z]+).?([0-9]+)$/.exec(matchVal);
@@ -136,13 +139,31 @@ class TSVValidator {
           // Store first occurrence row index
           catMatchMap.set(matchId, i); // i is 1-based line index from this.lines
         }
+
+        // Populate preScannedCatStages - normalize stage and map to matchId
+        let normalizedStage = stageVal;
+        if (normalizedStage === 'GPS' || normalizedStage === 'GP.*') {
+          normalizedStage = 'GP.0';
+        }
+        const stageParts = normalizedStage.split(/[ .]/).filter(Boolean);
+        if (stageParts.length === 2) {
+          const [partA, partB] = stageParts;
+          if (partA === 'GP' && /^\d+$/.test(partB)) {
+            normalizedStage = `GP.${Number(partB)}`;
+          } else if (TSVValidator.KO_CODES.has(partB)) {
+            normalizedStage = `${partA}.${partB}`;
+          }
+          // Store the mapping from normalized stage to match ID
+          if (!this.preScannedCatStages.has(catVal)) {
+            this.preScannedCatStages.set(catVal, new Map());
+          }
+          const catStageMap = this.preScannedCatStages.get(catVal);
+          catStageMap.set(normalizedStage, matchId);
+        }
       }
 
       // Populate preScannedCatGroups, preScannedCatBrackets, and preScannedCatGroupTeams
-      let stageVal = (cols[stageHdrIdx] || '').trim().toUpperCase();
-      if (stageVal === 'GPS' || stageVal === 'GP.*') {
-        stageVal = 'GP.0';
-      }
+      // stageVal is already declared and normalized above
       const stageParts = stageVal.split(/[ .]/).filter(Boolean);
 
       if (stageParts.length === 2) {
@@ -359,10 +380,30 @@ class TSVValidator {
     const tok = up.split(/\s+/);
     if (['WINNER', 'LOSER'].includes(tok[0])) {
       if (tok.length < 2)
-        return this._fw(col, r, 'WINNER/LOSER needs match id', up);
-      const mid = tok[1];
-      if (!/^[A-Z]+\.\d+$/.test(mid))
-        return this._fw(col, r, `Bad match id ${mid}`, up);
+        return this._fw(col, r, 'WINNER/LOSER needs match reference', up);
+      let mid = tok[1];
+
+      // Check if it's a match ID (e.g., "M.12")
+      if (/^[A-Z]+\.\d+$/.test(mid)) {
+        // It's already a match ID, proceed with existing logic
+      } else if (/^[A-Z]+\.[A-Z0-9]+$/i.test(mid)) {
+        // It's a stage name (e.g., "CUP.FIN"), resolve to match ID
+        const stageMap = this.preScannedCatStages.get(cat) || new Map();
+        const resolvedMatchId = stageMap.get(mid.toUpperCase());
+        if (!resolvedMatchId) {
+          const w = warn(
+            'integrity',
+            `Unknown stage ${mid} referenced in "${raw}"`,
+            r,
+            col
+          );
+          this.warnings.push(w);
+          return { value: `${tok[0]} ${mid}`, warnings: [w] };
+        }
+        mid = resolvedMatchId; // Use the resolved match ID
+      } else {
+        return this._fw(col, r, `Bad match reference ${mid}`, up);
+      }
 
       if (mid === matchId) {
         const w = warn(
