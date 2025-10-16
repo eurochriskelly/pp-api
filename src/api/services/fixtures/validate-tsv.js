@@ -386,7 +386,7 @@ class TSVValidator {
       // Check if it's a match ID (e.g., "M.12")
       if (/^[A-Z]+\.\d+$/.test(mid)) {
         // It's already a match ID, proceed with existing logic
-      } else if (/^[A-Z]+\.[A-Z0-9]+$/i.test(mid)) {
+      } else if (/^[A-Z]+\.[A-Z0-9/]+$/i.test(mid)) {
         // It's a stage name (e.g., "CUP.FIN"), resolve to match ID
         const stageMap = this.preScannedCatStages.get(cat) || new Map();
         const resolvedMatchId = stageMap.get(mid.toUpperCase());
