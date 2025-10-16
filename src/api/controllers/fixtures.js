@@ -126,7 +126,7 @@ module.exports = (db, useMock) => {
 
     reschedule: async (req, res) => {
       const { tournamentId, id } = req.params;
-      const { fixtureId, placement, targetPitch } = req.body;
+      const { fixtureId, placement, targetPitch, action } = req.body;
       const data = {
         operation: 'reschedule',
         targetPitch,
@@ -134,6 +134,7 @@ module.exports = (db, useMock) => {
         fixtureId: id,
         relativeFixtureId: fixtureId,
         placement,
+        action,
       };
       try {
         const result = await dbSvc.reschedule(data);

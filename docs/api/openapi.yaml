@@ -17,6 +17,8 @@ paths:
     $ref: './paths/auth/auth-logout.yaml'
   /auth/me:
     $ref: './paths/auth/auth-me.yaml'
+  /auth/users:
+    $ref: './paths/auth/auth-users.yaml'
   /tournaments/{tournamentId}/fixtures:
     $ref: './paths/fixtures/tournaments-tournamentid-fixtures.yaml'
   /tournaments/{tournamentId}/fixtures/nextup:
@@ -53,6 +55,8 @@ paths:
     $ref: './paths/general/general-tournaments-tournamentid-teams.yaml'
   /general/tournaments/{tournamentId}/standings:
     $ref: './paths/general/general-tournaments-tournamentid-standings.yaml'
+  /general/users:
+    $ref: './paths/general/general-users.yaml'
   /regions:
     $ref: './paths/regions/regions.yaml'
   /regions/{region}:
@@ -119,6 +123,10 @@ paths:
     $ref: './paths/tournaments/tournaments-id-overview.yaml'
   /tournaments/{id}/integrity-check:
     $ref: './paths/tournaments/tournaments-id-integrity-check.yaml'
+  /tournaments/{tournamentId}/organizers:
+    $ref: './paths/tournaments/tournaments-tournamentid-organizers.yaml'
+  /tournaments/{tournamentId}/organizers/{userId}:
+    $ref: './paths/tournaments/tournaments-tournamentid-organizers-userid.yaml'
 
 components:
   schemas:
