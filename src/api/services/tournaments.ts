@@ -332,10 +332,10 @@ export default (db: any) => {
       const eventUuid = uuidv4();
       await insert(
         `INSERT INTO tournaments (
-           region, Title, Date, Location, Lat, Lon, eventUuid, code,
+           region, Title, Date, Location, Lat, Lon, eventUuid, code, status,
            pointsForWin, pointsForDraw, pointsForLoss
-         ) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           region,
           title,
@@ -345,6 +345,7 @@ export default (db: any) => {
           lon,
           eventUuid,
           codeOrganizer,
+          'in-design',
           winPoints,
           drawPoints,
           lossPoints,
@@ -926,7 +927,6 @@ export default (db: any) => {
             break;
           case 'active':
             sqlFilterConditions.push(`(
-               (t.status = 'new' AND t.Date < CURDATE()) OR
                (t.status = 'published' AND t.Date <= CURDATE() AND (t.endDate IS NULL OR t.endDate >= CURDATE())) OR
                (t.status = 'started')
              )`);

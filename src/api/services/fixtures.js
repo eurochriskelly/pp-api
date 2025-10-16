@@ -380,28 +380,75 @@ module.exports = (db) => {
       relativeFixtureId,
       placement,
       targetPitch,
+      action,
     }) => {
-      const [relFixture] = await select(
-        `SELECT scheduled, pitch FROM fixtures 
-         WHERE id = ? AND tournamentId = ?`,
-        [relativeFixtureId, tournamentId]
-      );
-      if (!relFixture)
-        throw new Error(`Relative fixture ${relativeFixtureId} not found`);
+      if (action === 'swapTime') {
+        // Swap scheduled times between fixtureId and relativeFixtureId
+        const fixtures = await select(
+          `SELECT id, scheduled, pitch FROM fixtures
+           WHERE id IN (?, ?) AND tournamentId = ?`,
+          [fixtureId, relativeFixtureId, tournamentId]
+        );
+        if (fixtures.length !== 2) {
+          throw new Error(
+            `One or both fixtures not found or not in tournament`
+          );
+        }
+        const fixture1 = fixtures.find((f) => f.id == fixtureId);
+        const fixture2 = fixtures.find((f) => f.id == relativeFixtureId);
 
-      const relDate = new Date(relFixture.scheduled);
-      relDate.setMinutes(
-        relDate.getMinutes() + (placement === 'before' ? -5 : 5)
-      );
-      const newScheduled = relDate.toISOString().slice(0, 19).replace('T', ' ');
-      const pitch = targetPitch || relFixture.pitch;
+        // Ensure both fixtures are on the same pitch
+        if (fixture1.pitch !== fixture2.pitch) {
+          throw new Error(
+            `Cannot swap times: fixtures must be on the same pitch`
+          );
+        }
 
-      await update(
-        `UPDATE fixtures SET scheduled = ?, pitch = ? 
-         WHERE id = ? AND tournamentId = ?`,
-        [newScheduled, pitch, fixtureId, tournamentId]
-      );
-      return { fixtureId, newScheduled, pitch };
+        // Swap scheduled times
+        await transaction(async () => {
+          await update(
+            `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
+            [fixture2.scheduled, fixtureId, tournamentId]
+          );
+          await update(
+            `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
+            [fixture1.scheduled, relativeFixtureId, tournamentId]
+          );
+        });
+        return {
+          fixtureId,
+          relativeFixtureId,
+          action: 'swapTime',
+          newScheduled: fixture2.scheduled,
+          relativeNewScheduled: fixture1.scheduled,
+        };
+      } else {
+        // Original reschedule logic
+        const [relFixture] = await select(
+          `SELECT scheduled, pitch FROM fixtures
+           WHERE id = ? AND tournamentId = ?`,
+          [relativeFixtureId, tournamentId]
+        );
+        if (!relFixture)
+          throw new Error(`Relative fixture ${relativeFixtureId} not found`);
+
+        const relDate = new Date(relFixture.scheduled);
+        relDate.setMinutes(
+          relDate.getMinutes() + (placement === 'before' ? -5 : 5)
+        );
+        const newScheduled = relDate
+          .toISOString()
+          .slice(0, 19)
+          .replace('T', ' ');
+        const pitch = targetPitch || relFixture.pitch;
+
+        await update(
+          `UPDATE fixtures SET scheduled = ?, pitch = ?
+           WHERE id = ? AND tournamentId = ?`,
+          [newScheduled, pitch, fixtureId, tournamentId]
+        );
+        return { fixtureId, newScheduled, pitch };
+      }
     },
     // Note: embellishFixture is now defined inside the factory function scope above
   };
