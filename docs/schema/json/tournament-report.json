@@ -6,6 +6,12 @@
       "type": "object",
       "properties": {
         "tournamentId": { "type": "string" },
+        "lastUpdate": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "format": "date-time" }
+          ]
+        },
         "tournament": {
           "type": "object",
           "properties": {
@@ -373,7 +379,7 @@
           }
         }
       },
-      "required": ["tournamentId", "tournament", "pitches", "categories"]
+      "required": ["tournamentId", "lastUpdate", "tournament", "pitches", "categories"]
     }
   },
   "required": ["data"]

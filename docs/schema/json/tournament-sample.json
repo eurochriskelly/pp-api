@@ -1,6 +1,7 @@
 {
   "data": {
     "tournamentId": "34",
+    "lastUpdate": "2025-06-09T11:35:28.000Z",
     "tournament": {
       "eventUuid": "3e2e7421-f277-4b7e-a3b6-bfc5e482f20f",
       "status": "new",
