@@ -63,8 +63,20 @@ class ReportBuilder {
       })
     );
 
+    let lastUpdate = null;
+    for (const categoryData of categoriesWithFixtures) {
+      const categoryLastUpdated = categoryData?.fixtures?.lastUpdated;
+      if (
+        categoryLastUpdated &&
+        (!lastUpdate || new Date(categoryLastUpdated) > new Date(lastUpdate))
+      ) {
+        lastUpdate = categoryLastUpdated;
+      }
+    }
+
     return {
       tournamentId,
+      lastUpdate,
       tournament,
       pitches,
       categories: categoriesWithFixtures, // Use the combined data
