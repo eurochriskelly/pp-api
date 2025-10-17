@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/tournaments';
 import mockServiceFactory from '../services/mocks/tournaments';
+import { createTournamentReportCache } from '../../services/tournament-report-cache';
 
 function prettyPrintStages(stages: any) {
   let output = '';
@@ -81,6 +82,12 @@ type TournamentBody = {
 export default (db: any, useMock: boolean) => {
   const factory = useMock ? mockServiceFactory : serviceFactory;
   const dbSvc: any = factory(db);
+  const reportCache = createTournamentReportCache({
+    db,
+    dbSvc,
+    enabled: !useMock && !!db,
+  });
+  reportCache.start();
 
   return {
     // Tournament CRUD
@@ -207,6 +214,63 @@ export default (db: any, useMock: boolean) => {
         const { category } = req.query as { category?: string };
         const report = await dbSvc.buildTournamentReport(id, category);
         res.json({ data: report });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getTournamentReportCache: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { id } = req.params as TournamentParams;
+        const { lastUpdate } = req.query as { lastUpdate?: string };
+        const tournamentId = parseInt(id, 10);
+        if (Number.isNaN(tournamentId)) {
+          res.status(400).json({
+            error: 'INVALID_TOURNAMENT_ID',
+            message: 'Tournament id must be a valid number.',
+          });
+          return;
+        }
+        const cacheResult = reportCache.get(tournamentId, lastUpdate || null);
+
+        switch (cacheResult.state) {
+          case 'hit':
+            res.json({ data: cacheResult.payload });
+            return;
+          case 'unchanged':
+            res.json({ data: cacheResult.payload });
+            return;
+          case 'warming':
+            res.setHeader('Retry-After', String(cacheResult.retryAfter));
+            res.status(503).json({
+              error: 'CACHE_WARMING',
+              message: cacheResult.message,
+              retryAfter: cacheResult.retryAfter,
+            });
+            return;
+          case 'error':
+            res.setHeader('Retry-After', String(cacheResult.retryAfter));
+            res.status(503).json({
+              error: 'CACHE_ERROR',
+              message: cacheResult.message,
+              retryAfter: cacheResult.retryAfter,
+            });
+            return;
+          case 'disabled':
+            res.status(503).json({
+              error: 'CACHE_DISABLED',
+              message: cacheResult.message,
+            });
+            return;
+          default:
+            res.status(500).json({
+              error: 'CACHE_UNKNOWN_STATE',
+              message: 'Unknown tournament report cache state encountered.',
+            });
+        }
       } catch (err) {
         next(err);
       }

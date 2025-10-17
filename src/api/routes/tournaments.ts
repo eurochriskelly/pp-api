@@ -10,6 +10,7 @@ export default (db: any, useMock: boolean) => {
   router.get('/by-status/:status', ctrl.getTournamentsByStatus);
   router.get('/:id', ctrl.getTournament);
   router.get('/:id/report', ctrl.getTournamentReport);
+  router.get('/:id/report-cache', ctrl.getTournamentReportCache);
   router.put('/:id/report', ctrl.buildTournamentReport);
   router.put('/:id', ctrl.updateTournament);
   router.put('/:tournamentId/status/:status', ctrl.updateTournamentStatus);
