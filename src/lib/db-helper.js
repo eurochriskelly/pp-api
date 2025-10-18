@@ -18,9 +18,6 @@ module.exports = (db) => {
           EE('Error: db.query returned undefined results.');
           resolve([]);
         } else {
-          DD(
-            `Query succeeded, rows: ${results.length || results.affectedRows}`
-          );
           resolve(results);
         }
       });
