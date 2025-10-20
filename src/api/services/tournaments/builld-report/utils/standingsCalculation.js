@@ -80,25 +80,35 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
     const team1Stats = standingsByGroup[groupName][team1Name];
     const team2Stats = standingsByGroup[groupName][team2Name];
 
-    team1Stats.matchesPlayed++;
-    team2Stats.matchesPlayed++;
-
-    team1Stats.scoreFor += fixture.team1.total;
-    team1Stats.scoreAgainst += fixture.team2.total;
-    team2Stats.scoreFor += fixture.team2.total;
-    team2Stats.scoreAgainst += fixture.team1.total;
-
     if (fixture.team1.status === 'won') {
+      team1Stats.matchesPlayed++;
+      team2Stats.matchesPlayed++;
+      team1Stats.scoreFor += fixture.team1.total;
+      team1Stats.scoreAgainst += fixture.team2.total;
+      team2Stats.scoreFor += fixture.team2.total;
+      team2Stats.scoreAgainst += fixture.team1.total;
       team1Stats.won++;
       team1Stats.points += win;
       team2Stats.loss++;
       team2Stats.points += loss;
     } else if (fixture.team1.status === 'lost') {
+      team1Stats.matchesPlayed++;
+      team2Stats.matchesPlayed++;
+      team1Stats.scoreFor += fixture.team1.total;
+      team1Stats.scoreAgainst += fixture.team2.total;
+      team2Stats.scoreFor += fixture.team2.total;
+      team2Stats.scoreAgainst += fixture.team1.total;
       team1Stats.loss++;
       team1Stats.points += loss;
       team2Stats.won++;
       team2Stats.points += win;
     } else if (fixture.team1.status === 'draw') {
+      team1Stats.matchesPlayed++;
+      team2Stats.matchesPlayed++;
+      team1Stats.scoreFor += fixture.team1.total;
+      team1Stats.scoreAgainst += fixture.team2.total;
+      team2Stats.scoreFor += fixture.team2.total;
+      team2Stats.scoreAgainst += fixture.team1.total;
       team1Stats.draw++;
       team1Stats.points += draw;
       team2Stats.draw++;
