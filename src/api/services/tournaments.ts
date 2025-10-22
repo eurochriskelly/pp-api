@@ -1,11 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
 import { II, DD } from '../../lib/logging';
 import dbHelper from '../../lib/db-helper';
-import { buildReport } from './tournaments/builld-report/index.js';
 import { sqlGroupStandings } from '../../lib/queries';
+import { buildReport } from './tournaments/builld-report/index.js';
 import TSVValidator from './fixtures/validate-tsv';
 import { buildFixturesInsertSQL } from './tournaments/import-fixtures.js';
 import { generateFixturesForCompetition } from './tournaments/generate-fixtures.js';
+import { parseCoachPdfToJson } from '../../lib/pdf-parser';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 // Helper function to calculate lifecycle status
 function calculateLifecycleStatus(
@@ -1231,6 +1235,173 @@ export default (db: any) => {
         `INSERT INTO sec_roles (UserId, RoleName, tournamentId) VALUES (?, ?, ?)`,
         [userId, 'organizer', tournamentId]
       );
+    },
+
+    uploadTeamsheet: async (
+      tournamentId: string,
+      clubId: number,
+      pdfBuffer: Buffer
+    ) => {
+      // Get tournament UUID for eventUuid
+      const tournamentRows = await select(
+        'SELECT eventUuid FROM tournaments WHERE id = ?',
+        [tournamentId]
+      );
+
+      if (tournamentRows.length === 0) {
+        throw new Error('Tournament not found');
+      }
+
+      const eventUuid = tournamentRows[0].eventUuid;
+
+      // Create temporary file for PDF
+      const tempDir = os.tmpdir();
+      const tempFilePath = path.join(
+        tempDir,
+        `teamsheet-${Date.now()}-${Math.random()}.pdf`
+      );
+      fs.writeFileSync(tempFilePath, pdfBuffer);
+
+      try {
+        // Parse the PDF
+        const parsedData = await parseCoachPdfToJson(
+          tempFilePath,
+          eventUuid,
+          clubId
+        );
+
+        // Validate that at least some header fields were found
+        const hasAnyHeaderField =
+          parsedData.intakeForm.clubName ||
+          parsedData.intakeForm.teamFullName ||
+          parsedData.intakeForm.event ||
+          parsedData.intakeForm.startDate;
+
+        if (!hasAnyHeaderField) {
+          throw new Error('PDF parsing failed: no header fields found in PDF');
+        }
+
+        // Log parsed PDF data for debugging
+        console.log(
+          'Parsed PDF data - Club:',
+          parsedData.intakeForm.clubName,
+          'Team:',
+          parsedData.intakeForm.teamFullName,
+          'Event UUID:',
+          parsedData.intakeForm.eventUuid
+        );
+
+        // Check for existing intake form with same club_name, team_full_name, event_uuid
+        const searchClubName = parsedData.intakeForm.clubName || 'Unknown Club';
+        const searchTeamName =
+          parsedData.intakeForm.teamFullName || 'Unknown Team';
+        const searchEventUuid = parsedData.intakeForm.eventUuid;
+
+        console.log(
+          'Checking for existing intake form with club_name:',
+          searchClubName,
+          'team_full_name:',
+          searchTeamName,
+          'event_uuid:',
+          searchEventUuid
+        );
+
+        const existingFormRows = await select(
+          `SELECT intake_id FROM intake_forms
+           WHERE club_name = ? AND team_full_name = ? AND event_uuid = ?`,
+          [searchClubName, searchTeamName, searchEventUuid]
+        );
+
+        console.log('Found', existingFormRows.length, 'existing intake forms');
+
+        // If re-ingestion, delete old data
+        if (existingFormRows.length > 0) {
+          console.log(
+            'Re-ingestion detected. Deleting old data for',
+            existingFormRows.length,
+            'existing intake forms'
+          );
+
+          for (const row of existingFormRows) {
+            const existingIntakeId = row.intake_id;
+            console.log(
+              'Deleting intake_people records for intake_id:',
+              existingIntakeId
+            );
+            await dbDelete(`DELETE FROM intake_people WHERE intake_id = ?`, [
+              existingIntakeId,
+            ]);
+
+            console.log(
+              'Deleting intake_form record for intake_id:',
+              existingIntakeId
+            );
+            await dbDelete(`DELETE FROM intake_forms WHERE intake_id = ?`, [
+              existingIntakeId,
+            ]);
+          }
+
+          console.log('Old data deletion completed');
+        } else {
+          console.log(
+            'No existing intake form found - this is a new ingestion'
+          );
+        }
+
+        // Insert intake form (provide defaults for missing fields)
+        const intakeFormId = await insert(
+          `INSERT INTO intake_forms (event_uuid, club_id, club_name, team_full_name, event, start_date, clubLogo)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            parsedData.intakeForm.eventUuid,
+            parsedData.intakeForm.clubId,
+            parsedData.intakeForm.clubName || 'Unknown Club',
+            parsedData.intakeForm.teamFullName || 'Unknown Team',
+            parsedData.intakeForm.event || 'Unknown Event',
+            parsedData.intakeForm.startDate || null,
+            parsedData.clubLogo,
+          ]
+        );
+
+        // Insert intake people
+        for (const person of parsedData.intakePeople) {
+          if (
+            person.peopleFullName ||
+            person.peopleDateOfBirth ||
+            person.peopleRole ||
+            person.externalId !== null
+          ) {
+            await insert(
+              `INSERT INTO intake_people (intake_id, people_full_name, people_date_of_birth, people_role, external_id)
+               VALUES (?, ?, ?, ?, ?)`,
+              [
+                intakeFormId,
+                person.peopleFullName || null,
+                person.peopleDateOfBirth,
+                person.peopleRole || 'player',
+                person.externalId,
+              ]
+            );
+          }
+        }
+
+        return parsedData;
+      } finally {
+        // Clean up temporary file
+        try {
+          fs.unlinkSync(tempFilePath);
+        } catch (err) {
+          // Ignore cleanup errors
+        }
+      }
+    },
+
+    getClubLogo: async (tournamentId: string, clubId: number) => {
+      const rows = await select(
+        'SELECT clubLogo FROM intake_forms WHERE event_uuid = (SELECT eventUuid FROM tournaments WHERE id = ?) AND club_id = ?',
+        [tournamentId, clubId]
+      );
+      return rows[0]?.clubLogo || null;
     },
   };
 };

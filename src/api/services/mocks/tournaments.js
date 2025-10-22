@@ -478,7 +478,7 @@ module.exports = () => {
           derivedStatus = 'upcoming';
         } else {
           // Fallback for older items not explicitly 'past' (closed)
-          derivedStatus = 'active'; // Or could be 'past' but we only count specific 'past' types
+          derivedStatus = 'active'; // Or could be 'active' but we only count specific 'past' types
         }
 
         if (derivedStatus && summary[t.region][derivedStatus] !== undefined) {
@@ -488,6 +488,14 @@ module.exports = () => {
       return Object.values(summary).sort((a, b) =>
         a.region.localeCompare(b.region)
       );
+    },
+
+    uploadTeamsheet: async (tournamentId, clubId, intakeForm, intakePeople) => {
+      II(
+        `Mock: uploadTeamsheet for tournament [${tournamentId}], club [${clubId}]`
+      );
+      // Mock implementation - just return success
+      return { success: true, intakeForm, intakePeople };
     },
   };
 };
