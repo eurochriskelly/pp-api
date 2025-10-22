@@ -307,13 +307,22 @@ async function extractLogo(pdf: any): Promise<Buffer | null> {
 
   if (images.length === 0) return null;
 
-  // Select the top-left image: x < 200 and y > viewport.height - 200
-  const logoCandidates = images.filter(
-    (img) => img.x < 200 && img.y > viewport.height - 200
+  // Log images for debugging
+  console.log(
+    'Found images:',
+    images.map((img) => ({
+      x: img.x,
+      y: img.y,
+      width: img.img.width,
+      height: img.img.height,
+    }))
   );
-  if (logoCandidates.length === 0) return null;
 
-  const topLeftImage = logoCandidates[0]; // Take the first candidate
+  // Sort images by y descending (top first), then x ascending (left first)
+  images.sort((a, b) => b.y - a.y || a.x - b.x);
+
+  // Take the second image (assuming first is not the logo)
+  const topLeftImage = images[1] || images[0];
 
   // Convert to PNG
   const channels =
