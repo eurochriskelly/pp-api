@@ -717,5 +717,42 @@ export default (db: any, useMock: boolean) => {
         next(err);
       }
     },
+
+    uploadTeamsheet: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { tournamentId, clubId } = req.params as TournamentParams & {
+          clubId: string;
+        };
+        const result = await dbSvc.uploadTeamsheet(
+          tournamentId,
+          parseInt(clubId),
+          req.body
+        );
+        res.status(201).json(result);
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    getClubLogo: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { tournamentId, clubId } = req.params as TournamentParams & {
+          clubId: string;
+        };
+        const logo = await dbSvc.getClubLogo(tournamentId, parseInt(clubId));
+        if (logo) {
+          res.set('Content-Type', 'image/png');
+          res.send(logo);
+        } else {
+          res.status(404).json({ error: 'Logo not found' });
+        }
+      } catch (err) {
+        next(err);
+      }
+    },
   };
 };

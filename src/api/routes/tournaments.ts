@@ -48,10 +48,12 @@ export default (db: any, useMock: boolean) => {
   router.delete('/:id/cards', ctrl.deleteCards);
   router.post('/:id/pitches', ctrl.createPitches);
   router.post('/:id/fixtures', ctrl.createFixtures);
+
   router.get('/:id/overview', ctrl.getTournamentOverview);
   router.get('/:id/integrity-check', ctrl.integrityCheck);
   router.get('/:tournamentId/organizers', ctrl.getOrganizers);
   router.put('/:tournamentId/organizers/:userId', ctrl.assignOrganizer);
+  router.get('/:tournamentId/club/:clubId/logo', ctrl.getClubLogo);
 
   return router;
 };
