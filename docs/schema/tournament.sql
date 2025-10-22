@@ -78,3 +78,38 @@ CREATE TABLE `cards` (
   CONSTRAINT `fk_cards_tournament` FOREIGN KEY (`tournamentId`) REFERENCES `tournaments` (`id`)
 ) ENGINE=InnoDB;
 
+-- Intake forms (header)
+CREATE TABLE IF NOT EXISTS intake_forms (
+  intake_id      BIGINT NOT NULL AUTO_INCREMENT,
+  event_uuid     CHAR(36) NOT NULL,
+  club_id        INT NOT NULL,
+  club_name      VARCHAR(200) NOT NULL,
+  team_full_name VARCHAR(200) NOT NULL,
+  event          VARCHAR(200) NOT NULL,
+  start_date     DATE NOT NULL,
+  created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (intake_id),
+  KEY ix_intake_event (event_uuid),
+  KEY ix_intake_club (club_id),
+  KEY ix_intake_event_club_team_date (event_uuid, club_id, team_full_name, start_date),
+  CONSTRAINT fk_intake_forms_club
+    FOREIGN KEY (club_id) REFERENCES clubs(clubId)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Intake people (rows)
+CREATE TABLE IF NOT EXISTS intake_people (
+  id                     BIGINT NOT NULL AUTO_INCREMENT,
+  intake_id              BIGINT NOT NULL,
+  people_full_name       VARCHAR(200) NOT NULL,
+  people_date_of_birth   DATE NULL,
+  people_role            ENUM('player','manager','chairman','secretary') NOT NULL,
+  external_id            BIGINT NULL,
+  created_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY ix_intake_people_form (intake_id),
+  KEY ix_people_role (people_role),
+  KEY ix_external_id (external_id),
+  CONSTRAINT fk_intake_people_form
+    FOREIGN KEY (intake_id) REFERENCES intake_forms(intake_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
