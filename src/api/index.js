@@ -13,10 +13,42 @@ const systemRoutes = require('./routes/system');
 const { II } = require('../lib/logging'); // Import the logger
 
 const app = express();
+
 app.use(bodyParser.json());
 
 module.exports = (db, ARGS) => {
   II(`Setting up API endpoints. Mock mode: ${ARGS.useMock}`);
+
+  // Define PDF upload route BEFORE global JSON parsing (but after db is available)
+  app.post(
+    '/api/tournaments/:tournamentId/club/:clubId/teamsheet',
+    bodyParser.raw({ type: 'application/pdf', limit: '10mb' }),
+    (req, res) => {
+      console.log(
+        'Teamsheet route hit:',
+        req.params,
+        'Body type:',
+        typeof req.body,
+        'Body length:',
+        req.body ? req.body.length : 'null'
+      );
+      try {
+        // Import controller dynamically to avoid circular dependencies
+        const tournamentController = require('./controllers/tournaments');
+        const ctrl = tournamentController.default(db, ARGS.useMock);
+        ctrl.uploadTeamsheet(req, res, (err) => {
+          if (err) {
+            console.error('Teamsheet upload error:', err);
+            res.status(500).json({ error: err.message });
+          }
+        });
+      } catch (error) {
+        console.error('Teamsheet route error:', error);
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
   app.use(cors());
   app.use(morgan('dev'));
   console.log('Serving static path: ' + ARGS.staticPath);
