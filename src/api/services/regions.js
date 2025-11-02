@@ -88,5 +88,16 @@ module.exports = (db) => {
         data: teamDataRows,
       };
     },
+
+    listRegionClubs: async (regionString) => {
+      const rows = await select(
+        `SELECT clubId, clubName, country, city, region, subregion, status
+         FROM clubs
+         WHERE region = ? AND status = 'active'
+         ORDER BY clubName`,
+        [regionString]
+      );
+      return rows;
+    },
   };
 };

@@ -7,6 +7,7 @@ module.exports = (db, useMock) => {
 
   router.get('/', ctrl.listRegions);
   router.get('/:region', ctrl.listRegionInfo);
+  router.get('/:region/clubs', ctrl.listRegionClubs);
 
   return router;
 };
