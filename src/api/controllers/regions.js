@@ -14,5 +14,10 @@ module.exports = (db, useMock) => {
       const info = await dbSvc.listRegionInfo(req.params.region, req.query);
       res.json(info);
     },
+
+    listRegionClubs: async (req, res) => {
+      const clubs = await dbSvc.listRegionClubs(req.params.region);
+      res.json({ data: clubs });
+    },
   };
 };
