@@ -1,0 +1,69 @@
+AnnualReport:
+  type: object
+  properties:
+    year:
+      type: integer
+    summary:
+      type: object
+      properties:
+        totalTournaments:
+          type: integer
+        totalMatches:
+          type: integer
+        totalTeams:
+          type: integer
+        totalRegions:
+          type: integer
+        avgMatchesPerTournament:
+          type: number
+        winMarginStats:
+          type: object
+          properties:
+            avg:
+              type: number
+            max:
+              type: integer
+    monthlyMatches:
+      type: array
+      items:
+        type: object
+        properties:
+          month:
+            type: string
+          count:
+            type: integer
+    topRegions:
+      type: array
+      items:
+        type: object
+        properties:
+          region:
+            type: string
+          tournaments:
+            type: integer
+          matches:
+            type: integer
+    topSports:
+      type: array
+      items:
+        type: object
+        properties:
+          sport:
+            type: string
+          tournaments:
+            type: integer
+    tournaments:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+          matches:
+            type: integer
+          teams:
+            type: integer
+          region:
+            type: string

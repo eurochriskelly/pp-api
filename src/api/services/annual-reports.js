@@ -4,7 +4,6 @@ module.exports = (db) => {
   const dbh = dbHelper(db);
 
   const getAnnualReport = async (year) => {
-    // Validate year
     if (!Number.isInteger(year) || year < 1900 || year > 2100) {
       throw new Error('Invalid year');
     }
@@ -32,13 +31,18 @@ module.exports = (db) => {
     );
     const totalMatches = totalMatchesRes[0]?.count || 0;
 
-    // totalTeams (squads)
+    // totalTeams (unique planned teams from fixtures)
     const totalTeamsRes = await dbh.select(
-      `SELECT COUNT(DISTINCT s.id) as count 
-       FROM squads s 
-       JOIN tournaments t ON s.tournamentId = t.id 
-       WHERE YEAR(t.Date) = ?`,
-      [y]
+      `SELECT COUNT(DISTINCT team) as count FROM (
+        SELECT DISTINCT team1Planned as team FROM fixtures f 
+        JOIN tournaments t ON f.tournamentId = t.id 
+        WHERE YEAR(t.Date) = ? AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%'
+        UNION
+        SELECT DISTINCT team2Planned as team FROM fixtures f 
+        JOIN tournaments t ON f.tournamentId = t.id 
+        WHERE YEAR(t.Date) = ? AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%'
+      ) teams`,
+      [y, y]
     );
     const totalTeams = totalTeamsRes[0]?.count || 0;
 
@@ -57,7 +61,7 @@ module.exports = (db) => {
         ? Number((totalMatches / totalTournaments).toFixed(1))
         : 0;
 
-    // winMarginStats (only played matches with scores)
+    // winMarginStats
     const winMarginRes = await dbh.select(
       `SELECT 
          AVG(ABS(COALESCE(goals1,0) - COALESCE(goals2,0))) as avg_margin,
@@ -107,7 +111,7 @@ module.exports = (db) => {
       ),
     }));
 
-    // topRegions (top 5 by tournaments)
+    // topRegions
     const topRegionsRes = await dbh.select(
       `SELECT 
          t.region,
@@ -122,7 +126,7 @@ module.exports = (db) => {
       [y]
     );
 
-    // topSports (categories from squads, top 5 by tournaments)
+    // topSports
     const topSportsRes = await dbh.select(
       `SELECT 
          s.category as sport,
@@ -136,17 +140,20 @@ module.exports = (db) => {
       [y]
     );
 
-    // tournaments list (all, sorted by date desc)
+    // tournaments list with teams from fixtures
     const tournamentsRes = await dbh.select(
       `SELECT 
          t.id,
          t.Title as name,
          COUNT(f.id) as matches,
-         COUNT(DISTINCT s.id) as teams,
+         (SELECT COUNT(DISTINCT team) FROM (
+           SELECT DISTINCT team1Planned as team FROM fixtures WHERE tournamentId = t.id AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%'
+           UNION
+           SELECT DISTINCT team2Planned as team FROM fixtures WHERE tournamentId = t.id AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%'
+         ) u) as teams,
          t.region
        FROM tournaments t
        LEFT JOIN fixtures f ON f.tournamentId = t.id
-       LEFT JOIN squads s ON s.tournamentId = t.id
        WHERE YEAR(t.Date) = ?
        GROUP BY t.id, t.Title, t.region
        ORDER BY t.Date DESC`,
@@ -170,5 +177,27 @@ module.exports = (db) => {
     };
   };
 
-  return { getAnnualReport };
+  const getYearsSummary = async () => {
+    const yearsRes = await dbh.select(
+      `SELECT 
+         YEAR(t.Date) as year,
+         COUNT(DISTINCT t.id) as tournaments,
+         COUNT(f.id) as matches,
+         COUNT(DISTINCT teams.team) as teams
+       FROM tournaments t
+       LEFT JOIN fixtures f ON f.tournamentId = t.id
+       LEFT JOIN (
+         SELECT DISTINCT team1Planned as team, tournamentId FROM fixtures WHERE team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%'
+         UNION
+         SELECT DISTINCT team2Planned as team, tournamentId FROM fixtures WHERE team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%'
+       ) teams ON teams.tournamentId = t.id
+       WHERE t.Date IS NOT NULL
+       GROUP BY YEAR(t.Date)
+       HAVING tournaments > 0
+       ORDER BY year DESC`
+    );
+    return yearsRes;
+  };
+
+  return { getAnnualReport, getYearsSummary };
 };

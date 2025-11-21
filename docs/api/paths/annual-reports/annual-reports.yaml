@@ -1,0 +1,19 @@
+---
+get:
+  summary: 'Get available annual report years'
+  responses:
+    '200':
+      description: 'Success'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '../../components/schemas/YearsSummary.yaml#/YearsSummary'
+    '500':
+      description: 'Internal Server Error'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'

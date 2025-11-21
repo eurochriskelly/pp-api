@@ -1,0 +1,37 @@
+---
+get:
+  summary: 'Get annual report for specific year'
+  parameters:
+    - name: year
+      in: path
+      required: true
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: 'Success'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '../../components/schemas/AnnualReport.yaml#/AnnualReport'
+    '400':
+      description: 'Invalid year'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'
+    '404':
+      description: 'No data for year'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'
+    '500':
+      description: 'Internal Server Error'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'

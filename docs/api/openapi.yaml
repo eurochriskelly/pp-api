@@ -97,8 +97,7 @@ paths:
     $ref: './paths/tournaments/tournaments-id-finals-results.yaml'
   /tournaments/{id}/all-matches:
     $ref: './paths/tournaments/tournaments-id-all-matches.yaml'
-  /tournaments/{tournamentId}/filters:
-    $ref: './paths/tournaments/tournaments-tournamentid-filters.yaml'
+  /tournaments/{tournamentId}/filters:\n    $ref: './paths/tournaments/tournaments-tournamentid-filters.yaml'\n  /annual-reports:\n    $ref: './paths/annual-reports/annual-reports.yaml'\n  /annual-reports/{year}:\n    $ref: './paths/annual-reports/annual-reports-year.yaml'
   /tournaments/{id}/code-check/{code}:
     $ref: './paths/tournaments/tournaments-id-code-check-code.yaml'
   /tournaments/{tournamentId}/matches-by-pitch:
