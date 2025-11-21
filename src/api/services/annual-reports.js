@@ -10,7 +10,6 @@ module.exports = (db) => {
 
     const y = year;
 
-    // totalTournaments
     const totalTournamentsRes = await dbh.select(
       `SELECT COUNT(DISTINCT id) as count FROM tournaments WHERE YEAR(Date) = ?`,
       [y]
@@ -21,56 +20,35 @@ module.exports = (db) => {
       throw new Error('No data found for year');
     }
 
-    // totalMatches
     const totalMatchesRes = await dbh.select(
-      `SELECT COUNT(*) as count 
-       FROM fixtures f 
-       JOIN tournaments t ON f.tournamentId = t.id 
-       WHERE YEAR(t.Date) = ?`,
+      `SELECT COUNT(*) as count FROM fixtures f JOIN tournaments t ON f.tournamentId = t.id WHERE YEAR(t.Date) = ?`,
       [y]
     );
     const totalMatches = totalMatchesRes[0]?.count || 0;
 
-    // totalTeams (unique planned teams from fixtures)
     const totalTeamsRes = await dbh.select(
       `SELECT COUNT(DISTINCT team) as count FROM (
-        SELECT DISTINCT team1Planned as team FROM fixtures f 
-        JOIN tournaments t ON f.tournamentId = t.id 
-        WHERE YEAR(t.Date) = ? AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%'
+        SELECT DISTINCT team1Planned as team FROM fixtures f JOIN tournaments t ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%'
         UNION
-        SELECT DISTINCT team2Planned as team FROM fixtures f 
-        JOIN tournaments t ON f.tournamentId = t.id 
-        WHERE YEAR(t.Date) = ? AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%'
+        SELECT DISTINCT team2Planned as team FROM fixtures f JOIN tournaments t ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%'
       ) teams`,
       [y, y]
     );
     const totalTeams = totalTeamsRes[0]?.count || 0;
 
-    // totalRegions
     const totalRegionsRes = await dbh.select(
-      `SELECT COUNT(DISTINCT region) as count 
-       FROM tournaments 
-       WHERE YEAR(Date) = ? AND region IS NOT NULL AND region != ''`,
+      `SELECT COUNT(DISTINCT region) as count FROM tournaments WHERE YEAR(Date) = ? AND region IS NOT NULL AND region != ''`,
       [y]
     );
     const totalRegions = totalRegionsRes[0]?.count || 0;
 
-    // avgMatchesPerTournament
     const avgMatchesPerTournament =
       totalTournaments > 0
         ? Number((totalMatches / totalTournaments).toFixed(1))
         : 0;
 
-    // winMarginStats
     const winMarginRes = await dbh.select(
-      `SELECT 
-         AVG(ABS(COALESCE(goals1,0) - COALESCE(goals2,0))) as avg_margin,
-         MAX(ABS(COALESCE(goals1,0) - COALESCE(goals2,0))) as max_margin
-       FROM fixtures f 
-       JOIN tournaments t ON f.tournamentId = t.id 
-       WHERE YEAR(t.Date) = ? 
-         AND goals1 IS NOT NULL 
-         AND goals2 IS NOT NULL`,
+      `SELECT AVG(ABS(COALESCE(goals1,0) - COALESCE(goals2,0))) as avg_margin, MAX(ABS(COALESCE(goals1,0) - COALESCE(goals2,0))) as max_margin FROM fixtures f JOIN tournaments t ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? AND goals1 IS NOT NULL AND goals2 IS NOT NULL`,
       [y]
     );
     const avgMargin = winMarginRes[0]?.avg_margin
@@ -78,16 +56,8 @@ module.exports = (db) => {
       : 0;
     const maxMargin = winMarginRes[0]?.max_margin || 0;
 
-    // monthlyMatches
     const monthlyRes = await dbh.select(
-      `SELECT 
-         MONTH(scheduled) as month_num,
-         COUNT(*) as count
-       FROM fixtures f 
-       JOIN tournaments t ON f.tournamentId = t.id 
-       WHERE YEAR(t.Date) = ?
-       GROUP BY MONTH(scheduled)
-       ORDER BY month_num`,
+      `SELECT MONTH(scheduled) as month_num, COUNT(*) as count FROM fixtures f JOIN tournaments t ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? GROUP BY MONTH(scheduled) ORDER BY month_num`,
       [y]
     );
     const monthNames = [
@@ -111,52 +81,18 @@ module.exports = (db) => {
       ),
     }));
 
-    // topRegions
     const topRegionsRes = await dbh.select(
-      `SELECT 
-         t.region,
-         COUNT(DISTINCT t.id) as tournaments,
-         COUNT(f.id) as matches
-       FROM tournaments t
-       LEFT JOIN fixtures f ON f.tournamentId = t.id
-       WHERE YEAR(t.Date) = ? AND t.region IS NOT NULL AND t.region != ''
-       GROUP BY t.region
-       ORDER BY tournaments DESC
-       LIMIT 5`,
+      `SELECT t.region, COUNT(DISTINCT t.id) as tournaments, COUNT(f.id) as matches FROM tournaments t LEFT JOIN fixtures f ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? AND t.region IS NOT NULL AND t.region != '' GROUP BY t.region ORDER BY tournaments DESC LIMIT 5`,
       [y]
     );
 
-    // topSports
     const topSportsRes = await dbh.select(
-      `SELECT 
-         s.category as sport,
-         COUNT(DISTINCT t.id) as tournaments
-       FROM squads s
-       JOIN tournaments t ON s.tournamentId = t.id
-       WHERE YEAR(t.Date) = ? AND s.category IS NOT NULL AND s.category != ''
-       GROUP BY s.category
-       ORDER BY tournaments DESC
-       LIMIT 5`,
+      `SELECT s.category as sport, COUNT(DISTINCT t.id) as tournaments FROM squads s JOIN tournaments t ON s.tournamentId = t.id WHERE YEAR(t.Date) = ? AND s.category IS NOT NULL AND s.category != '' GROUP BY s.category ORDER BY tournaments DESC LIMIT 5`,
       [y]
     );
 
-    // tournaments list with teams from fixtures
     const tournamentsRes = await dbh.select(
-      `SELECT 
-         t.id,
-         t.Title as name,
-         COUNT(f.id) as matches,
-         (SELECT COUNT(DISTINCT team) FROM (
-           SELECT DISTINCT team1Planned as team FROM fixtures WHERE tournamentId = t.id AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%'
-           UNION
-           SELECT DISTINCT team2Planned as team FROM fixtures WHERE tournamentId = t.id AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%'
-         ) u) as teams,
-         t.region
-       FROM tournaments t
-       LEFT JOIN fixtures f ON f.tournamentId = t.id
-       WHERE YEAR(t.Date) = ?
-       GROUP BY t.id, t.Title, t.region
-       ORDER BY t.Date DESC`,
+      `SELECT t.id, t.Title as name, DATE(t.Date) as date, COALESCE((SELECT category FROM fixtures WHERE tournamentId = t.id GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1), 'Unknown') as sport, COUNT(f.id) as matches, (SELECT COUNT(DISTINCT team) FROM (SELECT DISTINCT team1Planned as team FROM fixtures WHERE tournamentId = t.id AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%' UNION SELECT DISTINCT team2Planned as team FROM fixtures WHERE tournamentId = t.id AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%') u) as teams, t.region FROM tournaments t LEFT JOIN fixtures f ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? GROUP BY t.id, t.Title, t.Date, t.region ORDER BY t.Date DESC`,
       [y]
     );
 
@@ -179,22 +115,7 @@ module.exports = (db) => {
 
   const getYearsSummary = async () => {
     const yearsRes = await dbh.select(
-      `SELECT 
-         YEAR(t.Date) as year,
-         COUNT(DISTINCT t.id) as tournaments,
-         COUNT(f.id) as matches,
-         COUNT(DISTINCT teams.team) as teams
-       FROM tournaments t
-       LEFT JOIN fixtures f ON f.tournamentId = t.id
-       LEFT JOIN (
-         SELECT DISTINCT team1Planned as team, tournamentId FROM fixtures WHERE team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%'
-         UNION
-         SELECT DISTINCT team2Planned as team, tournamentId FROM fixtures WHERE team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%'
-       ) teams ON teams.tournamentId = t.id
-       WHERE t.Date IS NOT NULL
-       GROUP BY YEAR(t.Date)
-       HAVING tournaments > 0
-       ORDER BY year DESC`
+      `SELECT YEAR(t.Date) as year, COUNT(DISTINCT t.id) as tournaments, COUNT(f.id) as matches, COUNT(DISTINCT teams.team) as teams FROM tournaments t LEFT JOIN fixtures f ON f.tournamentId = t.id LEFT JOIN (SELECT DISTINCT team1Planned as team, tournamentId FROM fixtures WHERE team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%' UNION SELECT DISTINCT team2Planned as team, tournamentId FROM fixtures WHERE team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%') teams ON teams.tournamentId = t.id WHERE t.Date IS NOT NULL GROUP BY YEAR(t.Date) HAVING tournaments > 0 ORDER BY year DESC`
     );
     return yearsRes;
   };

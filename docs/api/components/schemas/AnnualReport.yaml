@@ -63,7 +63,4 @@ AnnualReport:
             type: string
           matches:
             type: integer
-          teams:
-            type: integer
-          region:
-            type: string
+          teams:\n            type: integer\n          region:\n            type: string\n        date:\n          type: string\n          format: date\n        sport:\n          type: string
