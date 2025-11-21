@@ -1,0 +1,16 @@
+YearsSummary:
+  type: object
+  properties:
+    years:
+      type: array
+      items:
+        type: object
+        properties:
+          year:
+            type: integer
+          tournaments:
+            type: integer
+          matches:
+            type: integer
+          teams:
+            type: integer
