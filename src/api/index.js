@@ -10,6 +10,7 @@ const regionRoutes = require('./routes/regions');
 const generalRoutes = require('./routes/general');
 const authRoutes = require('./routes/auth');
 const systemRoutes = require('./routes/system');
+const annualReportsRoutes = require('./routes/annual-reports');
 const { II } = require('../lib/logging'); // Import the logger
 
 const app = express();
@@ -78,6 +79,7 @@ module.exports = (db, ARGS) => {
   app.use('/api/auth', authRoutes(db, ARGS.useMock));
   app.use('/auth', authRoutes(db, ARGS.useMock)); // Add this line to also mount auth routes at /auth
   app.use('/api/system', systemRoutes);
+  app.use('/api/annual-reports', annualReportsRoutes(db, ARGS.useMock));
 
   app.get('*', (req, res) => {
     console.log(`Catch-all triggered: Requested path -> ${req.path}`);
