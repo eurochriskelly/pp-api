@@ -92,7 +92,7 @@ module.exports = (db) => {
     );
 
     const tournamentsRes = await dbh.select(
-      `SELECT t.id, t.Title as name, DATE(t.Date) as date, COALESCE((SELECT category FROM fixtures WHERE tournamentId = t.id GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1), 'Unknown') as sport, COUNT(f.id) as matches, (SELECT COUNT(DISTINCT team) FROM (SELECT DISTINCT team1Planned as team FROM fixtures WHERE tournamentId = t.id AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%' UNION SELECT DISTINCT team2Planned as team FROM fixtures WHERE tournamentId = t.id AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%') u) as teams, t.region FROM tournaments t LEFT JOIN fixtures f ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? GROUP BY t.id, t.Title, t.Date, t.region ORDER BY t.Date DESC`,
+      `SELECT t.id, t.Title as name, DATE(t.Date) as date, t.sport as sport, COUNT(f.id) as matches, (SELECT COUNT(DISTINCT team) FROM (SELECT DISTINCT team1Planned as team FROM fixtures WHERE tournamentId = t.id AND team1Planned IS NOT NULL AND team1Planned NOT LIKE '~%' UNION SELECT DISTINCT team2Planned as team FROM fixtures WHERE tournamentId = t.id AND team2Planned IS NOT NULL AND team2Planned NOT LIKE '~%') u) as teams, t.region FROM tournaments t LEFT JOIN fixtures f ON f.tournamentId = t.id WHERE YEAR(t.Date) = ? GROUP BY t.id, t.Title, t.Date, t.region, t.sport ORDER BY t.Date DESC`,
       [y]
     );
 
