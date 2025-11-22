@@ -143,7 +143,7 @@ module.exports = (db) => {
 
       const insertId = await insert(
         `INSERT INTO sec_users (Email, Name, Pass, Role, IsActive, club_id) VALUES (?, ?, NULL, 'player', 1, ?)`,
-        [email, name, null]
+        [email, name, club]
       );
 
       // Send OTP for new user login
@@ -153,11 +153,11 @@ module.exports = (db) => {
 
       await sendOtpEmail(email, otp);
 
-      const user = await select(
+      const users = await select(
         `SELECT id, Email, Name, Role FROM sec_users WHERE id = ?`,
         [insertId]
-      )[0];
-
+      );
+      const user = users[0];
       return {
         message: 'User created, OTP sent',
         data: { ttl: 600 },
