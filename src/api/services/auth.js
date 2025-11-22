@@ -142,8 +142,8 @@ module.exports = (db) => {
       }
 
       const insertId = await insert(
-        `INSERT INTO sec_users (Email, Name, Pass, Role, IsActive, Club) VALUES (?, ?, NULL, 'player', 1, ?)`,
-        [email, name, club || null]
+        `INSERT INTO sec_users (Email, Name, Pass, Role, IsActive, club_id) VALUES (?, ?, NULL, 'player', 1, ?)`,
+        [email, name, null]
       );
 
       // Send OTP for new user login
