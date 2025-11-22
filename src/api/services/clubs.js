@@ -5,13 +5,13 @@ module.exports = (db) => {
 
   return {
     listClubs: async (search, limit) => {
-      let query = "SELECT clubId, clubName FROM clubs WHERE status = 'A'";
+      let query = "SELECT clubId, clubName FROM clubs WHERE status = 'active'";
       let params = [];
       if (search && search.length >= 2) {
         query += ' AND LOWER(clubName) LIKE LOWER(?)';
         params.push(`%${search}%`);
       }
-      query += ' ORDER BY Name LIMIT ?';
+      query += ' ORDER BY clubName LIMIT ?';
       params.push(limit);
       return await select(query, params);
     },
