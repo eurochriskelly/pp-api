@@ -123,14 +123,12 @@ module.exports = (db, useMock) => {
     },
 
     register: async (req, res) => {
-      const { email, name, password, club } = req.body;
+      const { email, name, club } = req.body;
       try {
-        if (!email || !name || !password) {
-          return res
-            .status(400)
-            .json({ error: 'Email, name, and password are required' });
+        if (!email || !name) {
+          return res.status(400).json({ error: 'Email and name are required' });
         }
-        const result = await dbSvc.register(email, name, password, club);
+        const result = await dbSvc.register(email, name, club);
         res.status(201).json(result);
       } catch (err) {
         res.status(400).json({ error: err.message });

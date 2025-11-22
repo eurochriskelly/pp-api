@@ -99,7 +99,7 @@ module.exports = () => {
       return { message: 'Logout successful' };
     },
 
-    register: async (email, name, password, club) => {
+    register: async (email, name, club) => {
       II(`Mock: register attempt for email [${email}]`);
       if (users[email]) {
         throw new Error('Email already exists');
@@ -108,14 +108,17 @@ module.exports = () => {
         id: `mock-id-${Object.keys(users).length + 1}`,
         email,
         name,
-        password,
         club,
         role: 'player',
       };
       users[email] = newUser;
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      otpStore.set(email, { code: otp, expires: Date.now() + 600 * 1000 });
+      II(`Mock: OTP [${otp}] sent to new user [${email}]`);
       DD(`Mock: User created:`, newUser);
       return {
-        message: 'User created successfully',
+        message: 'User created, OTP sent',
+        data: { ttl: 600 },
         user: {
           id: newUser.id,
           email: newUser.email,
