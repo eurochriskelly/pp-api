@@ -23,37 +23,46 @@ let users = {
   },
 };
 let activeTokens = {}; // Store active mock tokens: { token: email }
+const otpStore = new Map();
 
 module.exports = () => {
   // db parameter is kept for consistency, not used by mocks
   II('Auth mock service initialized with in-memory user store (using emails)');
 
   return {
-    signup: async (email, password, role = 'player') => {
-      II(`Mock: signup attempt for email [${email}] with role [${role}]`);
-      if (users[email]) {
-        DD(`Mock: Signup failed - email [${email}] already exists.`);
-        throw new Error('Email already exists');
+    signup: async (email) => {
+      II(`Mock: signup attempt for email [${email}]`);
+      if (!users[email]) {
+        DD(`Mock: Signup failed - email [${email}] not found.`);
+        throw new Error('User not found');
       }
-      // For mocks, we store passwords as-is. No real hashing.
-      const newUser = {
-        id: `mock-id-${Object.keys(users).length + 1}`,
-        email,
-        password,
-        role,
-      };
-      users[email] = newUser;
-      DD(`Mock: User with email [${email}] created:`, newUser);
-      // Automatically log in the user and return a token
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = Date.now() + 600 * 1000;
+      otpStore.set(email, { code: otp, expires });
+      II(`Mock: OTP [${otp}] sent to [${email}] (logged, no real email)`);
+      return { data: { ttl: 600 } };
+    },
+
+    verify: async (email, code) => {
+      II(`Mock: verify attempt for email [${email}], code [${code}]`);
+      const stored = otpStore.get(email);
+      if (!stored || Date.now() > stored.expires || stored.code !== code) {
+        throw new Error('Invalid or expired code');
+      }
+      otpStore.delete(email);
+
+      const user = users[email];
+      if (!user) throw new Error('User not found');
+
       const token = `mock-token-for-${email}-${Date.now()}`;
       activeTokens[token] = email;
       return {
-        message: 'Signup successful',
+        message: 'Verification successful',
         user: {
-          username: newUser.email,
-          role: newUser.role,
-          email: newUser.email,
-          id: newUser.id,
+          username: user.email,
+          role: user.role,
+          email: user.email,
+          id: user.id,
         },
         token,
       };
@@ -84,14 +93,35 @@ module.exports = () => {
     logout: async (token) => {
       II(`Mock: logout attempt for token [${token}]`);
       if (activeTokens[token]) {
-        delete activeTokens[token]; // Invalidate the token
+        delete activeTokens[token];
         DD(`Mock: Token [${token}] invalidated.`);
-        return { message: 'Logout successful' };
       }
-      DD(`Mock: Token [${token}] not found or already invalidated.`);
-      // It's okay if token is not found, client might have already discarded it
+      return { message: 'Logout successful' };
+    },
+
+    register: async (email, name, password, club) => {
+      II(`Mock: register attempt for email [${email}]`);
+      if (users[email]) {
+        throw new Error('Email already exists');
+      }
+      const newUser = {
+        id: `mock-id-${Object.keys(users).length + 1}`,
+        email,
+        name,
+        password,
+        club,
+        role: 'player',
+      };
+      users[email] = newUser;
+      DD(`Mock: User created:`, newUser);
       return {
-        message: 'Logout successful (token not active or already invalidated)',
+        message: 'User created successfully',
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+        },
       };
     },
 

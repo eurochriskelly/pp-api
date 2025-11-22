@@ -16,16 +16,17 @@ module.exports = (db, useMock) => {
      * @returns {Promise<void>} JSON response with user data or error
      */
     signup: async (req, res) => {
-      const { email, password, role } = req.body;
+      const { email } = req.body;
       try {
-        if (!email || !password) {
-          return res
-            .status(400)
-            .json({ error: 'Email and password are required' });
+        if (!email) {
+          return res.status(400).json({ error: 'Email is required' });
         }
-        const result = await dbSvc.signup(email, password, role);
-        res.status(201).json(result);
+        const result = await dbSvc.signup(email);
+        res.status(200).json(result);
       } catch (err) {
+        if (err.message === 'User not found') {
+          return res.status(404).json({ error: 'User not found' });
+        }
         res.status(400).json({ error: err.message });
       }
     },
@@ -105,6 +106,34 @@ module.exports = (db, useMock) => {
         }
       } else {
         res.status(401).json({ error: 'Authorization token required' });
+      }
+    },
+
+    verify: async (req, res) => {
+      const { email, code } = req.body;
+      try {
+        if (!email || !code) {
+          return res.status(400).json({ error: 'Email and code are required' });
+        }
+        const result = await dbSvc.verify(email, code);
+        res.json(result);
+      } catch (err) {
+        res.status(400).json({ error: err.message });
+      }
+    },
+
+    register: async (req, res) => {
+      const { email, name, password, club } = req.body;
+      try {
+        if (!email || !name || !password) {
+          return res
+            .status(400)
+            .json({ error: 'Email, name, and password are required' });
+        }
+        const result = await dbSvc.register(email, name, password, club);
+        res.status(201).json(result);
+      } catch (err) {
+        res.status(400).json({ error: err.message });
       }
     },
 

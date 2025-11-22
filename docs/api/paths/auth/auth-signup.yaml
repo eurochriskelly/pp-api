@@ -1,12 +1,44 @@
 ---
 post:
-  summary: "Create Auth signup"
+  summary: "Send OTP verification code to existing user email"
   requestBody:
     required: true
     content:
       application/json:
         schema:
           type: object
+          required: [email]
+          properties:
+            email:
+              type: string
+              format: email
+              example: "user@example.com"
+  responses:
+    '200':
+      description: "OTP sent successfully"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  ttl:
+                    type: integer
+                    example: 600
+    '404':
+      description: "User not found"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
+    '400':
+      description: "Bad Request"
+      content:
+        application/json:
+          schema:
+            $ref: "../../components/schemas/Error.yaml"
 
   responses:
     "200":

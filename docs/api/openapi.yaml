@@ -11,6 +11,10 @@ servers:
 paths:
   /auth/signup:
     $ref: './paths/auth/auth-signup.yaml'
+  /auth/verify:
+    $ref: './paths/auth/auth-verify.yaml'
+  /auth/register:
+    $ref: './paths/auth/auth-register.yaml'
   /auth/login:
     $ref: './paths/auth/auth-login.yaml'
   /auth/logout:

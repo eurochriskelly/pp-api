@@ -1,0 +1,39 @@
+---
+post:
+  summary: 'Verify OTP code and return auth token'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [email, code]
+          properties:
+            email:
+              type: string
+              format: email
+              example: 'user@example.com'
+            code:
+              type: string
+              pattern: '^[0-9]{6}$'
+              example: '123456'
+  responses:
+    '200':
+      description: 'Verification successful'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              user:
+                $ref: '../../components/schemas/Player.yaml'
+              token:
+                type: string
+    '400':
+      description: 'Invalid or expired code'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'
