@@ -1,0 +1,41 @@
+---
+get:
+  summary: 'List clubs with optional search and limit'
+  parameters:
+    - name: 'search'
+      in: 'query'
+      description: 'Search term for club name'
+      required: false
+      schema:
+        type: string
+        example: 'Am'
+    - name: 'limit'
+      in: 'query'
+      description: 'Max number of results'
+      required: false
+      schema:
+        type: integer
+        example: 10
+  responses:
+    '200':
+      description: 'List of clubs'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    clubId:
+                      type: integer
+                    Name:
+                      type: string
+    '500':
+      description: 'Internal Server Error'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'
