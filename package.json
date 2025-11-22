@@ -46,6 +46,7 @@
     "@types/morgan": "^1.9.10",
     "@types/mysql": "^2.15.27",
     "@types/node": "^24.0.4",
+    "@types/nodemailer": "^7.0.4",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.5",

@@ -1,0 +1,51 @@
+---
+post:
+  summary: 'Register new user'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [email, name, password]
+          properties:
+            email:
+              type: string
+              format: email
+              example: 'user@example.com'
+            name:
+              type: string
+              example: 'John Doe'
+            password:
+              type: string
+              example: 'securepass123'
+            club:
+              type: string
+              example: 'My Club'
+  responses:
+    '201':
+      description: 'User created'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              user:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  role:
+                    type: string
+    '400':
+      description: 'Bad Request (email exists)'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'

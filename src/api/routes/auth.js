@@ -6,6 +6,8 @@ module.exports = (db, useMock) => {
   const ctrl = authController(db, useMock);
 
   router.post('/signup', ctrl.signup);
+  router.post('/verify', ctrl.verify);
+  router.post('/register', ctrl.register);
   router.post('/login', ctrl.login);
   router.post('/logout', ctrl.logout); // POST is common for logout to allow sending token in body
   router.get('/me', ctrl.getCurrentUser); // Endpoint to verify token and get user info
