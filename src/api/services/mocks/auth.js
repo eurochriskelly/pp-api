@@ -108,7 +108,7 @@ module.exports = () => {
         id: `mock-id-${Object.keys(users).length + 1}`,
         email,
         name,
-        club,
+        club_id: null,
         role: 'player',
       };
       users[email] = newUser;
