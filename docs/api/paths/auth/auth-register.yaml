@@ -24,7 +24,7 @@ post:
               example: 'My Club'
   responses:
     '201':
-      description: 'User created'
+      description: "User created, OTP sent"
       content:
         application/json:
           schema:
@@ -32,6 +32,23 @@ post:
             properties:
               message:
                 type: string
+              data:
+                type: object
+                properties:
+                  ttl:
+                    type: integer
+                    example: 600
+              user:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  role:
+                    type: string
               user:
                 type: object
                 properties:

@@ -131,7 +131,7 @@ module.exports = (db) => {
       };
     },
 
-    register: async (email, name, password, club) => {
+    register: async (email, name, club) => {
       // Check if user exists
       const existing = await select(
         `SELECT id FROM sec_users WHERE Email = ?`,
@@ -142,9 +142,16 @@ module.exports = (db) => {
       }
 
       const insertId = await insert(
-        `INSERT INTO sec_users (Email, Name, Pass, Role, IsActive, Club) VALUES (?, ?, ?, 'player', 1, ?)`,
-        [email, name, password, club || null]
+        `INSERT INTO sec_users (Email, Name, Pass, Role, IsActive, Club) VALUES (?, ?, NULL, 'player', 1, ?)`,
+        [email, name, club || null]
       );
+
+      // Send OTP for new user login
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = Date.now() + 600 * 1000;
+      otpStore.set(email, { code: otp, expires });
+
+      await sendOtpEmail(email, otp);
 
       const user = await select(
         `SELECT id, Email, Name, Role FROM sec_users WHERE id = ?`,
@@ -152,7 +159,8 @@ module.exports = (db) => {
       )[0];
 
       return {
-        message: 'User created successfully',
+        message: 'User created, OTP sent',
+        data: { ttl: 600 },
         user: {
           id: user.id,
           email: user.Email,
