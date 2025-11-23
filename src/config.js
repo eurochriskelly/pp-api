@@ -1,5 +1,15 @@
 // Only enforce database environment variables if not in mock mode (inferred from PP_DBN)
 if (process.env['PP_DBN'] !== 'MockTourno') {
+  if (
+    !process.env['SMTP_HOST'] ||
+    !process.env['SMTP_USER'] ||
+    !process.env['SMTP_PASS']
+  ) {
+    console.log(
+      'SMTP env vars (SMTP_HOST, SMTP_USER, SMTP_PASS) required for non-mock. Exiting.'
+    );
+    process.exit(1);
+  }
   if (!process.env['PP_HST']) {
     console.log(
       `Env PP_HST is not defined for non-mock DB [${process.env['PP_DBN']}] .. exiting.`
