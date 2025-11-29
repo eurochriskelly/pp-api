@@ -13,17 +13,15 @@ if [ -z "${PP_DBN:-}" ]; then
   exit 1
 fi
 
-# Parse arguments first to determine USE_MOCK
-PORT=${1:-4000}
-APP=${2:-mobile}
-USE_MOCK=${3:-false}
-DATABASE=${4:-${PP_DBN}}
+# Single launch only, no sourcing/loops/nodemon
+PORT=${PP_PORT_API:-4000}
+APP=${PP_API_APP:-mobile}
+DATABASE=${PP_DATABASE:-EuroTourno}
 
-if [ "$USE_MOCK" = "false" ]; then
-  if [ ! -f "pp_env.sh" ]; then
-    echo "ERROR: Required file pp_env.sh not found in current directory (and not in mock mode)"
-    exit 1
-  fi
+# Port check
+if lsof -ti tcp:$PORT >/dev/null 2>&1; then
+  echo "ERROR: Port $PORT in use."
+  exit 1
 fi
 
 # Setup logging
@@ -35,25 +33,13 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Log startup info
 echo "=== Starting ${SCRIPT_NAME} at $(date) ==="
-echo "Database: ${PP_DBN}"
+echo "Database: ${PP_DBN:-$DATABASE}"
 echo "Port: ${PORT}"
 echo "App: ${APP}"
 echo "Use Mock: ${USE_MOCK}"
 echo "Log File: ${LOG_FILE}"
 
-if [ "${WATCH:-false}" = "true" ]; then
-  echo "--- Starting server in watch mode ---"
-  
-  if [ "$USE_MOCK" = "false" ]; then
-    echo "Sourcing pp_env.sh..."
-    OLD_DB=$PP_DBN
-    source pp_env.sh
-    if [ -n "$OLD_DB" ];then
-      PP_DBN=$OLD_DB
-    fi
-  else
-    echo "Skipping pp_env.sh sourcing (mock mode)"
-  fi
+node dist/server.js
   
   echo "--- Variables before starting Node.js ---"
   echo "PP_DBN: ${PP_DBN}"
@@ -63,13 +49,9 @@ if [ "${WATCH:-false}" = "true" ]; then
   echo "DATABASE: ${DATABASE}"
   echo "-----------------------------------------"
   
-  npx nodemon --watch dist/ dist/server.js \
-    --port="$PORT" \
-    --app="$APP" \
-    --use-mock="$USE_MOCK" \
-    --database="$DATABASE"
-  
-  echo "=== Server stopped at $(date) ==="
+npx nodemon --watch dist/ dist/server.js
+
+echo "=== Server stopped at $(date) ==="
 else
   RESTART_COUNT=0
   while [ $RESTART_COUNT -le $MAX_RESTARTS ]; do
@@ -97,11 +79,7 @@ else
     echo "-----------------------------------------"
 
     # Now start the server
-    if node dist/server.js \
-      --port="$PORT" \
-      --app="$APP" \
-      --use-mock="$USE_MOCK" \
-      --database="$DATABASE"
+if node dist/server.js
     then
       echo "Server exited cleanly"
       break

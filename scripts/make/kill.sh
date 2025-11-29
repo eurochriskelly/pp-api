@@ -1,5 +1,15 @@
 #!/bin/bash
 
+port="$1"
+if [ -n "$port" ]; then
+  mkdir -p ./pids
+  pids=$(lsof -ti tcp:$port 2>/dev/null || true)
+  [ -n "$pids" ] && kill -9 $pids 2>/dev/null || true
+  rm -f ./pids/$port.*
+  echo "Killed port $port (PIDs: $pids)"
+  exit 0
+fi
+
 # Colors
 BLUE='\033[1;34m'
 GREEN='\033[1;32m'

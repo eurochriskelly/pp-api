@@ -6,3 +6,4 @@ pp_env.sh
 pids/
 dist
 docs/api/index.html
+.env
