@@ -99,7 +99,7 @@ module.exports = () => {
       return { message: 'Logout successful' };
     },
 
-    register: async (email, name, club) => {
+    register: async (email, name /* club */) => {
       II(`Mock: register attempt for email [${email}]`);
       if (users[email]) {
         throw new Error('Email already exists');
