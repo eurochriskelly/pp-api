@@ -1,10 +1,11 @@
 #!/bin/bash
 
-port=${1:-4000}
-# Ensure logs directory exists
+port=${PP_PORT_API:-4000}
+export PP_ENV=mock
+export PP_DATABASE=MockTourno
+export PP_USE_MOCK=true
+export PP_API_APP=mobile
 mkdir -p ./logs
-# Truncate the log file
 > ./logs/server.log
-echo "Starting server in mock mode on port $port..."
-echo "Logging to ./logs/server.log"
-PP_DBN=MockTourno ./scripts/start-server.sh $port mobile true MockTourno >> ./logs/server.log 2>&1
+echo "Starting mock server on port $port. Log: ./logs/server.log"
+./scripts/start-server.sh >> ./logs/server.log 2>&1

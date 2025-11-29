@@ -32,8 +32,8 @@ follow:  ## Follow the server log (always follows ./logs/server.log)
 	@echo "Following ./logs/server.log (press Ctrl+C to exit)"
 	@tail -f "./logs/server.log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'
 
-kill:  ## Kill running server instances
-	./scripts/make/kill.sh
+kill:  ## Kill running server instances (usage: make kill [port=NUMBER])
+	./scripts/make/kill.sh $(port)
 
 diagnostics-sql-on: ## Enable SQL statement printing (usage: make diagnostics-sql-on port=NUMBER)
 	@if [ -z "$(port)" ]; then \
