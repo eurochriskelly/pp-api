@@ -17,19 +17,24 @@ module.exports = (db) => {
          GROUP BY c.region, c.subregion
          ORDER BY c.region, c.subregion`
       );
-      return rows.map((row) => {
-        const regionName =
-          row.subregion && row.subregion !== ''
-            ? `${row.region}%${row.subregion}`
-            : row.region;
-        const hash = crypto.createHash('md5').update(regionName).digest('hex');
-        return {
-          id: hash,
-          name: encodeURI(regionName),
-          activeClubsCount: parseInt(row.activeClubsCount, 10) || 0,
-          activeTeamsCount: parseInt(row.activeTeamsCount, 10) || 0,
-        };
-      });
+      return rows
+        .filter((row) => row.region != null)
+        .map((row) => {
+          const regionName =
+            row.subregion && row.subregion !== ''
+              ? `${row.region}%${row.subregion}`
+              : row.region;
+          const hash = crypto
+            .createHash('md5')
+            .update(regionName)
+            .digest('hex');
+          return {
+            id: hash,
+            name: encodeURI(regionName),
+            activeClubsCount: parseInt(row.activeClubsCount, 10) || 0,
+            activeTeamsCount: parseInt(row.activeTeamsCount, 10) || 0,
+          };
+        });
     },
 
     // FIXME: this should handle sub regions too
