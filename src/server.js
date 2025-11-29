@@ -1,8 +1,19 @@
 // @ts-nocheck
-const mysql = require('mysql');
-const { processArgs } = require('./lib/process-args');
+const mysql = require('mysql2');
 const apiSetup = require('./api/index');
-const ARGS = processArgs(process.argv);
+
+// Dereference all from env at top
+const port = parseInt(process.env.PP_PORT_API || process.env.PORT || '4001');
+const app =
+  process.env.PP_API_APP || `${process.env.PP_ENV || 'development'}/mobile`;
+const database = process.env.PP_DATABASE || process.env.PP_DBN || 'EuroTourno';
+const staticPath = `/gcp/dist/${app}/`;
+
+const ARGS = { port, app, database, staticPath };
+
+console.log(
+  `Using PP_ENV=${process.env.PP_ENV || 'development'}, database=${database}, app=${app}, port=${port}`
+);
 
 // Import config from local directory
 const { dbConf } = require('./config');
@@ -10,8 +21,7 @@ const { dbConf } = require('./config');
 const run = async () => {
   let db = null;
 
-  // Determine mock mode reliably based on ARGS.database,
-  const isMockMode = ARGS.database === 'MockTourno';
+  const isMockMode = database === 'MockTourno';
 
   if (!isMockMode) {
     db = mysql.createConnection(dbConf);
@@ -19,12 +29,12 @@ const run = async () => {
       if (err) {
         console.error(
           `Error connecting to the database.
-          Please check the following:
-          1. Is the database server running?
-          2. Are you connected to the correct network or VPN?
-          3. Are the credentials in your environment correct?
-          
-          Original error:`,
+Please check the following:
+1. Is the database server running?
+2. Are you connected to the network or VPN?
+3. Are the credentials in your environment correct?
+           
+Original error:`,
           err
         );
         return;
