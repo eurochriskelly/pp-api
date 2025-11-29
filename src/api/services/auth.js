@@ -4,7 +4,7 @@ const otpStore = new Map();
 module.exports = (db) => {
   const { select, insert, update } = dbHelper(db);
 
-  const { sendOtpEmail } = require('../../../lib/email');
+  const { sendOtpEmail } = require('../../lib/email');
 
   return {
     signup: async (email) => {
