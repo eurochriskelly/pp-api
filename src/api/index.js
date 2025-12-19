@@ -105,7 +105,7 @@ module.exports = (db, ARGS) => {
       console.log(`Serving [${indexHtmlPath}]`);
       res.sendFile(indexHtmlPath);
     } else {
-      res.status(404).send('Not Found');
+      res.status(404).send('Resourse not found');
     }
   });
 
