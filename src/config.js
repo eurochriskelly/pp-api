@@ -5,28 +5,24 @@ if (process.env.PP_DATABASE !== 'MockTourno') {
     !process.env['SMTP_USER'] ||
     !process.env['SMTP_PASS']
   ) {
-    console.log(
-      'SMTP env vars (SMTP_HOST, SMTP_USER, SMTP_PASS) required for non-mock. Exiting.'
+    throw new Error(
+      'SMTP env vars (SMTP_HOST, SMTP_USER, SMTP_PASS) required for non-mock.'
     );
-    process.exit(1);
   }
   if (!process.env['PP_HST']) {
-    console.log(
-      `Env PP_HST is not defined for non-mock DB [${process.env.PP_DATABASE}] .. exiting.`
+    throw new Error(
+      `Env PP_HST is not defined for non-mock DB [${process.env.PP_DATABASE}].`
     );
-    process.exit(1);
   }
   if (!process.env['PP_USR']) {
-    console.log(
-      `Env PP_USR is not defined for non-mock DB [${process.env.PP_DATABASE}] .. exiting.`
+    throw new Error(
+      `Env PP_USR is not defined for non-mock DB [${process.env.PP_DATABASE}].`
     );
-    process.exit(1);
   }
   if (!process.env['PP_PWD']) {
-    console.log(
-      `Env PP_PWD is not defined for non-mock DB [${process.env.PP_DATABASE}] .. exiting.`
+    throw new Error(
+      `Env PP_PWD is not defined for non-mock DB [${process.env.PP_DATABASE}].`
     );
-    process.exit(1);
   }
 }
 

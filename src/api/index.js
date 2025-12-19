@@ -19,6 +19,21 @@ const app = express();
 app.use(bodyParser.json());
 
 module.exports = (db, ARGS) => {
+  if (ARGS.errorMsg) {
+    console.log(`Error mode: ${ARGS.errorMsg}`);
+    app.use((req, res) => {
+      res.status(500).send(ARGS.errorMsg);
+    });
+    const port = ARGS.port;
+    app.listen(port, () => {
+      console.log(`Error server on port ${port} (10 min timeout)`);
+    });
+    setTimeout(() => {
+      console.log('Error mode timeout. Exiting.');
+      process.exit(1);
+    }, 600000);
+    return;
+  }
   II(`Setting up API endpoints. Mock mode: ${ARGS.useMock}`);
 
   // Define PDF upload route BEFORE global JSON parsing (but after db is available)

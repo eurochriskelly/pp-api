@@ -16,35 +16,30 @@ console.log(
 );
 
 // Import config from local directory
-const { dbConf } = require('./config');
-
 const run = async () => {
   let db = null;
-
-  const isMockMode = database === 'MockTourno';
-
-  if (!isMockMode) {
-    db = mysql.createConnection(dbConf);
-    db.connect((err) => {
-      if (err) {
-        console.error(
-          `Error connecting to the database.
-Please check the following:
-1. Is the database server running?
-2. Are you connected to the network or VPN?
-3. Are the credentials in your environment correct?
-           
-Original error:`,
-          err
-        );
-        return;
-      }
+  const effectiveArgs = { ...ARGS };
+  try {
+    const { dbConf } = require('./config');
+    const isMockMode = database === 'MockTourno';
+    effectiveArgs.useMock = isMockMode;
+    if (!isMockMode) {
+      db = mysql.createConnection(dbConf);
+      await new Promise((resolve, reject) => {
+        db.connect((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       console.log('Connected to the MySQL server.');
-    });
+    }
+    apiSetup(db, effectiveArgs);
+  } catch (err) {
+    console.error(`Startup error: ${err.message}`);
+    effectiveArgs.errorMsg = 'Bad news. Something went wrong. Check the logs.';
+    effectiveArgs.useMock = true;
+    apiSetup(null, effectiveArgs);
   }
-
-  const effectiveArgs = { ...ARGS, useMock: isMockMode };
-  apiSetup(db, effectiveArgs);
 };
 
 run();
