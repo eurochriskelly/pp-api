@@ -5,9 +5,9 @@ RUN npm ci
 COPY . .
 RUN npm run build
 ENV NODE_ENV=production \
-    PP_PORT_API=4001 \
+    PP_PORT_API=7001 \
     PP_DATABASE=MockTourno \
     PP_ENV=production \
     PP_API_APP=production/mobile
-EXPOSE 4001
+EXPOSE 7001
 CMD ["node", "dist/server.js"]
