@@ -1,0 +1,9 @@
+service: pp-api-test
+
+proxy:
+  ssl: true
+  host: test-api.pitchperfect.eu.com
+
+env:
+  clear:
+    PORT: 6001

@@ -98,6 +98,8 @@ module.exports = (db, ARGS) => {
   app.use('/api/clubs', clubsRoutes(db, ARGS.useMock));
   app.use('/api/annual-reports', annualReportsRoutes(db, ARGS.useMock));
 
+  app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
   app.get('*', (req, res) => {
     console.log(`Catch-all triggered: Requested path -> ${req.path}`);
     const indexHtmlPath = path.join(ARGS.staticPath, 'index.html');
@@ -105,7 +107,7 @@ module.exports = (db, ARGS) => {
       console.log(`Serving [${indexHtmlPath}]`);
       res.sendFile(indexHtmlPath);
     } else {
-      res.status(404).send('Resourse not found');
+      res.status(404).send('Resourse not found!');
     }
   });
 

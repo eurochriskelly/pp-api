@@ -1,0 +1,3 @@
+service: pp-api
+proxy:
+  host: api.pitchperfect.eu.com
