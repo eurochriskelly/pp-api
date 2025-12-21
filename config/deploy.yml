@@ -11,7 +11,7 @@ servers:
       - 10.8.0.1
     options:
       publish:
-        - "7001:7001"
+        - '7001:7001'
 
 ssh:
   user: pp-admin
@@ -19,6 +19,11 @@ ssh:
 proxy:
   host: api.pitchperfect.eu.com
   ssl: true
+  app_port: 7001
+  healthcheck:
+    path: /health
+    timeout: 10
+    interval: 2
 
 env:
   clear:
