@@ -1,3 +1,16 @@
 service: pp-api
+env:
+  clear:
+    PP_DATABASE: EuroTourno
+    PP_HST: 10.8.0.1
+    PP_USR: root
+    PP_PWD: '${PP_PWD}'
+    PORT: 7001
 proxy:
   host: api.pitchperfect.eu.com
+  ssl: true
+  app_port: 7001
+  healthcheck:
+    path: /health
+    timeout: 10
+    interval: 2

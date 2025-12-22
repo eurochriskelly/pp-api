@@ -1,9 +1,16 @@
 service: pp-api-test
-
+env:
+  clear:
+    PP_DATABASE: EuroTourno
+    PP_HST: 10.8.0.1
+    PP_USR: root
+    PP_PWD: '${PP_PWD}'
+    PORT: 6001
 proxy:
   ssl: true
   host: test-api.pitchperfect.eu.com
-
-env:
-  clear:
-    PORT: 6001
+  app_port: 6001
+  healthcheck:
+    path: /health
+    timeout: 10
+    interval: 2
