@@ -1,0 +1,42 @@
+service: pp-api-dev
+
+env:
+  clear:
+    PP_DATABASE: EuroTourno
+    PP_HST: pp-devel
+    PP_USR: root
+    SMTP_HOST: localhost
+    SMTP_USER: test
+    SMTP_PASS: test
+    PORT: 7001
+  secret:
+    - PP_PWD
+
+servers:
+  web:
+    hosts:
+      - kamal-dev
+    options:
+      publish:
+        - '7001:7001'
+
+ssh:
+  user: ubuntu
+
+# dev: no TLS/proxy; hit http://<VM_IP>:7001 directly
+proxy:
+  app_port: 7001
+  healthcheck:
+    path: /health
+    timeout: 10
+    interval: 2
+
+# registry must be reachable FROM the VM
+registry:
+  server: localhost:5555
+
+builder:
+  dockerfile: ./Dockerfile
+  local: false
+  arch: arm64
+  remote: ssh://ubuntu@kamal-dev

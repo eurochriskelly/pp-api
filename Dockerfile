@@ -1,13 +1,20 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN apt-get update && apt-get install -y \
+  build-essential \
+  libcairo2-dev \
+  libpango1.0-dev \
+  libjpeg62-turbo-dev \
+  libgif-dev \
+  librsvg2-dev && \
+  rm -rf /var/lib/apt/lists/* && \
+  npm ci
 COPY . .
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 RUN npm run build
 ENV NODE_ENV=production \
     PP_PORT_API=7001 \
-    PP_DATABASE=MockTourno \
     PP_ENV=production \
     PP_API_APP=production/mobile
 EXPOSE 7001
