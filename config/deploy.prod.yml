@@ -1,11 +1,17 @@
 service: pp-api
+
 env:
   clear:
     PP_DATABASE: EuroTourno
     PP_HST: 10.8.0.1
     PP_USR: root
-    PP_PWD: '${PP_PWD}'
+    SMTP_HOST: localhost
+    SMTP_USER: test
+    SMTP_PASS: test
     PORT: 7001
+  secret:
+    - PP_PWD
+
 proxy:
   host: api.pitchperfect.eu.com
   ssl: true
