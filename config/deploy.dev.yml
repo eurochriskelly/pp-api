@@ -3,7 +3,7 @@ service: pp-api-dev
 env:
   clear:
     PP_DATABASE: EuroTourno
-    PP_HST: pp-devel
+    PP_HST: 192.168.64.2
     PP_USR: root
     SMTP_HOST: localhost
     SMTP_USER: test
@@ -23,8 +23,10 @@ servers:
 ssh:
   user: ubuntu
 
-# dev: no TLS/proxy; hit http://<VM_IP>:7001 directly
+# dev: no TLS; unique proxy host to avoid conflicts with prod
 proxy:
+  host: dev-api.pitchperfect.eu.com
+  ssl: false
   app_port: 7001
   healthcheck:
     path: /health
