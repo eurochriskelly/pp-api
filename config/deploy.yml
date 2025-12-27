@@ -11,7 +11,7 @@ servers:
       - 10.8.0.1
     options:
       publish:
-        - '7001:7001'
+        - '<%= ENV["PP_PORT_API"] %>:<%= ENV["PP_PORT_API"] %>'
 
 ssh:
   user: pp-admin
@@ -19,7 +19,7 @@ ssh:
 proxy:
   host: api.pitchperfect.eu.com
   ssl: true
-  app_port: 7001
+  app_port: <%= ENV["PP_PORT_API"] %>
   healthcheck:
     path: /health
     timeout: 10
@@ -27,7 +27,17 @@ proxy:
 
 env:
   clear:
-    PORT: 7001
+    PP_PORT_API: "<%= ENV['PP_PORT_API'] %>"
+    PORT: "<%= ENV['PP_PORT_API'] %>"
+    PP_HST: "<%= ENV['PP_HOSTNAME_DB'] %>"
+    PP_USR: "<%= ENV['PP_USR'] %>"
+    PP_DATABASE: "<%= ENV['PP_DATABASE'] %>"
+    SMTP_HOST: "<%= ENV['SMTP_HOST'] %>"
+    SMTP_PORT: "<%= ENV['SMTP_PORT'] %>"
+    SMTP_USER: "<%= ENV['SMTP_USER'] %>"
+  secret:
+    - PP_PWD
+    - SMTP_PASS
 
 registry:
   server: localhost:5555
