@@ -8,7 +8,7 @@ env:
     SMTP_HOST: localhost
     SMTP_USER: test
     SMTP_PASS: test
-    PORT: 7001
+    PORT: "7001"
   secret:
     - PP_PWD
 
