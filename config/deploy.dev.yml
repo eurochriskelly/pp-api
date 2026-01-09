@@ -17,8 +17,7 @@ servers:
     hosts:
       - kamal-dev
     options:
-      publish:
-        - '7001:7001'
+      publish: []
 
 ssh:
   user: ubuntu
