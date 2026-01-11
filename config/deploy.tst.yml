@@ -1,15 +1,21 @@
-service: pp-api-test
+service: pp-api-tst
+
 env:
   clear:
     PP_DATABASE: EuroTourno
     PP_HST: 10.8.0.1
     PP_USR: root
-    PP_PWD: '${PP_PWD}'
-    PORT: 6001
+    SMTP_HOST: localhost
+    SMTP_USER: test
+    SMTP_PASS: test
+    PORT: 7001
+  secret:
+    - PP_PWD
+
 proxy:
-  ssl: true
   host: test-api.pitchperfect.eu.com
-  app_port: 6001
+  ssl: true
+  app_port: 7001
   healthcheck:
     path: /health
     timeout: 10
