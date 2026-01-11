@@ -3,12 +3,12 @@ service: pp-api-dev
 env:
   clear:
     PP_DATABASE: EuroTourno
-    PP_HST: 192.168.64.2
-    PP_USR: root
+    PP_HST: "<?= ENV['PP_HOSTNAME_DEV'] =?>" 
+    PP_USR: "<?= ENV['PP_USR_DEV'] =?>" 
     SMTP_HOST: localhost
     SMTP_USER: test
     SMTP_PASS: test
-    PORT: "7001"
+    PORT: <?= ENV['PP_PORT_API_DEV'] =?>
   secret:
     - PP_PWD
 
@@ -26,7 +26,7 @@ ssh:
 proxy:
   host: dev-api.pitchperfect.eu.com
   ssl: false
-  app_port: 7001
+  app_port: <?= ENV['PP_PORT_API_DEV'] =?>
   healthcheck:
     path: /health
     timeout: 10
