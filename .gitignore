@@ -8,3 +8,4 @@ dist
 docs/api/index.html
 .env
 .kamal
+.kamal/

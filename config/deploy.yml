@@ -4,15 +4,6 @@ service: pp-api
 # Name of the container image.
 image: pp-api
 
-# Deploy to these servers.
-servers:
-  web:
-    hosts:
-      - 10.8.0.1
-    options:
-      publish:
-        - '<%= ENV["PP_PORT_API"] %>:<%= ENV["PP_PORT_API"] %>'
-
 ssh:
   user: pp-admin
 
@@ -26,11 +17,8 @@ proxy:
 
 env:
   clear:
-    PP_DATBASE: <%= ENV['PP_DATABASE'] %>
+    PP_DATABASE: <%= ENV['PP_DATABASE'] %>
     SMTP_PORT: <%= ENV['SMTP_PORT'] %>
-  secret:
-    - PP_PWD
-    - SMTP_PASS
 
 registry:
   server: localhost:5555
@@ -39,4 +27,4 @@ builder:
   dockerfile: ./Dockerfile
   local: false
   arch: amd64
-  remote: ssh://10.8.0.1
+  remote: ssh://pp-admin@10.8.0.1

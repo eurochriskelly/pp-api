@@ -1,32 +1,34 @@
 service: pp-api-dev
+image: pp-api
 
 env:
   clear:
-    PP_DATABASE: EuroTourno
-    PP_HST: "<%= ENV['PP_HOSTNAME_DEV'] %>" 
-    PP_USR: "<%= ENV['PP_USR_DEV'] %>" 
-    PP_PWD: "<%= ENV['PP_PWD_DEV'] %>" 
-    SMTP_HOST: localhost
-    SMTP_USER: test
-    SMTP_PASS: test
-    PORT: "<%= ENV['PP_PORT_API_DEV'] %>"
+    PP_HST: '<%= ENV["PP_HOSTNAME_DEV"] %>'
+    PP_DATABASE: '<%= ENV["PP_DATABASE"] %>'
+    PP_USR: '<%= ENV["PP_USR_DEV"] %>'
+    PORT: '<%= ENV["PP_PORT_API_DEV"] %>'
+  secret:
+    - SMTP_HOST
+    # dev
+    - PP_PWD
+    - SMTP_USER
+    - SMTP_PASS
 
 # Deploy to these servers.
 servers:
   web:
     hosts:
-      - "<%= ENV['PP_HOSTNAME_DEV'] %>"
+      - '<%= ENV["PP_HOSTNAME_DEV"] %>'
     options:
-      publish: []
-
+      publish:
+        - '<%= ENV["PP_PORT_API_DEV"] %>:<%= ENV["PP_PORT_API_DEV"] %>'
 ssh:
-  user: ubuntu
+  user: '<%= ENV["PP_USR_SSH_DEV"] %>'
 
 # dev: no TLS; unique proxy host to avoid conflicts with prod
 proxy:
   host: dev-api.pitchperfect.eu.com
-  ssl: false
-  app_port: <%= ENV['PP_PORT_API_DEV'] %>
+  ssl: true
   healthcheck:
     path: /health
     timeout: 10
@@ -40,4 +42,4 @@ builder:
   dockerfile: ./Dockerfile
   local: false
   arch: arm64
-  remote: "<%= ENV['PP_KAMAL_SSH_DEV'] %>" 
+  remote: 'ssh://<%= ENV["PP_USR_SSH_DEV"] %>@<%= ENV["PP_HOSTNAME_DEV"] %>'
