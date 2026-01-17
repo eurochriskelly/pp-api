@@ -5,12 +5,11 @@ env:
     PP_DATABASE: EuroTourno
     PP_HST: "<%= ENV['PP_HOSTNAME_DEV'] %>" 
     PP_USR: "<%= ENV['PP_USR_DEV'] %>" 
+    PP_PWD: "<%= ENV['PP_PWD_DEV'] %>" 
     SMTP_HOST: localhost
     SMTP_USER: test
     SMTP_PASS: test
     PORT: "<%= ENV['PP_PORT_API_DEV'] %>"
-  secret:
-    - PP_PWD
 
 # Deploy to these servers.
 servers:
