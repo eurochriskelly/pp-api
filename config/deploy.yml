@@ -23,8 +23,3 @@ env:
 registry:
   server: localhost:5555
 
-builder:
-  dockerfile: ./Dockerfile
-  local: false
-  arch: amd64
-  remote: ssh://pp-admin@10.8.0.1

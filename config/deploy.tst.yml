@@ -2,21 +2,45 @@ service: pp-api-tst
 
 env:
   clear:
-    PP_DATABASE: EuroTourno
-    PP_HST: 10.8.0.1
-    PP_USR: root
-    SMTP_HOST: localhost
-    SMTP_USER: test
-    SMTP_PASS: test
-    PORT: 7001
+    PP_HST: '<%= ENV["PP_HOSTNAME_SSH_TST"] %>'
+    PP_DATABASE: '<%= ENV["PP_DATABASE"] %>'
+    PP_USR: '<%= ENV["PP_USR_TST"] %>'
+    PP_PORT_API: '<%= ENV["PP_PORT_API"] %>'
+    PORT: '<%= ENV["PP_PORT_API"] %>'
   secret:
+    - SMTP_HOST
+    # dev
     - PP_PWD
+    - SMTP_USER
+    - SMTP_PASS
 
+# Deploy to these servers.
+servers:
+  web:
+    hosts:
+      - '<%= ENV["PP_HOSTNAME_SSH_TST"] %>'
+    options:
+      publish:
+        - '<%= ENV["PP_PORT_API_TST"] %>:<%= ENV["PP_PORT_API"] %>'
+ssh:
+  user: '<%= ENV["PP_USR_SSH_TST"] %>'
+
+# dev: no TLS; unique proxy host to avoid conflicts with prod
 proxy:
   host: test-api.pitchperfect.eu.com
   ssl: true
-  app_port: 7001
+  app_port: <%= ENV["PP_PORT_API"] %>
   healthcheck:
     path: /health
     timeout: 10
     interval: 2
+
+# registry must be reachable FROM the VM
+registry:
+  server: localhost:5555
+
+builder:
+  dockerfile: ./Dockerfile
+  local: false
+  arch: amd64
+  remote: 'ssh://<%= ENV["PP_USR_SSH_TST"] %>@<%= ENV["PP_HOSTNAME_SSH_TST"] %>'

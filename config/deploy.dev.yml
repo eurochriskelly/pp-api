@@ -3,7 +3,7 @@ image: pp-api
 
 env:
   clear:
-    PP_HST: '<%= ENV["PP_HOSTNAME_DEV"] %>'
+    PP_HST: '<%= ENV["PP_HOSTNAME_SSH_DEV"] %>'
     PP_DATABASE: '<%= ENV["PP_DATABASE"] %>'
     PP_USR: '<%= ENV["PP_USR_DEV"] %>'
     PP_PORT_API: '<%= ENV["PP_PORT_API"] %>'
@@ -19,7 +19,7 @@ env:
 servers:
   web:
     hosts:
-      - '<%= ENV["PP_HOSTNAME_DEV"] %>'
+      - '<%= ENV["PP_HOSTNAME_SSH_DEV"] %>'
     options:
       publish:
         - '<%= ENV["PP_PORT_API_DEV"] %>:<%= ENV["PP_PORT_API"] %>'
@@ -36,7 +36,6 @@ proxy:
     timeout: 10
     interval: 2
 
-curl http://dev-api.pitchperfect.eu.com/api/tournaments
 # registry must be reachable FROM the VM
 registry:
   server: localhost:5555
@@ -45,4 +44,4 @@ builder:
   dockerfile: ./Dockerfile
   local: false
   arch: arm64
-  remote: 'ssh://<%= ENV["PP_USR_SSH_DEV"] %>@<%= ENV["PP_HOSTNAME_DEV"] %>'
+  remote: 'ssh://<%= ENV["PP_USR_SSH_DEV"] %>@<%= ENV["PP_HOSTNAME_SSH_DEV"] %>'
