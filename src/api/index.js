@@ -68,8 +68,6 @@ module.exports = (db, ARGS) => {
 
   app.use(cors());
   app.use(morgan('dev'));
-  console.log('Serving static path: ' + ARGS.staticPath);
-  app.use(express.static(ARGS.staticPath));
 
   // Direct endpoint (unchanged)
   app.post('/api/upload', (req, res) => {
@@ -101,14 +99,7 @@ module.exports = (db, ARGS) => {
   app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
   app.get('*', (req, res) => {
-    console.log(`Catch-all triggered: Requested path -> ${req.path}`);
-    const indexHtmlPath = path.join(ARGS.staticPath, 'index.html');
-    if (fs.existsSync(indexHtmlPath)) {
-      console.log(`Serving [${indexHtmlPath}]`);
-      res.sendFile(indexHtmlPath);
-    } else {
-      res.status(404).send('Resourse not found!');
-    }
+    res.status(404).send('Resourse not found!');
   });
 
   // Global error handler

@@ -14,9 +14,9 @@ COPY . .
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 RUN npm run build
 ENV NODE_ENV=production \
-    PP_PORT_API=7001 \
+    PP_PORT_API=$PP_PORT_API \
     PP_ENV=production \
     PP_API_APP=production/mobile
-EXPOSE 7001
-HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 CMD curl -f http://localhost:7001/health || exit 1
+EXPOSE $PP_PORT_API
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 CMD curl -f http://localhost:${PP_PORT_API}/health || exit 1
 CMD ["node", "dist/server.js"]
