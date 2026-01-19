@@ -29,6 +29,7 @@ module.exports = (db, ARGS) => {
       console.log(`Error server on port ${port} (10 min timeout)`);
     });
     setTimeout(() => {
+      // TODO: why do we want a time out here?
       console.log('Error mode timeout. Exiting.');
       process.exit(1);
     }, 600000);
@@ -55,12 +56,12 @@ module.exports = (db, ARGS) => {
         const ctrl = tournamentController.default(db, ARGS.useMock);
         ctrl.uploadTeamsheet(req, res, (err) => {
           if (err) {
-            console.error('Teamsheet upload error:', err);
+            console.error('Teamsheet upload error: ', err);
             res.status(500).json({ error: err.message });
           }
         });
       } catch (error) {
-        console.error('Teamsheet route error:', error);
+        console.error('Teamsheet route error: ', error);
         res.status(500).json({ error: error.message });
       }
     }

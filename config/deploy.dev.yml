@@ -1,19 +1,9 @@
 service: pp-api-dev
-image: pp-api
 
 env:
   clear:
     PP_HST: '<%= ENV["PP_HOSTNAME_SSH_DEV"] %>'
-    PP_DATABASE: '<%= ENV["PP_DATABASE"] %>'
     PP_USR: '<%= ENV["PP_USR_DEV"] %>'
-    PP_PORT_API: '<%= ENV["PP_PORT_API"] %>'
-    PORT: '<%= ENV["PP_PORT_API"] %>'
-  secret:
-    - SMTP_HOST
-    # dev
-    - PP_PWD
-    - SMTP_USER
-    - SMTP_PASS
 
 # Deploy to these servers.
 servers:
@@ -23,25 +13,22 @@ servers:
     options:
       publish:
         - '<%= ENV["PP_PORT_API_DEV"] %>:<%= ENV["PP_PORT_API"] %>'
+
 ssh:
   user: '<%= ENV["PP_USR_SSH_DEV"] %>'
 
 # dev: no TLS; unique proxy host to avoid conflicts with prod
 proxy:
   host: dev-api.pitchperfect.eu.com
-  ssl: false
+  ssl: true
   app_port: <%= ENV["PP_PORT_API"] %>
   healthcheck:
     path: /health
     timeout: 10
     interval: 2
 
-# registry must be reachable FROM the VM
-registry:
-  server: localhost:5555
-
 builder:
-  dockerfile: ./Dockerfile
-  local: false
   arch: arm64
   remote: 'ssh://<%= ENV["PP_USR_SSH_DEV"] %>@<%= ENV["PP_HOSTNAME_SSH_DEV"] %>'
+
+
