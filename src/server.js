@@ -18,9 +18,10 @@ console.log(
 // Import config from local directory
 const run = async () => {
   let db = null;
+  let dbClub = null;
   const effectiveArgs = { ...ARGS };
   try {
-    const { dbConf } = require('./config');
+    const { dbConf, clubEventsDbConf } = require('./config');
     const isMockMode = database === 'MockTourno';
     effectiveArgs.useMock = isMockMode;
     if (!isMockMode) {
@@ -31,14 +32,23 @@ const run = async () => {
           else resolve();
         });
       });
-      console.log('Connected to the MySQL server.');
+      console.log('Connected to the MySQL server (Main).');
+
+      dbClub = mysql.createConnection(clubEventsDbConf);
+      await new Promise((resolve, reject) => {
+        dbClub.connect((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      console.log('Connected to the MySQL server (ClubEvents).');
     }
-    apiSetup(db, effectiveArgs);
+    apiSetup({ main: db, club: dbClub }, effectiveArgs);
   } catch (err) {
     console.error(`Startup error: ${err.message}`);
     effectiveArgs.errorMsg = 'Bad news. Something went wrong. Check the logs.';
     effectiveArgs.useMock = true;
-    apiSetup(null, effectiveArgs);
+    apiSetup({ main: null, club: null }, effectiveArgs);
   }
 };
 

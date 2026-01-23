@@ -12,13 +12,18 @@ const authRoutes = require('./routes/auth');
 const systemRoutes = require('./routes/system');
 const annualReportsRoutes = require('./routes/annual-reports');
 const clubsRoutes = require('./routes/clubs');
+const eventsRoutes = require('./routes/events');
+const listingsRoutes = require('./routes/listings');
 const { II } = require('../lib/logging'); // Import the logger
 
 const app = express();
 
 app.use(bodyParser.json());
 
-module.exports = (db, ARGS) => {
+module.exports = (dbs, ARGS) => {
+  // Handle dbs being just a single connection object (backward compatibility) or { main, club }
+  const dbMain = dbs.main || dbs;
+
   if (ARGS.errorMsg) {
     console.log(`Error mode: ${ARGS.errorMsg}`);
     app.use((req, res) => {
@@ -53,7 +58,7 @@ module.exports = (db, ARGS) => {
       try {
         // Import controller dynamically to avoid circular dependencies
         const tournamentController = require('./controllers/tournaments');
-        const ctrl = tournamentController.default(db, ARGS.useMock);
+        const ctrl = tournamentController.default(dbMain, ARGS.useMock);
         ctrl.uploadTeamsheet(req, res, (err) => {
           if (err) {
             console.error('Teamsheet upload error: ', err);
@@ -84,18 +89,22 @@ module.exports = (db, ARGS) => {
     });
   });
 
-  app.use('/api/tournaments', tournamentRoutes(db, ARGS.useMock));
+  app.use('/api/tournaments', tournamentRoutes(dbMain, ARGS.useMock));
   app.use(
     '/api/tournaments/:tournamentId/fixtures',
-    fixtureRoutes(db, ARGS.useMock)
+    fixtureRoutes(dbMain, ARGS.useMock)
   );
-  app.use('/api/regions', regionRoutes(db, ARGS.useMock));
-  app.use('/api', generalRoutes(db, ARGS.useMock));
-  app.use('/api/auth', authRoutes(db, ARGS.useMock));
-  app.use('/auth', authRoutes(db, ARGS.useMock)); // Add this line to also mount auth routes at /auth
+  app.use('/api/regions', regionRoutes(dbMain, ARGS.useMock));
+  app.use('/api', generalRoutes(dbMain, ARGS.useMock));
+  app.use('/api/auth', authRoutes(dbMain, ARGS.useMock));
+  app.use('/auth', authRoutes(dbMain, ARGS.useMock)); // Add this line to also mount auth routes at /auth
   app.use('/api/system', systemRoutes);
-  app.use('/api/clubs', clubsRoutes(db, ARGS.useMock));
-  app.use('/api/annual-reports', annualReportsRoutes(db, ARGS.useMock));
+  app.use('/api/clubs', clubsRoutes(dbMain, ARGS.useMock));
+  app.use('/api/annual-reports', annualReportsRoutes(dbMain, ARGS.useMock));
+
+  // New schemas
+  app.use('/api/events', eventsRoutes(dbs, ARGS.useMock));
+  app.use('/api/listings', listingsRoutes(dbs, ARGS.useMock));
 
   app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
