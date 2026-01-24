@@ -1,6 +1,6 @@
 name: 6.delete role
 method: DELETE
-url: http://localhost:4001/api/roles/$ROLE_ID
+url: $T_HOST/api/roles/$ROLE_ID
 headers:
 - name: Authorization
   value: Bearer $TOKEN
