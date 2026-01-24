@@ -1,16 +1,16 @@
 name: 3.new event
 method: POST
-url: $T_HOST/api/listings
+url: $T_HOST/api/events
 body:
   content: |-
     {
-      "title": "adsfa",
-      "description": "adsf",
-      "start_date": "2026-01-07 22:59",
-      "end_date": "2026-02-01 22:59",
+      "title": "adsfa oo dd",
+      "description": "adsf sss",
+      "startDate": "2026-01-07T22:59",
+      "endDate": "2026-02-01 22:59",
       "location": "asdf",
-      "organizer_id": "u@pp.c",
-      "image_url": "https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&q=80&w=600",
+      "organizerId": 6,
+      "imageUl": "https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&q=80&w=600",
       "sports": [
         "hurling"
       ],
