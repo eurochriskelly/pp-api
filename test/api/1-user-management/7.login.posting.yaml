@@ -1,0 +1,14 @@
+name: 7.login
+method: POST
+url: http://localhost:4001/api/auth/login
+headers:
+- name: Content-Type
+  value: application/json
+body: |
+  {
+    "email": "testuser@example.com",
+    "password": "Password123!"
+  }
+response:
+  json:
+    token: $TOKEN

@@ -1,0 +1,16 @@
+name: 2.create role
+method: POST
+url: http://localhost:4001/api/roles
+headers:
+- name: Content-Type
+  value: application/json
+- name: Authorization
+  value: Bearer $TOKEN
+body: |
+  {
+    "userId": $USER_ID,
+    "roleName": "organizer"
+  }
+response:
+  json:
+    id: $ROLE_ID

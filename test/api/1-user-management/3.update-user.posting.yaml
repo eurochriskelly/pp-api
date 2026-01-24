@@ -1,0 +1,12 @@
+name: 3.update user
+method: PUT
+url: http://localhost:4001/api/users/$USER_ID
+headers:
+- name: Content-Type
+  value: application/json
+- name: Authorization
+  value: Bearer $TOKEN
+body: |
+  {
+    "name": "Updated Test User"
+  }

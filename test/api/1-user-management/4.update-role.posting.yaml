@@ -1,0 +1,12 @@
+name: 4.update role
+method: PUT
+url: http://localhost:4001/api/roles/$ROLE_ID
+headers:
+- name: Content-Type
+  value: application/json
+- name: Authorization
+  value: Bearer $TOKEN
+body: |
+  {
+    "roleName": "admin"
+  }
