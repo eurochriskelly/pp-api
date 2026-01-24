@@ -6,11 +6,13 @@ headers:
   value: application/json
 - name: Authorization
   value: Bearer $TOKEN
-body: |
-  {
-    "userId": $USER_ID,
-    "roleName": "organizer"
-  }
+body:
+  content: |-
+    {
+      "userId": $USER_ID,
+      "roleName": "organizer"
+    }
+  content_type:  application/json
 response:
   json:
     id: $ROLE_ID
