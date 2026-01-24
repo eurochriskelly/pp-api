@@ -1,0 +1,17 @@
+name: 1.new listing
+method: POST
+url: $T_HOST/api/listings
+body:
+  content: |-
+    {
+      "title":"Test",
+      "slug":"test",
+      "created_by":"u@pp.c",
+      "event_ids":[]
+    }
+  content_type: application/json
+headers:
+- name: Authorization
+  value: Bearer $TOKEN
+- name: content-type
+  value: application/json

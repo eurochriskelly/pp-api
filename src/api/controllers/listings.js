@@ -28,7 +28,17 @@ module.exports = (dbs, useMock) => {
     },
     createListing: async (req, res, next) => {
       try {
-        const listing = await dbSvc.createListing(req.body);
+        // Extract fields and map to service expectations
+        const { title, slug, description, event_ids, eventIds } = req.body;
+        const data = {
+          title,
+          slug,
+          description,
+          eventIds: eventIds || event_ids || [],
+          createdBy: req.user ? req.user.id : undefined,
+        };
+
+        const listing = await dbSvc.createListing(data);
         res.status(201).json({ data: listing });
       } catch (err) {
         next(err);
@@ -37,7 +47,14 @@ module.exports = (dbs, useMock) => {
     updateListing: async (req, res, next) => {
       try {
         const { id } = req.params;
-        const listing = await dbSvc.updateListing(id, req.body);
+        const { title, slug, description, event_ids, eventIds } = req.body;
+        const data = {
+          title,
+          slug,
+          description,
+          eventIds: eventIds || event_ids,
+        };
+        const listing = await dbSvc.updateListing(id, data);
         res.json({ data: listing });
       } catch (err) {
         next(err);
