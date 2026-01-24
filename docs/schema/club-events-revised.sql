@@ -47,7 +47,7 @@ CREATE TABLE EventSports (
 CREATE TABLE Listings (
     id VARCHAR(50) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE, -- e.g., 'youth-events'
+    slug VARCHAR(255) UNIQUE, -- e.g., 'youth-events'
     description TEXT,
     created_by VARCHAR(50) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
