@@ -1,4 +1,4 @@
-name: 1.new listing
+name: 2.new listing
 method: POST
 url: $T_HOST/api/listings
 body:
