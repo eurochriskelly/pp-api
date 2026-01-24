@@ -1,4 +1,37 @@
 // @ts-nocheck
+require('dotenv').config();
+
+// --- DEBUG & CONFIG PRE-CHECK ---
+console.log('--- STARTUP DEBUG INFO ---');
+console.log(`Node Version: ${process.version}`);
+console.log(`PP_ENV: ${process.env.PP_ENV}`);
+console.log(`PP_DATABASE (initial): ${process.env.PP_DATABASE}`);
+
+const requiredForNonMock = [
+  'SMTP_HOST',
+  'SMTP_USER',
+  'SMTP_PASS',
+  'PP_HST',
+  'PP_USR',
+  'PP_PWD',
+];
+const missingVars = requiredForNonMock.filter((k) => !process.env[k]);
+
+if (missingVars.length > 0 && process.env.PP_DATABASE !== 'MockTourno') {
+  console.warn(
+    `\n[WARNING] Missing environment variables for non-mock mode: ${missingVars.join(', ')}`
+  );
+  console.warn(
+    '[INFO] Automatically switching to MockTourno mode to allow server startup.'
+  );
+  process.env.PP_DATABASE = 'MockTourno';
+}
+console.log(
+  `PP_DATABASE (effective): ${process.env.PP_DATABASE || 'MockTourno (defaulted)'}`
+);
+console.log('----------------------------\n');
+// --------------------------------
+
 const mysql = require('mysql2');
 const apiSetup = require('./api/index');
 
