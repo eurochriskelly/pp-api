@@ -6,7 +6,9 @@ headers:
   value: application/json
 - name: Authorization
   value: Bearer $TOKEN
-body: |
-  {
-    "name": "Updated Test User"
-  }
+body: 
+  content: |-
+    {
+      "name": "Updated Test User"
+    }
+  content_type: application/json

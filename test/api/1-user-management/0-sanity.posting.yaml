@@ -1,0 +1,3 @@
+name: 0.sanity
+method: GET
+url: http://$T_HOST/health
