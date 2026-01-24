@@ -14,6 +14,7 @@ const annualReportsRoutes = require('./routes/annual-reports');
 const clubsRoutes = require('./routes/clubs');
 const eventsRoutes = require('./routes/events');
 const listingsRoutes = require('./routes/listings');
+const usersRoutes = require('./routes/users');
 const { II } = require('../lib/logging'); // Import the logger
 
 const app = express();
@@ -105,6 +106,7 @@ module.exports = (dbs, ARGS) => {
   // New schemas
   app.use('/api/events', eventsRoutes(dbs, ARGS.useMock));
   app.use('/api/listings', listingsRoutes(dbs, ARGS.useMock));
+  app.use('/api', usersRoutes(dbMain, ARGS.useMock)); // Mounts /api/users and /api/roles
 
   app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 

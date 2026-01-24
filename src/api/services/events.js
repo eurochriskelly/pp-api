@@ -47,7 +47,10 @@ module.exports = (dbs) => {
     // Adjust columns to match what `sec_users` actually has.
     // Assuming 'id', 'Email', 'Name' based on previous auth.js code.
     const users = await selectMain(
-      'SELECT id, Email, Name, Role FROM sec_users WHERE id = ?',
+      `SELECT u.id, u.Email, u.Name, r.RoleName as Role 
+       FROM sec_users u 
+       LEFT JOIN sec_roles r ON u.id = r.UserId 
+       WHERE u.id = ?`,
       [userId]
     );
 
