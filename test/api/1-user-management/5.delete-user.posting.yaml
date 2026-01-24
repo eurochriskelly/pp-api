@@ -1,0 +1,6 @@
+name: 5.delete user
+method: DELETE
+url: http://localhost:4001/api/users/$USER_ID
+headers:
+- name: Authorization
+  value: Bearer $TOKEN
