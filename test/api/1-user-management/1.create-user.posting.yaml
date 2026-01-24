@@ -1,15 +1,15 @@
-name: 1. create-user
+name: 1.create-user
 method: POST
-url: http://tst-api.lan/api/users
-headers:
-  - name: Content-Type
-    value: application/json
+url: $T_HOST/api/users
 body:
   content: |-
     {
       "email": "$T_EMAIL",
       "password": "$T_PASS",
       "name": "Test User",
-      "role": "player"
+      "role": "organizer"
     }
-  content_type:  application/json
+  content_type: application/json
+headers:
+- name: Content-Type
+  value: application/json

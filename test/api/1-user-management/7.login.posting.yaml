@@ -1,14 +1,14 @@
 name: 7.login
 method: POST
-url: http://localhost:4001/api/auth/login
+url: $T_HOST/api/auth/login
 headers:
 - name: Content-Type
   value: application/json
 body: 
   content: |-
     {
-      "email": "testuser@example.com",
-      "password": "Password123!"
+      "email": "$T_EMAIL",
+      "password": "$T_PASS"
     }
   content_type: application/json
 response:

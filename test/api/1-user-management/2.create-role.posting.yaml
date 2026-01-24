@@ -1,6 +1,6 @@
 name: 2.create role
 method: POST
-url: http://localhost:4001/api/roles
+url: $T_HOST/api/roles
 headers:
 - name: Content-Type
   value: application/json
@@ -9,7 +9,7 @@ headers:
 body:
   content: |-
     {
-      "userId": $USER_ID,
+      "userId": "1",
       "roleName": "organizer"
     }
   content_type:  application/json

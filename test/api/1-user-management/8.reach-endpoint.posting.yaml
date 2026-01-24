@@ -1,6 +1,6 @@
 name: 8.reach endpoint
 method: GET
-url: http://localhost:4001/api/auth/me
+url: $T_HOST/api/auth/me
 headers:
 - name: Authorization
   value: Bearer $TOKEN
