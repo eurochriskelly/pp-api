@@ -1,31 +1,4 @@
-// Only enforce database environment variables if not in mock mode (inferred from PP_DATABASE)
-if (process.env.PP_DATABASE !== 'MockTourno') {
-  if (
-    !process.env['SMTP_HOST'] ||
-    !process.env['SMTP_USER'] ||
-    !process.env['SMTP_PASS']
-  ) {
-    throw new Error(
-      'SMTP env vars (SMTP_HOST, SMTP_USER, SMTP_PASS) required for non-mock.'
-    );
-  }
-  if (!process.env['PP_HST']) {
-    throw new Error(
-      `Env PP_HST is not defined for non-mock DB [${process.env.PP_DATABASE}].`
-    );
-  }
-  if (!process.env['PP_USR']) {
-    throw new Error(
-      `Env PP_USR is not defined for non-mock DB [${process.env.PP_DATABASE}].`
-    );
-  }
-  if (!process.env['PP_PWD']) {
-    throw new Error(
-      `Env PP_PWD is not defined for non-mock DB [${process.env.PP_DATABASE}].`
-    );
-  }
-}
-
+// @ts-nocheck
 module.exports = {
   dbConf: {
     host: process.env['PP_HST'], // Fallbacks for dev
