@@ -9,7 +9,7 @@ body:
       "startDate": "2026-01-07T22:59",
       "endDate": "2026-02-01 22:59",
       "location": "asdf",
-      "organizerId": 6,
+      "organizerId": "u@pp.c",
       "imageUl": "https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&q=80&w=600",
       "sports": [
         "hurling"

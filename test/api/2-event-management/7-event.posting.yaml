@@ -1,0 +1,6 @@
+name: 8.event
+method: DELETE
+url: $T_HOST/api/event
+headers:
+- name: Authorization
+  value: Bearer $TOKEN

@@ -1,0 +1,20 @@
+name: 3.new event with email organizer
+method: POST
+url: $T_HOST/api/events
+body:
+  content: |-
+    {
+      "title": "Event with Email Organizer",
+      "description": "Created using email as organizerId",
+      "startDate": "2026-06-01T10:00",
+      "endDate": "2026-06-01T12:00",
+      "location": "Test Location",
+      "organizerId": "u@pp.c",
+      "region": "Test Region"
+    }
+  content_type: application/json
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN
+  - name: content-type
+    value: application/json

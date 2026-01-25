@@ -1,0 +1,24 @@
+name: 9.update event
+description: |-
+  Modify an event
+method: PUT
+url: $T_HOST/api/events/$T_EVENT_ID
+body:
+  content: |-
+    {
+      "title": "The fields of Athenry",
+      "description": "A fun event for all the family",
+      "location": "A better location",
+      "region": "Benelux",
+      "imageUrl": "https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&q=80&w=600",
+      "organizerId": "8",
+      "sports": [
+        "hurling"
+      ]
+    }
+  content_type: application/json
+headers:
+- name: Authorization
+  value: Bearer $TOKEN
+- name: content-type
+  value: application/json

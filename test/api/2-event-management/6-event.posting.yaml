@@ -1,0 +1,5 @@
+name: 6.event
+url: $T_HOST/api/event/$T_EVENT_ID
+headers:
+- name: Authorization
+  value: Bearer $TOKEN

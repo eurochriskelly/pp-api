@@ -1,0 +1,6 @@
+name: 7.listing
+method: DELETE
+url: $T_HOST/api/listings/$T_LISTING_ID2
+headers:
+- name: Authorization
+  value: Bearer $TOKEN
