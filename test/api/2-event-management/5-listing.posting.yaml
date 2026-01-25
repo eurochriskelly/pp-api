@@ -1,0 +1,5 @@
+name: 5.listing
+url: $T_HOST/api/listings/$T_LISTING_ID
+headers:
+- name: Authorization
+  value: Bearer $TOKEN
