@@ -70,6 +70,28 @@ module.exports = (dbs) => {
     );
   };
 
+  // Helper to resolve email to User ID if necessary
+  const resolveUserId = async (idOrEmail) => {
+    // If not a string or doesn't look like an email, assume it's already an ID
+    if (typeof idOrEmail !== 'string' || !idOrEmail.includes('@')) {
+      return idOrEmail;
+    }
+
+    // If we don't have access to main DB, we can't look up email
+    if (!dbMain) return idOrEmail;
+
+    const { select: selectMain } = dbHelper(dbMain);
+    const users = await selectMain('SELECT id FROM sec_users WHERE Email = ?', [
+      idOrEmail,
+    ]);
+
+    if (users.length === 0) {
+      throw new Error(`User with email '${idOrEmail}' not found.`);
+    }
+
+    return users[0].id;
+  };
+
   const getEvent = async (id) => {
     const events = await select('SELECT * FROM Events WHERE id = ?', [id]);
     if (!events.length) return null;
@@ -161,7 +183,7 @@ module.exports = (dbs) => {
     },
 
     createEvent: async (data) => {
-      const {
+      let {
         title,
         description,
         startDate,
@@ -170,13 +192,21 @@ module.exports = (dbs) => {
         region,
         imageUrl,
         organizerId,
+        organizerEmail,
         sports,
       } = data;
+
+      if (!organizerId && organizerEmail) {
+        organizerId = await resolveUserId(organizerEmail);
+      } else if (organizerId) {
+        // Just in case they sent an email in the ID field (backward compatibility/safety)
+        organizerId = await resolveUserId(organizerId);
+      }
 
       // Validation
       if (!title) throw new Error('Title is required');
       if (!startDate) throw new Error('Start date is required');
-      if (!organizerId) throw new Error('Organizer ID is required');
+      if (!organizerId) throw new Error('Organizer ID or Email is required');
 
       // Sync User first to satisfy Foreign Key
       await syncUser(organizerId);
@@ -216,6 +246,7 @@ module.exports = (dbs) => {
         region,
         imageUrl,
         organizerId,
+        organizerEmail,
         sports,
       } = data;
 
@@ -250,9 +281,18 @@ module.exports = (dbs) => {
           fields.push('image_url = ?');
           params.push(imageUrl);
         }
-        if (organizerId !== undefined) {
+
+        let finalOrganizerId = organizerId;
+        if (finalOrganizerId === undefined && organizerEmail !== undefined) {
+          finalOrganizerId = await resolveUserId(organizerEmail);
+        } else if (finalOrganizerId !== undefined) {
+          finalOrganizerId = await resolveUserId(finalOrganizerId);
+        }
+
+        if (finalOrganizerId !== undefined) {
+          await syncUser(finalOrganizerId);
           fields.push('organizer_id = ?');
-          params.push(organizerId);
+          params.push(finalOrganizerId);
         }
 
         if (fields.length) {
