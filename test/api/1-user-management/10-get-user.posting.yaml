@@ -1,0 +1,5 @@
+name: 10.get user
+url: $T_HOST/api/users/$T_USER_ID
+headers:
+- name: Authorization
+  value: Bearer $TOKEN

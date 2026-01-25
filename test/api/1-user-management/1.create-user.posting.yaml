@@ -6,7 +6,7 @@ body:
     {
       "email": "$T_EMAIL",
       "password": "$T_PASS",
-      "name": "Test User",
+      "name": "$T_USERNAME",
       "role": "organizer"
     }
   content_type: application/json

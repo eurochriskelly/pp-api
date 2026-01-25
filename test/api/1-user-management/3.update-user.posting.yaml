@@ -1,14 +1,14 @@
 name: 3.update user
 method: PUT
-url: $T_HOST/api/users/$USER_ID
+url: $T_HOST/api/users/$T_USER_ID
+body:
+  content: |-
+    {
+      "password": "$T_PASS"
+    }
+  content_type: application/json
 headers:
 - name: Content-Type
   value: application/json
 - name: Authorization
   value: Bearer $TOKEN
-body: 
-  content: |-
-    {
-      "name": "Updated Test User"
-    }
-  content_type: application/json
