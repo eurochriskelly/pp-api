@@ -6,18 +6,21 @@ let users = {
   'p@pp.com': {
     id: 'player1',
     email: 'p@pp.com',
+    name: 'Player One',
     password: 'p',
     role: 'player',
   },
   'o@pp.com': {
     id: 'organizer1',
     email: 'o@pp.com',
+    name: 'Organizer One',
     password: 'o',
     role: 'organizer',
   },
   'r@pp.com': {
     id: 'referee1',
     email: 'r@pp.com',
+    name: 'Referee One',
     password: 'r',
     role: 'referee',
   },
@@ -82,6 +85,7 @@ module.exports = () => {
             role: user.role,
             email: user.email,
             id: user.id,
+            name: user.name,
           },
           token,
         };

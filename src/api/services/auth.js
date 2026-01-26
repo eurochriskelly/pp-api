@@ -160,6 +160,7 @@ module.exports = (db) => {
           role: user.Role || 'player',
           email: user.Email,
           id: user.id,
+          name: user.Name,
         },
         token,
       };
