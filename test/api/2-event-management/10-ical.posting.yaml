@@ -1,0 +1,5 @@
+name: 10.ical
+url: $T_HOST/api/listings/$T_LISTING_ID/ical
+headers:
+- name: Authorization
+  value: Bearer $TOKEN
