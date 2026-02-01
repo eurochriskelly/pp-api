@@ -1,0 +1,6 @@
+name: 13. Global Search
+url: $T_HOST/api/events/search?q=Test
+method: GET
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN

@@ -1,0 +1,6 @@
+name: 11. Listing Events
+url: $T_HOST/api/listings/test/events
+method: GET
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN

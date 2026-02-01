@@ -10,6 +10,7 @@ module.exports = (dbs, useMock) => {
   const protect = authMiddleware(dbs.main, useMock);
 
   router.get('/', ctrl.getEvents);
+  router.get('/search', ctrl.searchEvents);
   router.get('/:id', ctrl.getEvent);
 
   router.post('/', protect, ctrl.createEvent);

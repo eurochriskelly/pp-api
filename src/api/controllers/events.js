@@ -22,6 +22,19 @@ module.exports = (db, useMock) => {
         next(err);
       }
     },
+    searchEvents: async (req, res, next) => {
+      try {
+        const { q, include_past } = req.query;
+        const filters = {
+          q,
+          includePast: include_past === 'true',
+        };
+        const events = await dbSvc.searchEvents(filters);
+        res.json({ data: events });
+      } catch (err) {
+        next(err);
+      }
+    },
     getEvent: async (req, res, next) => {
       try {
         const { id } = req.params;

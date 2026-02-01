@@ -1,0 +1,6 @@
+name: 14. Listing Events Search
+url: $T_HOST/api/listings/test/events?search=Test&include_past=true
+method: GET
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN
