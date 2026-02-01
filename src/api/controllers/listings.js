@@ -26,6 +26,40 @@ module.exports = (dbs, useMock) => {
         next(err);
       }
     },
+    getListingEvents: async (req, res, next) => {
+      try {
+        const { id } = req.params;
+        // Map query params to filters
+        const filters = {
+          search: req.query.search,
+          sport: req.query.sport,
+          region: req.query.region,
+          startDate: req.query.start_date || req.query.startDate,
+          endDate: req.query.end_date || req.query.endDate,
+          includePast: req.query.include_past === 'true',
+        };
+
+        const events = await dbSvc.getListingEvents(id, filters);
+        if (events === null) {
+          return res.status(404).json({ error: 'Listing not found' });
+        }
+        res.json({ data: events });
+      } catch (err) {
+        next(err);
+      }
+    },
+    getListingTimeline: async (req, res, next) => {
+      try {
+        const { id } = req.params;
+        const timeline = await dbSvc.getListingTimeline(id);
+        if (timeline === null) {
+          return res.status(404).json({ error: 'Listing not found' });
+        }
+        res.json({ data: timeline });
+      } catch (err) {
+        next(err);
+      }
+    },
     getListingIcal: async (req, res, next) => {
       try {
         const { id } = req.params;

@@ -1,0 +1,6 @@
+name: 12. Listing Timeline
+url: $T_HOST/api/listings/test/timeline
+method: GET
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN

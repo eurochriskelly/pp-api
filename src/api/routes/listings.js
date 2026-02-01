@@ -10,6 +10,8 @@ module.exports = (dbs, useMock) => {
 
   router.get('/', ctrl.getListings);
   router.get('/:id', ctrl.getListing); // :id can be slug too
+  router.get('/:id/events', ctrl.getListingEvents);
+  router.get('/:id/timeline', ctrl.getListingTimeline);
   router.get('/:id/ical', ctrl.getListingIcal);
 
   router.post('/', protect, ctrl.createListing);

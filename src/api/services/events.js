@@ -144,6 +144,38 @@ module.exports = (dbs) => {
   return {
     getEvent,
 
+    searchEvents: async (filters) => {
+      let query = 'SELECT * FROM Events WHERE 1=1';
+      const params = [];
+
+      if (filters.q) {
+        query += ' AND (title LIKE ? OR description LIKE ?)';
+        params.push(`%${filters.q}%`, `%${filters.q}%`);
+      }
+
+      if (!filters.includePast) {
+        query += ' AND end_date >= NOW()';
+      }
+
+      query += ' ORDER BY start_date ASC';
+
+      const events = await select(query, params);
+
+      // Populate sports
+      for (const event of events) {
+        const sports = await select(
+          `SELECT s.name as sport 
+           FROM EventSports es
+           JOIN Sports s ON es.sport_id = s.id
+           WHERE es.event_id = ?`,
+          [event.id]
+        );
+        event.sports = sports.map((s) => s.sport);
+      }
+
+      return events.map(mapEventToApi);
+    },
+
     listEvents: async (filters) => {
       let query = 'SELECT * FROM Events WHERE 1=1';
       const params = [];
