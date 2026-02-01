@@ -100,6 +100,12 @@ module.exports = (dbs, useMock) => {
         const listing = await dbSvc.createListing(data);
         res.status(201).json({ data: listing });
       } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+          return res.status(409).json({
+            error: 'Duplicate entry',
+            message: 'A listing with this slug already exists.',
+          });
+        }
         next(err);
       }
     },
