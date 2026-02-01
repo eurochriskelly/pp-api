@@ -2,11 +2,24 @@ const dbHelper = require('../../lib/db-helper');
 const { v4: uuidv4 } = require('uuid');
 
 function mapListingToApi(dbListing) {
+  let heroConfig = dbListing.hero_config;
+  // If it's a string (e.g. stored as TEXT or returned as string), parse it
+  if (typeof heroConfig === 'string') {
+    try {
+      heroConfig = JSON.parse(heroConfig);
+    } catch {
+      // If parsing fails, return as is or null.
+      // Given the requirement is a JSON object, we might want to ensure it's one,
+      // but if the DB has bad data, better not to crash.
+    }
+  }
+
   return {
     id: dbListing.id,
     title: dbListing.title,
     slug: dbListing.slug,
     description: dbListing.description,
+    heroConfig,
     createdBy: dbListing.created_by,
     eventIds: dbListing.event_ids || [],
     events: dbListing.events || undefined,
@@ -132,14 +145,21 @@ module.exports = (dbs) => {
 
     createListing: async (data) => {
       const id = `lst_${uuidv4().split('-')[0]}`;
-      const { title, slug, description, createdBy, eventIds } = data;
+      const { title, slug, description, createdBy, eventIds, hero_config } =
+        data;
 
       await syncUser(createdBy);
 
+      // Ensure hero_config is a string if it's an object, for DB compatibility
+      const heroConfigVal =
+        hero_config && typeof hero_config === 'object'
+          ? JSON.stringify(hero_config)
+          : hero_config;
+
       await transaction(async () => {
         await insert(
-          `INSERT INTO Listings (id, title, slug, description, created_by) VALUES (?, ?, ?, ?, ?)`,
-          [id, title, slug, description, createdBy]
+          `INSERT INTO Listings (id, title, slug, description, created_by, hero_config) VALUES (?, ?, ?, ?, ?, ?)`,
+          [id, title, slug, description, createdBy, heroConfigVal]
         );
 
         if (eventIds && eventIds.length) {
@@ -156,7 +176,7 @@ module.exports = (dbs) => {
     },
 
     updateListing: async (id, data) => {
-      const { title, slug, description, eventIds } = data;
+      const { title, slug, description, eventIds, hero_config } = data;
 
       await transaction(async () => {
         const fields = [];
@@ -172,6 +192,14 @@ module.exports = (dbs) => {
         if (description !== undefined) {
           fields.push('description = ?');
           params.push(description);
+        }
+        if (hero_config !== undefined) {
+          fields.push('hero_config = ?');
+          params.push(
+            hero_config && typeof hero_config === 'object'
+              ? JSON.stringify(hero_config)
+              : hero_config
+          );
         }
 
         if (fields.length) {

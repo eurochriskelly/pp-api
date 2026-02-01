@@ -86,11 +86,13 @@ module.exports = (dbs, useMock) => {
     createListing: async (req, res, next) => {
       try {
         // Extract fields and map to service expectations
-        const { title, slug, description, event_ids, eventIds } = req.body;
+        const { title, slug, description, event_ids, eventIds, hero_config } =
+          req.body;
         const data = {
           title,
           slug,
           description,
+          hero_config,
           eventIds: eventIds || event_ids || [],
           createdBy: req.user ? req.user.id : undefined,
         };
@@ -104,11 +106,13 @@ module.exports = (dbs, useMock) => {
     updateListing: async (req, res, next) => {
       try {
         const { id } = req.params;
-        const { title, slug, description, event_ids, eventIds } = req.body;
+        const { title, slug, description, event_ids, eventIds, hero_config } =
+          req.body;
         const data = {
           title,
           slug,
           description,
+          hero_config,
           eventIds: eventIds || event_ids,
         };
         const listing = await dbSvc.updateListing(id, data);
