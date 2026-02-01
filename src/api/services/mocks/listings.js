@@ -56,9 +56,12 @@ module.exports = () => {
 
     createListing: async (data) => {
       const id = `lst_${uuidv4().split('-')[0]}`;
+      // Map hero_config to heroConfig to match API response style
+      const { hero_config, ...rest } = data;
       const newListing = {
         id,
-        ...data,
+        ...rest,
+        heroConfig: hero_config,
         eventIds: data.eventIds || [],
       };
       mockListings.push(newListing);
@@ -68,10 +71,14 @@ module.exports = () => {
     updateListing: async (id, data) => {
       const index = mockListings.findIndex((l) => l.id === id);
       if (index !== -1) {
+        const { hero_config, ...rest } = data;
         mockListings[index] = {
           ...mockListings[index],
-          ...data,
+          ...rest,
         };
+        if (hero_config !== undefined) {
+          mockListings[index].heroConfig = hero_config;
+        }
         return mockListings[index];
       }
       return null;
