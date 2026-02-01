@@ -1,0 +1,28 @@
+name: 1b.new listing with hero config
+method: POST
+url: $T_HOST/api/listings
+body:
+  content: |-
+    {
+      "title": "Hero Configuration Test",
+      "slug": "hero-config-test",
+      "description": "A listing with hero configuration",
+      "created_by": "u@pp.c",
+      "event_ids": [],
+      "hero_config": {
+        "headline": "European Youth GAA Calendar",
+        "subheadline": "Matches, camps, and tournaments across Europe.",
+        "logoUrl": "https://placehold.co/100x100",
+        "ctaLabel": "View Events",
+        "style": "image",
+        "backgroundImageUrl": "https://placehold.co/600x400",
+        "primaryColor": "#059669",
+        "overlayOpacity": 60
+      }
+    }
+  content_type: application/json
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN
+  - name: content-type
+    value: application/json

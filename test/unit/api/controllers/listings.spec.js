@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const listingsControllerFactory = require('../../../../src/api/controllers/listings');
 
-test('getListingIcal generates valid iCal content', async (t) => {
+test('getListingIcal generates valid iCal content', async () => {
   const req = {
     params: { id: 'lst_99' },
   };
@@ -57,7 +57,7 @@ test('getListingIcal generates valid iCal content', async (t) => {
   assert.ok(sentData.includes('END:VCALENDAR'));
 });
 
-test('getListingIcal returns 404 for missing listing', async (t) => {
+test('getListingIcal returns 404 for missing listing', async () => {
   const req = {
     params: { id: 'non_existent_listing' },
   };
@@ -91,4 +91,126 @@ test('getListingIcal returns 404 for missing listing', async (t) => {
 
   assert.equal(status, 404);
   assert.deepEqual(sentData, { error: 'Listing not found' });
+});
+
+// Mock request/response helpers for hero tests
+function createMockRes() {
+  const res = {
+    statusCode: 200,
+    headers: {},
+    data: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(data) {
+      this.data = data;
+      return this;
+    },
+    send(data) {
+      this.data = data;
+      return this;
+    },
+    set(key, value) {
+      this.headers[key] = value;
+    },
+  };
+  return res;
+}
+
+const mockNext = (err) => {
+  throw err;
+};
+
+// Initialize controller with useMock=true (shared)
+const controller = listingsControllerFactory({}, true);
+
+test('createListing accepts hero_config and returns heroConfig', async (t) => {
+  const heroConfig = {
+    headline: 'Test Headline',
+    primaryColor: '#000000',
+  };
+
+  const req = {
+    body: {
+      title: 'Hero Listing',
+      slug: 'hero-listing',
+      hero_config: heroConfig,
+    },
+    user: { id: 'usr_test' },
+  };
+  const res = createMockRes();
+
+  await controller.createListing(req, res, mockNext);
+
+  assert.equal(res.statusCode, 201);
+  assert.ok(res.data.data.id);
+  assert.deepEqual(res.data.data.heroConfig, heroConfig);
+
+  // Store ID for next tests
+  t.diagnostic(`Created listing ID: ${res.data.data.id}`);
+});
+
+test('getListing returns heroConfig', async () => {
+  // First create one
+  const heroConfig = {
+    headline: 'Get Test',
+    style: 'image',
+  };
+
+  const createReq = {
+    body: { title: 'Get Test', slug: 'get-test', hero_config: heroConfig },
+    user: { id: 'usr_test' },
+  };
+  const createRes = createMockRes();
+  await controller.createListing(createReq, createRes, mockNext);
+  const id = createRes.data.data.id;
+
+  // Now get it
+  const req = { params: { id } };
+  const res = createMockRes();
+
+  // Mock query for expand
+  req.query = {};
+
+  await controller.getListing(req, res, mockNext);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.data.data.heroConfig, heroConfig);
+});
+
+test('updateListing updates hero_config', async () => {
+  // First create one
+  const createReq = {
+    body: { title: 'Update Test', slug: 'update-test' },
+    user: { id: 'usr_test' },
+  };
+  const createRes = createMockRes();
+  await controller.createListing(createReq, createRes, mockNext);
+  const id = createRes.data.data.id;
+
+  // Update it
+  const newHeroConfig = {
+    headline: 'Updated Headline',
+    overlayOpacity: 80,
+  };
+
+  const req = {
+    params: { id },
+    body: {
+      hero_config: newHeroConfig,
+    },
+  };
+  const res = createMockRes();
+
+  await controller.updateListing(req, res, mockNext);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.data.data.heroConfig, newHeroConfig);
+
+  // Verify with GET
+  const getReq = { params: { id }, query: {} };
+  const getRes = createMockRes();
+  await controller.getListing(getReq, getRes, mockNext);
+  assert.deepEqual(getRes.data.data.heroConfig, newHeroConfig);
 });
