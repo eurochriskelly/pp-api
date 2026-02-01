@@ -1,0 +1,20 @@
+name: 5a.update listing hero config
+method: PUT
+url: $T_HOST/api/listings/$T_LISTING_ID
+body:
+  content: |-
+    {
+      "hero_config": {
+        "headline": "Updated Hero Config",
+        "subheadline": "This has been updated via PUT",
+        "style": "gradient",
+        "primaryColor": "#ff0000",
+        "overlayOpacity": 80
+      }
+    }
+  content_type: application/json
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN
+  - name: content-type
+    value: application/json
