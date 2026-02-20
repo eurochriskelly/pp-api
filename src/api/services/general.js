@@ -74,15 +74,17 @@ module.exports = (db) => {
     },
 
     listPitches: async (tournamentId) => {
-      const pitchEvents = await select(
-        `SELECT DISTINCT * FROM v_pitch_events WHERE tournamentId = ?`,
+      // Always get pitches from the pitches table directly to ensure we get all pitches
+      // regardless of whether they have events in v_pitch_events
+      const allPitches = await select(
+        `SELECT id, pitch, location, type FROM pitches WHERE tournamentId = ? ORDER BY pitch`,
         [tournamentId]
       );
-      if (pitchEvents.length) return pitchEvents;
-      return await select(
-        `SELECT MAX(id) AS id, pitch, location FROM pitches WHERE tournamentId = ? GROUP BY pitch, location`,
-        [tournamentId]
+      console.log(
+        `[listPitches] Found ${allPitches.length} pitches for tournament ${tournamentId}:`,
+        allPitches.map((p) => p.pitch)
       );
+      return allPitches;
     },
 
     listStandings: async (tournamentId, category) => {

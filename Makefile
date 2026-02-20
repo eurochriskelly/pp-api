@@ -10,6 +10,15 @@ help:  ## Show this help menu
 mocks:  ## Start server in mock mode (usage: make mocks [port=NUMBER])
 	./scripts/make/mocks.sh $(port)
 
+dev:  ## Start server in dev mode connecting to tst-data.lan
+	@set -a && source .env && set +a && \
+	set -a && source .kamal/secrets.tst && set +a && \
+	PP_HST=tst-data.lan \
+	PP_USR=$$PP_USR_TST \
+	PP_PWD=$$PP_PWD \
+	PP_DATABASE=$$PP_DATABASE \
+	npm run dev
+
 start:  ## Start server with auto-restart (usage: make start [env=production|acceptance] [port=NUMBER])
 	./scripts/make/start.sh $(env) $(port)
 
