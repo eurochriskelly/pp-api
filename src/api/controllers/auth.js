@@ -144,5 +144,22 @@ module.exports = (db, useMock) => {
         res.status(500).json({ error: err.message });
       }
     },
+
+    checkEmail: async (req, res) => {
+      const { email } = req.body;
+      try {
+        if (!email) {
+          return res.status(400).json({ error: 'Email is required' });
+        }
+        const user = await dbSvc.checkEmail(email);
+        if (user) {
+          return res.status(200).json({ exists: true });
+        } else {
+          return res.status(404).json({ exists: false });
+        }
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+    },
   };
 };

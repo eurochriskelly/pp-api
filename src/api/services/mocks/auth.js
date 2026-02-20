@@ -148,5 +148,10 @@ module.exports = () => {
       DD(`Mock: Token [${token}] is invalid or expired.`);
       throw new Error('Invalid or expired token');
     },
+
+    checkEmail: async (email) => {
+      II(`Mock: checkEmail for [${email}]`);
+      return users[email] || null;
+    },
   };
 };
