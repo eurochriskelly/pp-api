@@ -218,5 +218,10 @@ module.exports = (db) => {
       const users = await select(query, params);
       return users;
     },
+
+    checkEmail: async (email) => {
+      const user = await getUserWithRole(email);
+      return user || null;
+    },
   };
 };
