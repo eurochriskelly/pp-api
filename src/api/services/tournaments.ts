@@ -224,9 +224,10 @@ export default (db: any) => {
     createFixtures: async (tournamentId: number, fixtureRows: any[]) => {
       DD(`Creating fixtures for tournament with id ${tournamentId}`);
       try {
-        const pitches = fixtureRows.map((row) => {
+        const uniquePitches = [...new Set(fixtureRows.map((row) => row.PITCH))];
+        const pitches = uniquePitches.map((pitchName) => {
           return {
-            pitch: row.PITCH,
+            pitch: pitchName,
             location: null,
             type: 'grass',
             tournamentId,

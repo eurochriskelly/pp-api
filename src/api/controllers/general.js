@@ -26,7 +26,9 @@ module.exports = (db, useMock) => {
 
     listPitches: async (req, res) => {
       try {
-        const pitches = await dbSvc.listPitches(req.params.tournamentId);
+        const pitches = await dbSvc.listPitches(
+          parseInt(req.params.tournamentId)
+        );
         res.json({ data: pitches });
       } catch (err) {
         console.log(err);
