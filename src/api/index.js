@@ -74,7 +74,7 @@ module.exports = (dbs, ARGS) => {
   );
 
   app.use(cors());
-  app.use(morgan('dev'));
+  app.use(morgan('dev', { skip: (req) => req.path === '/health' }));
 
   // Direct endpoint (unchanged)
   app.post('/api/upload', (req, res) => {
