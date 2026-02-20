@@ -4,6 +4,9 @@ require('dotenv').config();
 const mysql = require('mysql2');
 const apiSetup = require('./api/index');
 
+// Get version from package.json
+const packageJson = require('../package.json');
+
 // Dereference all from env at top
 const port = parseInt(process.env.PP_PORT_API || process.env.PORT || '4001');
 const app =
@@ -13,6 +16,7 @@ const staticPath = `/gcp/dist/${app}/`;
 
 const ARGS = { port, app, database, staticPath };
 
+console.log(`PP-API Version: ${packageJson.version}`);
 console.log(
   `Using PP_ENV=${process.env.PP_ENV || 'development'}, database=${database}, app=${app}, port=${port}`
 );
