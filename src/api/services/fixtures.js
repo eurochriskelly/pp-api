@@ -152,11 +152,12 @@ module.exports = (db) => {
 
       const categoryCompositions =
         await getOrCalculateTournamentCategoryCompositions(tournamentId);
-      return await Promise.all(
+      const results = await Promise.all(
         fixtures
           .sort((a, b) => new Date(a.scheduled) - new Date(b.scheduled))
           .map((f) => embellishFixture(f, {}, categoryCompositions))
       );
+      return results || [];
     },
 
     // Not called directly from route
