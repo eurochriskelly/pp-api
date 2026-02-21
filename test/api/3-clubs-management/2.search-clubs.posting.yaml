@@ -1,0 +1,7 @@
+name: 2.search-clubs
+method: GET
+url: $T_HOST/api/clubs?search=Amherst&limit=5
+body:
+  content: ''
+  content_type: ''
+headers: []

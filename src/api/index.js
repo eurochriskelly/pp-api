@@ -73,6 +73,38 @@ module.exports = (dbs, ARGS) => {
     }
   );
 
+  // Club logo upload route - must be defined before JSON parser to handle binary data
+  const authMiddlewareFactory = require('./middleware/auth');
+  const auth = authMiddlewareFactory(dbMain, ARGS.useMock);
+  app.post(
+    '/api/clubs/:id/logo',
+    auth,
+    bodyParser.raw({ type: 'image/*', limit: '5mb' }),
+    (req, res) => {
+      console.log(
+        'Club logo upload route hit:',
+        req.params,
+        'Body type:',
+        typeof req.body,
+        'Body length:',
+        req.body ? req.body.length : 'null'
+      );
+      try {
+        const clubsController = require('./controllers/clubs');
+        const ctrl = clubsController(dbMain, ARGS.useMock);
+        ctrl.uploadLogo(req, res, (err) => {
+          if (err) {
+            console.error('Logo upload error: ', err);
+            res.status(500).json({ error: err.message });
+          }
+        });
+      } catch (error) {
+        console.error('Logo upload route error: ', error);
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
   app.use(cors());
   app.use(morgan('dev', { skip: (req) => req.path === '/health' }));
 

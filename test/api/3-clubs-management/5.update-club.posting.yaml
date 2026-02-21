@@ -1,0 +1,15 @@
+name: 5.update-club
+method: PUT
+url: $T_HOST/api/clubs/1
+body:
+  content: |-
+    {
+      "city": "Updated City",
+      "clubCode": "UPD"
+    }
+  content_type: application/json
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $T_TOKEN
