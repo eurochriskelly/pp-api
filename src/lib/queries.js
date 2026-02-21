@@ -1,46 +1,6 @@
 module.exports = {
-  calculateRankings: async (tournamentId, category, select) => {
-    const groupData = {};
-    let rankings = [];
-    let q = ` select * from v_group_standings where tournamentId=${tournamentId} and category = '${category}'`;
-    const standings = (await select(q)).data;
-    // generate group counts
-    const groups = new Set();
-    standings.forEach((s) => {
-      groups.add(s.grp);
-      if (!Object.prototype.hasOwnProperty.call(groupData, `g${s.grp}`)) {
-        groupData[`g${s.grp}`] = 1;
-      } else {
-        groupData[`g${s.grp}`] += 1;
-      }
-    });
-    // include average points
-    standings.forEach((s) => {
-      s.PointsDifferenceAverage = s.PointsDifference / groupData[`g${s.grp}`];
-    });
-    // Now build rankings table
-    let group = 1;
-    let place = 1;
-    standings.forEach((s) => {
-      if (s.grp !== group) {
-        place = 1;
-        group++;
-      }
-      rankings.push({
-        id: s.id,
-        team: s.team,
-        place: place++,
-        pda: s.PointsDifferenceAverage,
-      });
-    });
-    // sort rankings
-    rankings = rankings
-      .sort((a, b) => (a.pda > b.pda ? -1 : a.pda < b.pda ? 1 : 0))
-      .sort((a, b) => (a.place > b.place ? 1 : a.place < b.place ? -1 : 0));
-    console.table(rankings);
-    return rankings;
-  },
   sqlGroupStandings,
+  sqlGroupStandingsWithH2H,
   sqlGroupRankings: (
     rank = 1,
     winAward = 2,
@@ -185,5 +145,85 @@ function sqlGroupStandings(
         : ''
     }
     ) as vgs`;
+  return query;
+}
+
+/**
+ * Generate SQL query for group standings including head-to-head match data
+ * This is used with the head-to-head tiebreaker in JavaScript
+ * @param {number} winAward - Points for a win (default: 2)
+ * @param {number} drawAward - Points for a draw (default: 1)
+ * @param {number} lossAward - Points for a loss (default: 0)
+ * @param {number} goalsPoints - Points per goal (default: 3)
+ * @param {number} pointsPoints - Points per point (default: 1)
+ * @returns {string} SQL query string
+ */
+function sqlGroupStandingsWithH2H(
+  winAward = 2,
+  drawAward = 1,
+  lossAward = 0,
+  goalsPoints = 3,
+  pointsPoints = 1
+) {
+  const t1Score = `((f.goals1 * ${goalsPoints}) + (f.points1 * ${pointsPoints}))`;
+  const t2Score = `((f.goals2 * ${goalsPoints}) + (f.points2 * ${pointsPoints}))`;
+
+  const standingsQuery = sqlGroupStandings(
+    winAward,
+    drawAward,
+    lossAward,
+    goalsPoints,
+    pointsPoints,
+    false
+  );
+
+  // Remove the outer wrapper and alias for use in CTE
+  // The sqlGroupStandings returns: "(...) as vgs", we need just the inner SELECT
+  const standingsInnerQuery = standingsQuery
+    .replace(/^\s*\(\s*/, '') // Remove opening "("
+    .replace(/\s*\)\s*as\s+vgs\s*$/i, ''); // Remove ") as vgs" at end
+
+  const query = `
+    WITH BaseStandings AS (
+      ${standingsInnerQuery}
+    ),
+    HeadToHeadMatches AS (
+      -- Get all matches between teams in the same group/category/tournament
+      SELECT 
+        f.category,
+        f.groupNumber AS grp,
+        f.team1Id AS teamA,
+        f.team2Id AS teamB,
+        ${t1Score} AS scoreA,
+        ${t2Score} AS scoreB
+      FROM fixtures f
+      WHERE f.stage = 'group'
+        AND f.goals1 IS NOT NULL 
+        AND f.goals2 IS NOT NULL
+        AND f.outcome NOT IN ('conceded', 'forfeit', 'not played')
+    )
+    SELECT 
+      bs.category,
+      bs.grp,
+      bs.team,
+      bs.tournamentId,
+      bs.MatchesPlayed,
+      bs.Wins,
+      bs.Draws,
+      bs.Losses,
+      bs.PointsFrom,
+      bs.PointsDifference,
+      bs.TotalPoints,
+      hhm.teamA AS h2hTeamA,
+      hhm.teamB AS h2hTeamB,
+      hhm.scoreA AS h2hScoreA,
+      hhm.scoreB AS h2hScoreB
+    FROM BaseStandings bs
+    LEFT JOIN HeadToHeadMatches hhm 
+      ON (bs.team = hhm.teamA OR bs.team = hhm.teamB)
+      AND bs.category = hhm.category 
+      AND bs.grp = hhm.grp
+    ORDER BY bs.category DESC, bs.grp, bs.TotalPoints DESC, bs.PointsDifference DESC, bs.PointsFrom DESC`;
+
   return query;
 }
