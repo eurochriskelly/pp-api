@@ -73,7 +73,7 @@ function calcStage(stage, groupNumber) {
 
 function getMatchStatus(outcome, score1, score2) {
   if (outcome === 'not played') return 'contender';
-  if (!score1) return 'contender';
+  if (score1 == null) return 'contender';
   if (score1 > score2) return 'won';
   if (score2 > score1) return 'lost';
   if (score1 === score2) return 'draw';
