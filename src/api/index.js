@@ -108,6 +108,12 @@ module.exports = (dbs, ARGS) => {
   app.use('/api/listings', listingsRoutes(dbs, ARGS.useMock));
   app.use('/api', usersRoutes(dbMain, ARGS.useMock)); // Mounts /api/users and /api/roles
 
+  // Internal/test-only endpoints (dev/test environments only)
+  if (process.env.NODE_ENV !== 'production') {
+    const internalRoutes = require('./routes/internal').default;
+    app.use('/api/internal', internalRoutes(dbMain, ARGS.useMock, true));
+  }
+
   app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
   app.get('*', (req, res) => {

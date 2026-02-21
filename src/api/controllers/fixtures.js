@@ -97,11 +97,21 @@ module.exports = (db, useMock) => {
 
     rewindFixture: async (req, res) => {
       const { tournamentId } = req.params;
-      const { id, category, stage } =
-        await dbSvc.rewindLatestFixture(tournamentId);
-      res.json({
-        message: `Removed score for category [${category}] fixture [${id}] stage [${stage}]`,
-      });
+      try {
+        const result = await dbSvc.rewindLatestFixture(tournamentId);
+        if (!result) {
+          return res.status(404).json({
+            error: 'No started fixture found to rewind',
+          });
+        }
+        const { id, category, stage } = result;
+        res.json({
+          message: `Removed score for category [${category}] fixture [${id}] stage [${stage}]`,
+        });
+      } catch (err) {
+        console.error('Error in rewindFixture:', err);
+        res.status(500).json({ error: 'Internal server error' });
+      }
     },
 
     startFixture: async (req, res) => {
