@@ -1,0 +1,19 @@
+name: 4.create-club
+method: POST
+url: $T_HOST/api/clubs
+body:
+  content: |-
+    {
+      "clubName": "Test API Club",
+      "clubCode": "TAC",
+      "country": "IE",
+      "city": "Dublin",
+      "region": "Leinster",
+      "status": "active"
+    }
+  content_type: application/json
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $T_TOKEN
