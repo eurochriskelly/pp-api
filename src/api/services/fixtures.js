@@ -246,13 +246,19 @@ module.exports = (db) => {
     updateScore: async (tournamentId, fixtureId, team1, team2, outcome) => {
       await update(
         `UPDATE fixtures 
-         SET goals1 = ?, points1 = ?, goals2 = ?, points2 = ?, outcome = ?
+         SET goals1 = ?, points1 = ?, goals1Extra = ?, points1Extra = ?,
+             goals2 = ?, points2 = ?, goals2Extra = ?, points2Extra = ?,
+             outcome = ?
          WHERE id = ?`,
         [
           team1.goals,
           team1.points,
+          team1.goalsExtra ?? null,
+          team1.pointsExtra ?? null,
           team2.goals,
           team2.points,
+          team2.goalsExtra ?? null,
+          team2.pointsExtra ?? null,
           outcome,
           fixtureId,
         ]

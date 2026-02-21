@@ -955,12 +955,37 @@ export default (db: any) => {
 
     getTournamentCategories: async (id: number) => {
       const rows = await select(
-        `SELECT * FROM v_categories WHERE tournamentId = ?`,
+        `SELECT 
+          f.tournamentId,
+          f.category,
+          COALESCE(MAX(CASE WHEN f.started IS NOT NULL THEN f.stage END), 'group') AS latestStage,
+          COUNT(*) AS totalGames,
+          SUM(CASE WHEN f.started IS NOT NULL THEN 1 ELSE 0 END) AS currentGame,
+          GROUP_CONCAT(DISTINCT 
+            CASE 
+              WHEN f.stage IN ('playoffs','finals','semis','runnerup','quarters','eights') THEN 'cup'
+              WHEN f.stage = 'group' THEN 'plate'
+              ELSE 'shield'
+            END 
+            ORDER BY 
+              CASE 
+                WHEN f.stage IN ('playoffs','finals','semis','runnerup','quarters','eights') THEN 1
+                WHEN f.stage = 'group' THEN 2
+                ELSE 3
+              END 
+            SEPARATOR ', '
+          ) AS brackets
+        FROM fixtures f
+        WHERE f.tournamentId = ?
+        GROUP BY f.tournamentId, f.category
+        ORDER BY f.category`,
         [id]
       );
       return rows.map((row: any) => ({
         ...row,
-        brackets: row.brackets.split(',').map((x: string) => x.trim()),
+        brackets: row.brackets
+          ? row.brackets.split(',').map((x: string) => x.trim())
+          : [],
       }));
     },
 
