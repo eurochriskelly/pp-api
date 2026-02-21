@@ -1,3 +1,7 @@
+const {
+  applyHeadToHeadTiebreaker,
+} = require('../../../../../../src/lib/headToHead');
+
 /**
  * Calculates group standings from fixture data.
  * @param {object} fixtures - The structured fixtures object from ReportBuilder.
@@ -29,6 +33,9 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
       };
     });
   });
+
+  // Store all completed matches for head-to-head calculation
+  const allMatches = [];
 
   // Process each group fixture to calculate results
   groupFixtures.forEach((fixture) => {
@@ -80,6 +87,15 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
     const team1Stats = standingsByGroup[groupName][team1Name];
     const team2Stats = standingsByGroup[groupName][team2Name];
 
+    // Store match for head-to-head calculation
+    allMatches.push({
+      groupName,
+      teamA: team1Name,
+      teamB: team2Name,
+      scoreA: fixture.team1.total,
+      scoreB: fixture.team2.total,
+    });
+
     if (fixture.team1.status === 'won') {
       team1Stats.matchesPlayed++;
       team2Stats.matchesPlayed++;
@@ -127,22 +143,71 @@ function calculateStandings(fixtures, teamsByGroup, pointsConfig) {
       s.scoreDifference = s.scoreFor - s.scoreAgainst;
     });
 
-    // Sort standings: 1. points, 2. scoreDifference, 3. scoreFor
-    groupStandings.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.scoreDifference !== a.scoreDifference)
-        return b.scoreDifference - a.scoreDifference;
-      if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
-      return a.team.localeCompare(b.team);
-    });
+    // Get matches for this group only
+    const groupMatches = allMatches.filter((m) => m.groupName === groupName);
 
-    finalStandings.byGroup[groupName] = groupStandings;
-    allGroupsStandings.push(...groupStandings);
+    // Transform standings to format expected by applyHeadToHeadTiebreaker
+    const transformedStandings = groupStandings.map((team) => ({
+      team: team.team,
+      TotalPoints: team.points,
+      PointsDifference: team.scoreDifference,
+      PointsFrom: team.scoreFor,
+      MatchesPlayed: team.matchesPlayed,
+      Wins: team.won,
+      Draws: team.draw,
+      Losses: team.loss,
+    }));
+
+    // Transform matches to format expected by applyHeadToHeadTiebreaker
+    const transformedMatches = groupMatches.map((match) => ({
+      teamA: match.teamA,
+      teamB: match.teamB,
+      scoreA: match.scoreA,
+      scoreB: match.scoreB,
+    }));
+
+    // Apply head-to-head tiebreaker
+    const sortedWithH2H = applyHeadToHeadTiebreaker(
+      transformedStandings,
+      transformedMatches,
+      true // allowJointPositions
+    );
+
+    // Transform back to original format
+    const sortedGroupStandings = sortedWithH2H.map((team) => ({
+      team: team.team,
+      matchesPlayed: team.MatchesPlayed,
+      won: team.Wins,
+      draw: team.Draws,
+      loss: team.Losses,
+      scoreFor: team.PointsFrom,
+      scoreAgainst: team.PointsFrom - team.PointsDifference,
+      scoreDifference: team.PointsDifference,
+      points: team.TotalPoints,
+      position: team.position,
+      jointPosition: team.jointPosition,
+      h2hStats: team.h2hStats,
+    }));
+
+    finalStandings.byGroup[groupName] = sortedGroupStandings;
+    allGroupsStandings.push(...sortedGroupStandings);
   }
 
   // Sort allGroups standings by the same criteria
   allGroupsStandings.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
+    // If tied on points, use H2H points if available
+    if (a.h2hStats && b.h2hStats) {
+      if (b.h2hStats.points !== a.h2hStats.points) {
+        return b.h2hStats.points - a.h2hStats.points;
+      }
+      if (b.h2hStats.diff !== a.h2hStats.diff) {
+        return b.h2hStats.diff - a.h2hStats.diff;
+      }
+      if (b.h2hStats.for !== a.h2hStats.for) {
+        return b.h2hStats.for - a.h2hStats.for;
+      }
+    }
     if (b.scoreDifference !== a.scoreDifference)
       return b.scoreDifference - a.scoreDifference;
     if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
