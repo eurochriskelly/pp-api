@@ -1,7 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import { II, DD } from '../../lib/logging';
 import dbHelper from '../../lib/db-helper';
-import { sqlGroupStandings } from '../../lib/queries';
+import { sqlGroupStandings, sqlGroupStandingsWithH2H } from '../../lib/queries';
+import {
+  applyHeadToHeadTiebreaker,
+  extractH2HMatches,
+  cleanStandingsData,
+} from '../../lib/headToHead';
 import { buildReport } from './tournaments/builld-report/index.js';
 import TSVValidator from './fixtures/validate-tsv';
 import { buildFixturesInsertSQL } from './tournaments/import-fixtures.js';
@@ -589,23 +594,75 @@ export default (db: any) => {
       );
     },
 
-    getGroupStandings: async (id: number) => {
-      const groups = await select(
-        `SELECT DISTINCT grp as gnum, category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`,
-        [id]
-      );
+    getGroupStandings: async (id: number, useHeadToHead: boolean = true) => {
       const standings: { [key: string]: { [key: string]: any[] } } = {};
-      for (const { gnum, category } of groups) {
-        const rows = await select(
-          `SELECT category, grp, team, tournamentId, MatchesPlayed, Wins, Draws, Losses, PointsFrom, PointsDifference, TotalPoints 
-           FROM ${sqlGroupStandings(winAward)} 
-           WHERE tournamentId = ? AND category = ? AND grp LIKE ? 
-           ORDER BY TotalPoints DESC, PointsDifference DESC, PointsFrom DESC`,
-          [id, category, gnum]
+
+      if (useHeadToHead) {
+        // Use head-to-head tiebreaker
+        const rawResults = await select(
+          `SELECT * FROM (${sqlGroupStandingsWithH2H(winAward)}) AS h2h_data 
+           WHERE tournamentId = ? 
+           ORDER BY category DESC, grp, TotalPoints DESC, PointsDifference DESC, PointsFrom DESC`,
+          [id]
         );
-        standings[category] = standings[category] || {};
-        standings[category][gnum] = rows;
+
+        // Group results by category and group
+        const grouped = rawResults.reduce((acc: any, row: any) => {
+          const key = `${row.category}|${row.grp}`;
+          if (!acc[key]) {
+            acc[key] = [];
+          }
+          acc[key].push(row);
+          return acc;
+        }, {});
+
+        // Process each group with head-to-head tiebreaker
+        for (const [key, groupRows] of Object.entries(grouped)) {
+          const [category, gnum] = key.split('|');
+          const rows = groupRows as any[];
+
+          // Extract head-to-head matches and clean standings
+          const h2hMatches = extractH2HMatches(rows);
+          const cleanRows = cleanStandingsData(rows);
+
+          // Remove duplicates from clean rows (one per team)
+          const uniqueTeams = new Map();
+          cleanRows.forEach((row) => {
+            if (!uniqueTeams.has(row.team)) {
+              uniqueTeams.set(row.team, row);
+            }
+          });
+          const uniqueStandings = Array.from(uniqueTeams.values());
+
+          // Apply head-to-head tiebreaker
+          const finalStandings = applyHeadToHeadTiebreaker(
+            uniqueStandings,
+            h2hMatches,
+            true
+          );
+
+          standings[category] = standings[category] || {};
+          standings[category][gnum] = finalStandings;
+        }
+      } else {
+        // Legacy behavior without head-to-head
+        const groups = await select(
+          `SELECT DISTINCT grp as gnum, category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`,
+          [id]
+        );
+        for (const { gnum, category } of groups) {
+          const rows = await select(
+            `SELECT category, grp, team, tournamentId, MatchesPlayed, Wins, Draws, Losses, PointsFrom, PointsDifference, TotalPoints 
+             FROM ${sqlGroupStandings(winAward)} 
+             WHERE tournamentId = ? AND category = ? AND grp LIKE ? 
+             ORDER BY TotalPoints DESC, PointsDifference DESC, PointsFrom DESC`,
+            [id, category, gnum]
+          );
+          standings[category] = standings[category] || {};
+          standings[category][gnum] = rows;
+        }
       }
+
       return standings;
     },
     getKnockoutFixtures: async (id: number) => {
