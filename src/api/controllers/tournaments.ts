@@ -79,6 +79,12 @@ type TournamentBody = {
   key?: string;
 };
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value
+  );
+}
+
 export default (db: any, useMock: boolean) => {
   const factory = useMock ? mockServiceFactory : serviceFactory;
   const dbSvc: any = factory(db);
@@ -88,6 +94,17 @@ export default (db: any, useMock: boolean) => {
     enabled: !useMock && !!db,
   });
   reportCache.start();
+
+  const resolveTournamentId = async (
+    identifier: string
+  ): Promise<number | null> => {
+    if (isUuid(identifier)) {
+      const tournament = await dbSvc.getTournament(undefined, identifier);
+      return tournament?.id ?? null;
+    }
+    const numericId = parseInt(identifier, 10);
+    return isNaN(numericId) ? null : numericId;
+  };
 
   return {
     // Tournament CRUD
@@ -212,7 +229,15 @@ export default (db: any, useMock: boolean) => {
       try {
         const { id } = req.params as TournamentParams;
         const { category } = req.query as { category?: string };
-        const report = await dbSvc.buildTournamentReport(id, category);
+        const tournamentId = await resolveTournamentId(id);
+        if (!tournamentId) {
+          res.status(404).json({ error: 'TOURNAMENT_NOT_FOUND' });
+          return;
+        }
+        const report = await dbSvc.buildTournamentReport(
+          tournamentId,
+          category
+        );
         res.json({ data: report });
       } catch (err) {
         next(err);
@@ -226,11 +251,11 @@ export default (db: any, useMock: boolean) => {
       try {
         const { id } = req.params as TournamentParams;
         const { lastUpdate } = req.query as { lastUpdate?: string };
-        const tournamentId = parseInt(id, 10);
-        if (Number.isNaN(tournamentId)) {
-          res.status(400).json({
-            error: 'INVALID_TOURNAMENT_ID',
-            message: 'Tournament id must be a valid number.',
+        const tournamentId = await resolveTournamentId(id);
+        if (!tournamentId) {
+          res.status(404).json({
+            error: 'TOURNAMENT_NOT_FOUND',
+            message: 'Tournament not found.',
           });
           return;
         }
@@ -283,7 +308,12 @@ export default (db: any, useMock: boolean) => {
     ) => {
       try {
         const { id } = req.params as TournamentParams;
-        const report = await dbSvc.buildTournamentReport(id);
+        const tournamentId = await resolveTournamentId(id);
+        if (!tournamentId) {
+          res.status(404).json({ error: 'TOURNAMENT_NOT_FOUND' });
+          return;
+        }
+        const report = await dbSvc.buildTournamentReport(tournamentId);
         res.json({ data: report });
       } catch (err) {
         next(err);
