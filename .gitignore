@@ -10,3 +10,6 @@ docs/api/index.html
 .kamal
 .kamal/
 config
+backups/
+.env.local
+docs/external/
