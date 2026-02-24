@@ -19,8 +19,23 @@ start:  ## Start server with auto-restart (usage: make start [env=production|acc
 test:  ## Run unit tests
 	npm run test:unit
 
-backup:  ## Create a database backup
-	npm run backup
+backup:  ## Create a database backup (usage: make backup ENV=<environment>)
+	@if [ -z "$(ENV)" ]; then \
+		echo "Error: ENV is required. Usage: make backup ENV=<environment>"; \
+		exit 1; \
+	fi
+	ENV=$(ENV) /bin/bash scripts/backup.sh
+
+restore:  ## Restore database from backup (usage: make restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true])
+	@if [ -z "$(ENV)" ]; then \
+		echo "Error: ENV is required. Usage: make restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true]"; \
+		exit 1; \
+	fi
+	@if [ -z "$(FILE)" ]; then \
+		echo "Error: FILE is required. Usage: make restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true]"; \
+		exit 1; \
+	fi
+	ENV=$(ENV) FILE=$(FILE) DATABASE=$(DATABASE) DROP=$(DROP) /bin/bash scripts/restore.sh
 
 clean: ## Remove cache directory
 	@echo "Removing cache directory..."
