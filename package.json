@@ -19,6 +19,7 @@
     "api": "bash scripts/host-api.sh",
     "test:api": "bash scripts/test-api.sh",
     "test:unit": "node --test test/unit/stage-completion.utils.spec.js",
+    "migrate:received-tournaments": "node scripts/migrate-received-tournaments.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
