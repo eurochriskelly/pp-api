@@ -15,6 +15,8 @@ import { parseCoachPdfToJson } from '../../lib/pdf-parser';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import * as crypto from 'crypto';
+import * as zlib from 'zlib';
 
 // Helper function to calculate lifecycle status
 function calculateLifecycleStatus(
@@ -169,6 +171,140 @@ const deletePitches = async (
     throw new Error(
       `Failed to delete pitches for tournament ${tournamentId}: ${err.message}`
     );
+  }
+};
+
+const PPP_STORAGE_ROOT = '/mnt/data/tournaments';
+
+const formatArchiveTimestamp = (date: Date) => {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(
+    date.getDate()
+  )}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+};
+
+const getZipEntries = (
+  zipBuffer: Buffer
+): Array<{ name: string; data: Buffer; isDirectory: boolean }> => {
+  let offset = 0;
+  const entries: Array<{ name: string; data: Buffer; isDirectory: boolean }> =
+    [];
+
+  while (offset + 30 <= zipBuffer.length) {
+    const signature = zipBuffer.readUInt32LE(offset);
+    if (signature !== 0x04034b50) {
+      break;
+    }
+
+    const bitFlag = zipBuffer.readUInt16LE(offset + 6);
+    const compressionMethod = zipBuffer.readUInt16LE(offset + 8);
+    const compressedSize = zipBuffer.readUInt32LE(offset + 18);
+    const fileNameLength = zipBuffer.readUInt16LE(offset + 26);
+    const extraFieldLength = zipBuffer.readUInt16LE(offset + 28);
+
+    const fileNameStart = offset + 30;
+    const fileNameEnd = fileNameStart + fileNameLength;
+    const entryName = zipBuffer.slice(fileNameStart, fileNameEnd).toString();
+
+    const dataStart = fileNameEnd + extraFieldLength;
+    if (bitFlag & 0x0008) {
+      return null;
+    }
+
+    const dataEnd = dataStart + compressedSize;
+    if (dataEnd > zipBuffer.length) {
+      return null;
+    }
+
+    const compressedData = zipBuffer.slice(dataStart, dataEnd);
+    let data: Buffer;
+    if (compressionMethod === 0) {
+      data = compressedData;
+    } else if (compressionMethod === 8) {
+      data = zlib.inflateRawSync(compressedData);
+    } else {
+      throw new Error('INVALID_PPP_ARCHIVE');
+    }
+
+    entries.push({
+      name: entryName,
+      data,
+      isDirectory: entryName.endsWith('/'),
+    });
+
+    offset = dataEnd;
+  }
+
+  return entries;
+};
+
+const extractArchivePayload = (
+  archiveBuffer: Buffer
+): {
+  payload: any;
+  eventUuid: string | null;
+  tournamentId: number | null;
+} => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ppp-archive-'));
+  try {
+    const entries = getZipEntries(archiveBuffer).filter((entry) => !entry.isDirectory);
+    if (entries.length === 0) {
+      throw new Error('INVALID_PPP_ARCHIVE');
+    }
+
+    const files: Record<string, any> = {};
+    for (const entry of entries) {
+      const normalizedEntryName = path.posix.normalize(entry.name);
+      const segments = normalizedEntryName.split('/').filter(Boolean);
+      if (
+        segments.length === 0 ||
+        segments.some((segment) => segment === '..') ||
+        !normalizedEntryName.toLowerCase().endsWith('.json')
+      ) {
+        throw new Error('INVALID_PPP_ARCHIVE');
+      }
+
+      const targetPath = path.join(tmpDir, ...segments);
+      const resolvedTargetPath = path.resolve(targetPath);
+      const resolvedTmpDir = path.resolve(tmpDir);
+      if (!resolvedTargetPath.startsWith(resolvedTmpDir)) {
+        throw new Error('INVALID_PPP_ARCHIVE');
+      }
+
+      fs.mkdirSync(path.dirname(resolvedTargetPath), { recursive: true });
+      fs.writeFileSync(resolvedTargetPath, entry.data);
+
+      const parsedJson = JSON.parse(fs.readFileSync(resolvedTargetPath, 'utf8'));
+      files[normalizedEntryName] = parsedJson;
+    }
+
+    const preferredPayload =
+      files['tournament.json'] || files['./tournament.json'] || Object.values(files)[0];
+    const eventUuid =
+      typeof preferredPayload?.tournament?.eventUuid === 'string'
+        ? preferredPayload.tournament.eventUuid
+        : null;
+
+    let tournamentId: number | null = null;
+    const sourceTournamentId = preferredPayload?.tournament?.id;
+    if (typeof sourceTournamentId === 'number') {
+      tournamentId = sourceTournamentId;
+    } else if (typeof sourceTournamentId === 'string') {
+      const parsed = parseInt(sourceTournamentId, 10);
+      tournamentId = isNaN(parsed) ? null : parsed;
+    }
+
+    return {
+      payload: {
+        files,
+      },
+      eventUuid,
+      tournamentId,
+    };
+  } catch {
+    throw new Error('INVALID_PPP_ARCHIVE');
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 };
 
@@ -374,6 +510,68 @@ export default (db: any) => {
         [userId, 'organizer', newTournamentId]
       );
       return newTournament;
+    },
+
+    publishTournamentArchive: async ({
+      archiveBuffer,
+      submittedByUserId,
+      softwareVersion,
+    }: {
+      archiveBuffer: Buffer;
+      submittedByUserId: string | number;
+      softwareVersion?: string;
+    }) => {
+      const checksum = crypto
+        .createHash('sha256')
+        .update(archiveBuffer)
+        .digest('hex');
+      const fileSizeBytes = archiveBuffer.length;
+      const submissionTimestamp = new Date();
+
+      const { payload, eventUuid, tournamentId } =
+        extractArchivePayload(archiveBuffer);
+
+      const submissionId = await insert(
+        `INSERT INTO received_tournaments (
+          archive_path,
+          checksum_sha256,
+          file_size_bytes,
+          submitted_at,
+          submitted_by_user_id,
+          software_version,
+          tournament_id,
+          event_uuid,
+          payload_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          '',
+          checksum,
+          fileSizeBytes,
+          submissionTimestamp,
+          submittedByUserId,
+          softwareVersion || null,
+          tournamentId,
+          eventUuid,
+          JSON.stringify(payload),
+        ]
+      );
+
+      const archiveTimestamp = formatArchiveTimestamp(submissionTimestamp);
+      const archiveDirectory = path.join(PPP_STORAGE_ROOT, String(submissionId));
+      fs.mkdirSync(archiveDirectory, { recursive: true });
+      const archivePath = path.join(archiveDirectory, `${archiveTimestamp}.ppp`);
+      fs.writeFileSync(archivePath, archiveBuffer);
+
+      await update(
+        `UPDATE received_tournaments SET archive_path = ? WHERE id = ?`,
+        [archivePath, submissionId]
+      );
+
+      return {
+        id: submissionId,
+        eventUuid,
+        tournamentId,
+      };
     },
 
     updateTournament: async (

@@ -1,9 +1,43 @@
 import express from 'express';
 import tournamentController from '../controllers/tournaments';
+const authMiddlewareFactory = require('../middleware/auth');
+
+const PPP_CONTENT_TYPES = new Set([
+  'application/zip',
+  'application/octet-stream',
+  'application/x-zip-compressed',
+  'application/vnd.ppp',
+]);
+
+const isPppUploadRequest = (req: express.Request): boolean => {
+  const rawContentType = req.headers['content-type'];
+  if (!rawContentType || typeof rawContentType !== 'string') return false;
+  const contentType = rawContentType.split(';')[0].trim().toLowerCase();
+  return PPP_CONTENT_TYPES.has(contentType);
+};
 
 export default (db: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
   const ctrl = tournamentController(db, useMock);
+  const auth = authMiddlewareFactory(db, useMock);
+
+  router.post(
+    '/',
+    (req, res, next) => {
+      void res;
+      if (!isPppUploadRequest(req)) {
+        next('route');
+        return;
+      }
+      next();
+    },
+    auth,
+    express.raw({
+      type: isPppUploadRequest,
+      limit: '100mb',
+    }),
+    ctrl.publishTournamentArchive
+  );
   router.post('/', ctrl.createTournament);
   router.get('/', ctrl.getTournaments);
   router.get('/summary', ctrl.getTournamentsSummary);
