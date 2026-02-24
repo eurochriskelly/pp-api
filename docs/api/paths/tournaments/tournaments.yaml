@@ -1,16 +1,24 @@
 ---
 post:
-  summary: "Create Tournaments"
+  summary: "Create Or Publish Tournament"
   requestBody:
     required: true
     content:
       application/json:
         schema:
           type: object
+      application/zip:
+        schema:
+          type: string
+          format: binary
+      application/octet-stream:
+        schema:
+          type: string
+          format: binary
 
   responses:
-    "200":
-      description: "Success"
+    "201":
+      description: "Created"
       content:
         application/json:
           schema:

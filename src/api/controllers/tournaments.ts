@@ -79,6 +79,13 @@ type TournamentBody = {
   key?: string;
 };
 
+type AuthenticatedRequest = Request & {
+  user?: {
+    id?: number | string;
+    [key: string]: any;
+  };
+};
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     value
@@ -152,6 +159,58 @@ export default (db: any, useMock: boolean) => {
         });
         res.status(201).json(tournament);
       } catch (err) {
+        next(err);
+      }
+    },
+
+    publishTournamentArchive: async (
+      req: AuthenticatedRequest,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const submittedByUserId = req.user?.id;
+        if (!submittedByUserId) {
+          res.status(401).json({ error: 'UNAUTHORIZED' });
+          return;
+        }
+
+        if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+          res.status(400).json({
+            error: 'PPP_FILE_REQUIRED',
+            message: 'Request body must contain a .ppp archive.',
+          });
+          return;
+        }
+
+        const softwareVersionHeader = req.headers['x-pp-software-version'];
+        const softwareVersion =
+          typeof softwareVersionHeader === 'string'
+            ? softwareVersionHeader
+            : undefined;
+
+        const result = await dbSvc.publishTournamentArchive({
+          archiveBuffer: req.body,
+          submittedByUserId,
+          softwareVersion,
+        });
+
+        res.status(201).json({
+          data: {
+            id: result.id,
+            eventUuid: result.eventUuid,
+            tournamentId: result.tournamentId,
+          },
+        });
+      } catch (err) {
+        if (err instanceof Error && err.message === 'INVALID_PPP_ARCHIVE') {
+          res.status(400).json({
+            error: 'INVALID_PPP_ARCHIVE',
+            message:
+              'Invalid .ppp archive. Expected a ZIP containing tournament.json.',
+          });
+          return;
+        }
         next(err);
       }
     },

@@ -196,6 +196,26 @@ module.exports = () => {
       return newTournament.id;
     },
 
+    publishTournamentArchive: async ({ archiveBuffer }) => {
+      let eventUuid = null;
+      let tournamentId = null;
+
+      try {
+        const text = archiveBuffer.toString('utf8');
+        const maybePayload = JSON.parse(text);
+        eventUuid = maybePayload?.tournament?.eventUuid || null;
+        tournamentId = maybePayload?.tournament?.id || null;
+      } catch {
+        // In mock mode we accept opaque buffers and return placeholder metadata.
+      }
+
+      return {
+        id: Date.now(),
+        eventUuid,
+        tournamentId,
+      };
+    },
+
     getTournament: async (id, uuid) => {
       const tournament = mockTournaments.find(
         (t) =>
