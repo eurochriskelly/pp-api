@@ -113,3 +113,23 @@ CREATE TABLE IF NOT EXISTS intake_people (
     FOREIGN KEY (intake_id) REFERENCES intake_forms(intake_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE IF NOT EXISTS received_tournaments (
+  id                  BIGINT NOT NULL AUTO_INCREMENT,
+  archive_path        VARCHAR(1024) NOT NULL,
+  checksum_sha256     CHAR(64) NOT NULL,
+  file_size_bytes     BIGINT NOT NULL,
+  submitted_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  submitted_by_user_id BIGINT NOT NULL,
+  software_version    VARCHAR(64) DEFAULT NULL,
+  tournament_id       INT DEFAULT NULL,
+  event_uuid          CHAR(36) DEFAULT NULL,
+  payload_json        JSON DEFAULT NULL,
+  created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY ix_received_tournaments_submitted_by (submitted_by_user_id),
+  KEY ix_received_tournaments_tournament_id (tournament_id),
+  KEY ix_received_tournaments_event_uuid (event_uuid),
+  CONSTRAINT fk_received_tournaments_tournament
+    FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
