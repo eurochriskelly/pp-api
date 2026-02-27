@@ -517,5 +517,9 @@ module.exports = () => {
       // Mock implementation - just return success
       return { success: true, intakeForm, intakePeople };
     },
+
+    getTournamentClubs: async () => {
+      return [];
+    },
   };
 };

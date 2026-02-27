@@ -60,6 +60,7 @@ export default (db: any, useMock: boolean) => {
   router.get('/:id/knockout-fixtures', ctrl.getKnockoutFixtures);
   router.get('/:id/finals-results', ctrl.getFinalsResults);
   router.get('/:id/all-matches', ctrl.getAllMatches);
+  router.get('/:tournamentId/clubs', ctrl.getTournamentClubs);
   router.get('/:tournamentId/filters', ctrl.getFilters);
   router.get('/:id/code-check/:code', ctrl.codeCheck);
   router.get('/:tournamentId/matches-by-pitch', ctrl.getMatchesByPitch);

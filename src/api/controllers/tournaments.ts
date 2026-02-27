@@ -410,6 +410,26 @@ export default (db: any, useMock: boolean) => {
       }
     },
 
+    getTournamentClubs: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const { tournamentId } = req.params as TournamentParams;
+        const numericTournamentId = parseInt(tournamentId, 10);
+        if (isNaN(numericTournamentId)) {
+          res.status(400).json({ error: 'INVALID_TOURNAMENT_ID' });
+          return;
+        }
+
+        const data = await dbSvc.getTournamentClubs(numericTournamentId);
+        res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+
     getTournament: async (req: Request, res: Response) => {
       const { id, uuid } = req.params as TournamentParams;
       const tournament = await dbSvc.getTournament(id, uuid);
