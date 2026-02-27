@@ -90,6 +90,23 @@ function calculateLifecycleStatus(
   return 'archive';
 }
 
+const parseNullableJson = (value: any) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  return value;
+};
+
+const normalizeClubName = (value: any) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().toLowerCase();
+};
+
 const createPitches = async (
   insert: (query: string, params: any[]) => Promise<any>,
   tournamentId: number,
@@ -247,7 +264,9 @@ const extractArchivePayload = (
 } => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ppp-archive-'));
   try {
-    const entries = getZipEntries(archiveBuffer).filter((entry) => !entry.isDirectory);
+    const entries = getZipEntries(archiveBuffer).filter(
+      (entry) => !entry.isDirectory
+    );
     if (entries.length === 0) {
       throw new Error('INVALID_PPP_ARCHIVE');
     }
@@ -274,12 +293,16 @@ const extractArchivePayload = (
       fs.mkdirSync(path.dirname(resolvedTargetPath), { recursive: true });
       fs.writeFileSync(resolvedTargetPath, entry.data);
 
-      const parsedJson = JSON.parse(fs.readFileSync(resolvedTargetPath, 'utf8'));
+      const parsedJson = JSON.parse(
+        fs.readFileSync(resolvedTargetPath, 'utf8')
+      );
       files[normalizedEntryName] = parsedJson;
     }
 
     const preferredPayload =
-      files['tournament.json'] || files['./tournament.json'] || Object.values(files)[0];
+      files['tournament.json'] ||
+      files['./tournament.json'] ||
+      Object.values(files)[0];
     const eventUuid =
       typeof preferredPayload?.tournament?.eventUuid === 'string'
         ? preferredPayload.tournament.eventUuid
@@ -557,9 +580,15 @@ export default (db: any) => {
       );
 
       const archiveTimestamp = formatArchiveTimestamp(submissionTimestamp);
-      const archiveDirectory = path.join(PPP_STORAGE_ROOT, String(submissionId));
+      const archiveDirectory = path.join(
+        PPP_STORAGE_ROOT,
+        String(submissionId)
+      );
       fs.mkdirSync(archiveDirectory, { recursive: true });
-      const archivePath = path.join(archiveDirectory, `${archiveTimestamp}.ppp`);
+      const archivePath = path.join(
+        archiveDirectory,
+        `${archiveTimestamp}.ppp`
+      );
       fs.writeFileSync(archivePath, archiveBuffer);
 
       await update(
@@ -1462,6 +1491,85 @@ export default (db: any) => {
       return roleFilterKeys.map(
         (key) => allFilterDefinitions[key as keyof typeof allFilterDefinitions]
       );
+    },
+
+    getTournamentClubs: async (tournamentId: number) => {
+      const tournamentRows = await select(
+        'SELECT eventUuid FROM tournaments WHERE id = ?',
+        [tournamentId]
+      );
+      const tournamentTempUuid = tournamentRows[0]?.eventUuid || null;
+
+      const clauses = ['tournamentId = ?'];
+      const params: any[] = [tournamentId];
+
+      if (tournamentTempUuid) {
+        clauses.push('tournamentTempUuid = ?');
+        params.push(tournamentTempUuid);
+      }
+
+      const teams = await select(
+        `SELECT id, name, competition, contributingClubs
+         FROM teams
+         WHERE ${clauses.join(' OR ')}
+         ORDER BY id ASC`,
+        params
+      );
+
+      const clubsByName = new Map();
+
+      for (const team of teams) {
+        const contributing = parseNullableJson(team.contributingClubs);
+        const contributingClubList = Array.isArray(
+          contributing?.contributingClubs
+        )
+          ? contributing.contributingClubs
+          : [];
+
+        for (const rawClub of contributingClubList) {
+          const clubName =
+            rawClub?.name ||
+            rawClub?.clubName ||
+            rawClub?.shortName ||
+            rawClub?.code ||
+            null;
+          const normalizedClubName = normalizeClubName(clubName);
+          if (!normalizedClubName) continue;
+
+          if (!clubsByName.has(normalizedClubName)) {
+            clubsByName.set(normalizedClubName, {
+              clubName,
+              clubId: rawClub?.clubId || rawClub?.id || null,
+              shortName: rawClub?.shortName || null,
+              code: rawClub?.code || null,
+              teams: [],
+              _seenTeamIds: new Set(),
+            });
+          }
+
+          const clubEntry = clubsByName.get(normalizedClubName);
+          if (!clubEntry._seenTeamIds.has(team.id)) {
+            clubEntry.teams.push({
+              teamId: team.id,
+              teamName: team.name,
+              competition: team.competition,
+              numPlayers:
+                typeof rawClub?.numPlayers === 'number'
+                  ? rawClub.numPlayers
+                  : null,
+            });
+            clubEntry._seenTeamIds.add(team.id);
+          }
+        }
+      }
+
+      return Array.from(clubsByName.values())
+        .map((club) => {
+          const { _seenTeamIds, ...result } = club;
+          void _seenTeamIds;
+          return result;
+        })
+        .sort((a, b) => a.clubName.localeCompare(b.clubName));
     },
 
     updateSquad: async (
