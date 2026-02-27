@@ -133,3 +133,23 @@ CREATE TABLE IF NOT EXISTS received_tournaments (
   CONSTRAINT fk_received_tournaments_tournament
     FOREIGN KEY (tournament_id) REFERENCES tournaments(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS teams (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  tournamentTempUuid CHAR(36) NOT NULL,
+  tournamentId INT DEFAULT NULL,
+  competition VARCHAR(255) DEFAULT NULL,
+  contributingClubs JSON DEFAULT NULL,
+  logo LONGBLOB DEFAULT NULL,
+  colors JSON DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY ix_teams_tournament_temp_uuid (tournamentTempUuid),
+  KEY ix_teams_tournament_id (tournamentId),
+  KEY ix_teams_competition (competition),
+  CONSTRAINT fk_teams_tournament
+    FOREIGN KEY (tournamentId) REFERENCES tournaments(id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
