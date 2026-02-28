@@ -1,0 +1,14 @@
+{
+  "watch": ["dist"],
+  "ext": "js,json",
+  "ignore": ["dist/**/*.spec.js", "dist/**/*.test.js"],
+  "delay": 3000,
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "exec": "node dist/server.js",
+  "signal": "SIGTERM",
+  "killSignal": "SIGTERM",
+  "restartable": "rs",
+  "verbose": false
+}
