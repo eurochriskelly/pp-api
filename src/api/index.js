@@ -15,31 +15,24 @@ const clubsRoutes = require('./routes/clubs');
 const eventsRoutes = require('./routes/events');
 const listingsRoutes = require('./routes/listings');
 const usersRoutes = require('./routes/users');
+const teamsRoutes = require('./routes/teams').default;
 const { II } = require('../lib/logging'); // Import the logger
 
-const app = express();
-
-app.use(bodyParser.json());
+const createApp = () => {
+  const app = express();
+  app.use(bodyParser.json());
+  return app;
+};
 
 module.exports = (dbs, ARGS) => {
+  const app = createApp();
+
   // Handle dbs being just a single connection object (backward compatibility) or { main, club }
   const dbMain = dbs.main || dbs;
 
   if (ARGS.errorMsg) {
-    console.log(`Error mode: ${ARGS.errorMsg}`);
-    app.use((req, res) => {
-      res.status(500).send(ARGS.errorMsg);
-    });
-    const port = ARGS.port;
-    app.listen(port, () => {
-      console.log(`Error server on port ${port} (10 min timeout)`);
-    });
-    setTimeout(() => {
-      // TODO: why do we want a time out here?
-      console.log('Error mode timeout. Exiting.');
-      process.exit(1);
-    }, 600000);
-    return;
+    console.error(`Fatal error: ${ARGS.errorMsg}`);
+    process.exit(1);
   }
   II(`Setting up API endpoints. Mock mode: ${ARGS.useMock}`);
 
@@ -105,6 +98,27 @@ module.exports = (dbs, ARGS) => {
     }
   );
 
+  app.post(
+    '/api/teams/:id/logo',
+    auth,
+    bodyParser.raw({ type: 'image/png', limit: '5mb' }),
+    (req, res) => {
+      try {
+        const teamsController = require('./controllers/teams');
+        const ctrl = teamsController.default(dbMain, ARGS.useMock);
+        ctrl.uploadLogo(req, res, (err) => {
+          if (err) {
+            console.error('Team logo upload error: ', err);
+            res.status(500).json({ error: err.message });
+          }
+        });
+      } catch (error) {
+        console.error('Team logo upload route error: ', error);
+        res.status(500).json({ error: error.message });
+      }
+    }
+  );
+
   app.use(cors());
   app.use(morgan('dev', { skip: (req) => req.path === '/health' }));
 
@@ -131,9 +145,10 @@ module.exports = (dbs, ARGS) => {
   app.use('/api', generalRoutes(dbMain, ARGS.useMock));
   app.use('/api/auth', authRoutes(dbMain, ARGS.useMock));
   app.use('/auth', authRoutes(dbMain, ARGS.useMock)); // Add this line to also mount auth routes at /auth
-  app.use('/api/system', systemRoutes);
+  app.use('/api/system', systemRoutes(dbMain, ARGS.useMock));
   app.use('/api/clubs', clubsRoutes(dbMain, ARGS.useMock));
   app.use('/api/annual-reports', annualReportsRoutes(dbMain, ARGS.useMock));
+  app.use('/api/teams', teamsRoutes(dbMain, ARGS.useMock));
 
   // New schemas
   app.use('/api/events', eventsRoutes(dbs, ARGS.useMock));
@@ -159,9 +174,32 @@ module.exports = (dbs, ARGS) => {
   });
 
   const { port } = ARGS;
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`Server running on port ${port}`);
   });
+
+  server.on('error', (err) => {
+    console.error(`Server failed to start: ${err.message}`);
+    process.exit(1);
+  });
+
+  // Graceful shutdown handling
+  const gracefulShutdown = (signal) => {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+
+    // Force shutdown after 5 seconds
+    setTimeout(() => {
+      console.log('Forced shutdown');
+      process.exit(1);
+    }, 5000);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 };
 
 function parseFormData(req, res, callback) {
