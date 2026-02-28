@@ -1,6 +1,6 @@
 {
   "name": "pp-api",
-  "version": "1.6.14",
+  "version": "1.7.15",
   "description": "See readme.md",
   "main": "src/server.js",
   "directories": {
