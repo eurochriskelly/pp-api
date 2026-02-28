@@ -3,22 +3,21 @@
 # Get port from .env default
 set -a
 source .env
-[ -f .env.local ] && source .env.local
+source .kamal/secrets.tst
 set +a
 
 # Check port and get final value
 export PP_PORT_API=$(./scripts/make/check-port.sh)
-
-# Source secrets
-set -a
-source .kamal/secrets.tst
-set +a
 
 # Set other env vars
 export PP_HST=${PP_HOSTNAME_DB_DEV:-tst-data.lan}
 export PP_USR=$PP_USR_TST
 export PP_PWD=$PP_PWD
 export PP_DATABASE=$PP_DATABASE
+
+set -a
+[ -f .env.local ] && source .env.local
+set +a
 
 # Run dev
 echo "Starting dev server on port $PP_PORT_API..."
