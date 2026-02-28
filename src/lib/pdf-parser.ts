@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+const pdfjs = require('pdfjs-dist/build/pdf.js');
 const sharp = require('sharp');
 
 // Types for PDF text content
