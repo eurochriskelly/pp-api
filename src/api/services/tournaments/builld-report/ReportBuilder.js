@@ -8,10 +8,12 @@ const {
 const { calculateStandings } = require('./utils/standingsCalculation');
 const { calculateTeamSummary } = require('./utils/teamSummaryCalculation');
 const { calculateFinalRankings } = require('./utils/finalRankingsCalculation');
+const InitialGenerator = require('../../fixtures/enhance-fixture/initial-generator');
 
 class ReportBuilder {
   constructor(select) {
     this.select = select;
+    this.initialGenerator = new InitialGenerator();
   }
 
   async build(tournamentId, category) {
@@ -27,6 +29,18 @@ class ReportBuilder {
           (catInfo) => catInfo.category.toUpperCase() === category.toUpperCase()
         )
       : categoryTeamInfo;
+
+    // Generate initials for all categories (to ensure consistency even when filtering)
+    const categoryInitials = new Map();
+    for (const catInfo of categoryTeamInfo) {
+      const initial = this.initialGenerator.generateInitial(catInfo.category);
+      const resolvedInitial = this.initialGenerator.resolveConflict(
+        catInfo.category,
+        initial,
+        () => {} // no-op logger
+      );
+      categoryInitials.set(catInfo.category, resolvedInitial);
+    }
 
     // Now, for each category, fetch and structure its fixtures
     const categoriesWithFixtures = await Promise.all(
@@ -58,6 +72,7 @@ class ReportBuilder {
 
         return {
           category: catInfo.category,
+          initials: categoryInitials.get(catInfo.category),
           teams: {
             // Keep the teams structure from getCategoriesInfo
             allTeams: catInfo.allTeams,
