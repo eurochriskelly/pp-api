@@ -7,6 +7,7 @@ const {
 } = require('./utils/stageFormatting');
 const { calculateStandings } = require('./utils/standingsCalculation');
 const { calculateTeamSummary } = require('./utils/teamSummaryCalculation');
+const { calculateFinalRankings } = require('./utils/finalRankingsCalculation');
 
 class ReportBuilder {
   constructor(select) {
@@ -48,6 +49,13 @@ class ReportBuilder {
           standings
         );
 
+        const rankings = calculateFinalRankings(
+          fixtures,
+          catInfo.byBracket,
+          catInfo.byGroup,
+          standings.allGroups
+        );
+
         return {
           category: catInfo.category,
           teams: {
@@ -59,6 +67,7 @@ class ReportBuilder {
           },
           fixtures: fixtures, // Add the structured fixtures
           standings: standings,
+          rankings: rankings,
         };
       })
     );
