@@ -98,14 +98,25 @@ function calculateFinalRankings(
 
   if (hasKnockouts) {
     // Process knockout-based rankings
-    // Step 1: Process finals and playoffs in order
+    // Step 1: Process each bracket completely before moving to next bracket
+    // This ensures ALL Cup teams rank above ALL Shield teams, etc.
     BRACKET_ORDER.forEach((bracketName) => {
       if (!teamsByBracketMap.has(bracketName)) return;
 
+      const bracketFixtures = allKnockoutFixtures.filter(
+        (f) => f.bracket === bracketName
+      );
+
+      // Get all teams in this bracket that played in knockouts
+      const bracketTeams = new Set();
+      bracketFixtures.forEach((f) => {
+        if (f.team1.name) bracketTeams.add(f.team1.name);
+        if (f.team2.name) bracketTeams.add(f.team2.name);
+      });
+
+      // Process finals and playoffs in order for this bracket
       PLAYOFF_STAGE_ORDER.forEach((stageCode) => {
-        const fixture = allKnockoutFixtures.find(
-          (f) => f.bracket === bracketName && f.stage === stageCode
-        );
+        const fixture = bracketFixtures.find((f) => f.stage === stageCode);
 
         if (
           !fixture ||
@@ -142,23 +153,18 @@ function calculateFinalRankings(
           rankedTeams.add(loser);
         }
       });
-    });
 
-    // Step 2: Rank remaining teams in brackets based on group performance
-    BRACKET_ORDER.forEach((bracketName) => {
-      if (!teamsByBracketMap.has(bracketName)) return;
-
-      const bracketTeams = teamsByBracketMap.get(bracketName);
-      const unrankedInBracket = bracketTeams
+      // Step 2: Rank remaining teams in this bracket (eliminated early, no playoff)
+      // Get teams that played in knockouts but weren't ranked yet
+      const unrankedInBracket = Array.from(bracketTeams)
         .filter((team) => !rankedTeams.has(team))
         .sort(compareTeamsForRanking);
 
       unrankedInBracket.forEach((team) => {
         // Find the last knockout match this team played
-        const lastMatch = allKnockoutFixtures
+        const lastMatch = bracketFixtures
           .filter(
             (f) =>
-              f.bracket === bracketName &&
               (f.team1.name === team || f.team2.name === team) &&
               f.outcome !== 'not played' &&
               f.outcome !== 'skipped'
