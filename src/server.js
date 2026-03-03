@@ -61,14 +61,28 @@ const run = async () => {
       });
       console.log('✓ Connected to MySQL (Main) - data will be persisted');
 
-      dbClub = mysql.createConnection(clubEventsDbConf);
-      await new Promise((resolve, reject) => {
-        dbClub.connect((err) => {
-          if (err) reject(err);
-          else resolve();
+      // Try to connect to ClubEvents DB, but allow it to fail gracefully
+      try {
+        dbClub = mysql.createConnection(clubEventsDbConf);
+        await new Promise((resolve, reject) => {
+          dbClub.connect((err) => {
+            if (err) reject(err);
+            else resolve();
+          });
         });
-      });
-      console.log('✓ Connected to MySQL (ClubEvents)');
+        console.log('✓ Connected to MySQL (ClubEvents)');
+      } catch (clubErr) {
+        dbClub = null;
+        if (clubErr.message && clubErr.message.includes('Unknown database')) {
+          console.log(
+            `⚠️  ${clubEventsDbConf.database} database not found - skipping ClubEvents features`
+          );
+        } else {
+          console.log(
+            `⚠️  Could not connect to ClubEvents: ${clubErr.message}`
+          );
+        }
+      }
     }
     apiSetup({ main: db, club: dbClub }, effectiveArgs);
   } catch (err) {

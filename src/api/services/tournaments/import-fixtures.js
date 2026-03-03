@@ -122,6 +122,9 @@ function rowsToFixtures(rows, tournamentId, startDate) {
 
     const isGroupStage = stage === 'group';
 
+    // Get duration from TSV row (DURATION field contains minutes as number)
+    const duration = r.DURATION ? parseInt(r.DURATION, 10) : 20;
+
     const team1 = convertTeam(
       r.TEAM1,
       isGroupStage,
@@ -170,6 +173,8 @@ function rowsToFixtures(rows, tournamentId, startDate) {
       umpireTeamPlanned: umpire,
       umpireTeamId: umpire,
 
+      durationPlanned: duration,
+
       outcome: 'not played',
     };
   });
@@ -200,6 +205,7 @@ function buildFixturesInsertSQL(rows, tournamentId, startDate) {
     'points2',
     'umpireTeamPlanned',
     'umpireTeamId',
+    'durationPlanned',
     'outcome',
   ];
   const valuesLines = fixtures
@@ -226,6 +232,7 @@ function buildFixturesInsertSQL(rows, tournamentId, startDate) {
           esc(f.points2),
           esc(f.umpireTeamPlanned),
           esc(f.umpireTeamId),
+          esc(f.durationPlanned),
           esc(f.outcome),
         ].join(', ')})`
     )
