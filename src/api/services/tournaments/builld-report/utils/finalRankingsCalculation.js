@@ -1,18 +1,4 @@
-const BRACKET_ORDER = ['Cup', 'Shield', 'Plate', 'Bowl', 'Spoon'];
-const PLAYOFF_STAGE_ORDER = [
-  'FIN',
-  '3/4',
-  '4/5',
-  '5/6',
-  '6/7',
-  '7/8',
-  '8/9',
-  '9/10',
-  '10/11',
-  '11/12',
-  '12/13',
-  '13/14',
-];
+const { BRACKET_ORDER, PLAYOFF_STAGE_ORDER } = require('./rankingConstants');
 
 /**
  * Calculates the final tournament rankings for all teams.
@@ -40,19 +26,21 @@ function calculateFinalRankings(
   const teamsByBracketMap = new Map(
     teamsByBracket.map((b) => [b.bracket, b.teams])
   );
-  const teamsByGroupMap = new Map(teamsByGroup.map((g) => [g.group, g.teams]));
   const groupStandingsRankMap = new Map(
     allGroupsStandings.map((s, i) => [s.team, i])
   );
 
+  // Build team→group lookup for O(1) access
+  const teamToGroupMap = new Map();
+  teamsByGroup.forEach((g) => {
+    g.teams.forEach((team) => {
+      teamToGroupMap.set(team, `GP.${g.group}`);
+    });
+  });
+
   // Helper to get a team's group
   function getTeamGroup(teamName) {
-    for (const [groupNum, teams] of teamsByGroupMap.entries()) {
-      if (teams.includes(teamName)) {
-        return `GP.${groupNum}`;
-      }
-    }
-    return null;
+    return teamToGroupMap.get(teamName) || null;
   }
 
   // Helper to get group position for tie-breaking
@@ -166,27 +154,25 @@ function calculateFinalRankings(
         .sort(compareTeamsForRanking);
 
       unrankedInBracket.forEach((team) => {
-        if (!rankedTeams.has(team)) {
-          // Find the last knockout match this team played
-          const lastMatch = allKnockoutFixtures
-            .filter(
-              (f) =>
-                f.bracket === bracketName &&
-                (f.team1.name === team || f.team2.name === team) &&
-                f.outcome !== 'not played' &&
-                f.outcome !== 'skipped'
-            )
-            .pop();
+        // Find the last knockout match this team played
+        const lastMatch = allKnockoutFixtures
+          .filter(
+            (f) =>
+              f.bracket === bracketName &&
+              (f.team1.name === team || f.team2.name === team) &&
+              f.outcome !== 'not played' &&
+              f.outcome !== 'skipped'
+          )
+          .pop();
 
-          rankings.push(
-            createRankingEntry(
-              team,
-              bracketName,
-              lastMatch ? createLastMatchInfo(lastMatch, team) : null
-            )
-          );
-          rankedTeams.add(team);
-        }
+        rankings.push(
+          createRankingEntry(
+            team,
+            bracketName,
+            lastMatch ? createLastMatchInfo(lastMatch, team) : null
+          )
+        );
+        rankedTeams.add(team);
       });
     });
 
