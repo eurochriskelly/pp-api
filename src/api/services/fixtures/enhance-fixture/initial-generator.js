@@ -7,7 +7,10 @@ class InitialGenerator {
 
   generateInitial(categoryName) {
     if (!categoryName) return 'N/A';
-    const tokens = categoryName.split(/[\s-_]+/);
+    // Split on spaces, underscores, hyphens, AND boundaries between letters and numbers
+    const tokens = categoryName.split(
+      /[\s-_]+|(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])/
+    );
     let initial = '';
     for (const token of tokens) {
       if (/^\d+$/.test(token)) {
@@ -29,7 +32,7 @@ class InitialGenerator {
       `Initial conflict for category "${categoryName}": initial "${initial}" already used.`
     );
     const tokens = categoryName
-      .split(/[\s-_]+/)
+      .split(/[\s-_]+|(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])/)
       .filter((t) => !/^\d+$/.test(t));
     const isSingleWord = tokens.length === 1;
 
