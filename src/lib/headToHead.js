@@ -131,6 +131,36 @@ function groupByH2HStats(h2hSorted) {
 }
 
 /**
+ * Group teams by overall stats to identify sub-ties after overall tiebreaker
+ * @param {Array} overallSorted - Teams sorted by overall stats
+ * @returns {Array} Array of groups (each group is an array of tied teams)
+ */
+function groupByOverallStats(overallSorted) {
+  if (overallSorted.length === 0) return [];
+
+  const groups = [];
+  let currentGroup = [overallSorted[0]];
+
+  for (let i = 1; i < overallSorted.length; i++) {
+    const prev = overallSorted[i - 1];
+    const curr = overallSorted[i];
+
+    // Check if overall stats are identical (PointsDifference, PointsFrom)
+    if (
+      prev.PointsDifference === curr.PointsDifference &&
+      prev.PointsFrom === curr.PointsFrom
+    ) {
+      currentGroup.push(curr);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = [curr];
+    }
+  }
+  groups.push(currentGroup);
+  return groups;
+}
+
+/**
  * Apply overall stats tiebreaker to teams still tied after head-to-head
  * @param {Array} teams - Teams still tied after H2H
  * @returns {Array} Teams sorted by overall stats
@@ -170,16 +200,20 @@ function resolveTieGroup(tiedTeams, h2hMatches, allowJointPositions = true) {
       // Clear winner in this subgroup
       result.push(group[0]);
     } else {
-      // Still tied after head-to-head
-      if (allowJointPositions) {
-        // Gaelic Games Europe allows joint positions
-        // Keep them in the order they are (already sorted by H2H)
-        // They will share the same position
-        result.push(...group);
-      } else {
-        // Fall back to overall stats
-        const resolvedByOverall = applyOverallTiebreaker(group);
-        result.push(...resolvedByOverall);
+      // Still tied after head-to-head - apply overall tiebreaker
+      const resolvedByOverall = applyOverallTiebreaker([...group]);
+
+      // Group by overall stats to see who is still tied
+      const overallGroups = groupByOverallStats(resolvedByOverall);
+
+      for (const overallGroup of overallGroups) {
+        if (overallGroup.length === 1 || !allowJointPositions) {
+          // Single team or joint positions not allowed
+          result.push(...overallGroup);
+        } else {
+          // Still tied after overall stats - mark as joint positions
+          result.push(...overallGroup);
+        }
       }
     }
   }
@@ -368,6 +402,7 @@ module.exports = {
   extractH2HMatches,
   cleanStandingsData,
   groupByH2HStats,
+  groupByOverallStats,
   resolveTieGroup,
   applyOverallTiebreaker,
 };
