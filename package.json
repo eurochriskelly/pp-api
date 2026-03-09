@@ -10,15 +10,15 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "start": "npm run build && node dist/server.js",
-    "dev": "tsc && nodemon dist/server.js",
+    "start": "npm run build && node dist/src/server.js",
+    "dev": "tsx watch src/server.ts",
     "backup": "bash scripts/backup.sh",
     "interactive": "node test/interactive.js",
     "start:prod": "make start-production",
     "start:acc": "make start-acceptance",
     "api": "bash scripts/host-api.sh",
     "test:api": "bash scripts/test-api.sh",
-    "test:unit": "node --test test/unit/stage-completion.utils.spec.js",
+    "test:unit": "node --test dist/test/unit/**/*.spec.js",
     "migrate:received-tournaments": "node scripts/migrate-received-tournaments.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
@@ -62,6 +62,7 @@
     "globals": "^16.2.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.6.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   }
 }
