@@ -1,0 +1,11 @@
+name: 03a.select-club
+phase: setup
+method: GET
+path: /api/clubs?limit=1
+expect:
+  status: 200
+  json:
+    - path: data.0.clubId
+      exists: true
+capture:
+  TEST_CLUB_ID: data.0.clubId

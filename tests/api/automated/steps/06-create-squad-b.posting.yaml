@@ -1,0 +1,19 @@
+name: 06.create-squad-b
+phase: setup
+method: POST
+path: /api/tournaments/$TOURNAMENT_ID/squads
+headers:
+  Content-Type: application/json
+body:
+  teamName: Auto Team B
+  groupLetter: A
+  category: MEN
+  teamSheetSubmitted: false
+  notes: Created by automated tests
+expect:
+  status: 201
+  json:
+    - path: id
+      exists: true
+capture:
+  SQUAD_B_ID: id

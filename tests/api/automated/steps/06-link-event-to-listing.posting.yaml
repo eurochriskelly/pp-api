@@ -1,0 +1,15 @@
+name: 06.link-event-to-listing
+phase: setup
+method: PUT
+path: /api/listings/$LISTING_ID
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  eventIds:
+    - $EVENT_ID
+expect:
+  status: 200
+  json:
+    - path: data.id
+      equals: $LISTING_ID

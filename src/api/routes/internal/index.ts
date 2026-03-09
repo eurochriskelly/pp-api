@@ -184,6 +184,114 @@ export default (db: any, useMock: boolean, isDev: boolean) => {
   });
 
   /**
+   * GET /api/internal/schema
+   *
+   * Return DB schema metadata from information_schema for debugging.
+   *
+   * Query params:
+   *   - table?: string | string[] (comma-separated or repeated)
+   *
+   * Example:
+   *   /api/internal/schema?table=tournaments,fixtures,squads
+   */
+  router.get('/schema', async (req, res) => {
+    if (!db) {
+      res.status(400).json({
+        error: 'DB_CONNECTION_REQUIRED',
+        message: 'Schema inspection requires a live DB connection',
+      });
+      return;
+    }
+
+    try {
+      const { select } = require('../../../lib/db-helper')(db);
+
+      const rawTableQuery = req.query.table;
+      const requestedTables = Array.isArray(rawTableQuery)
+        ? rawTableQuery
+            .flatMap((v) => String(v).split(','))
+            .map((v) => v.trim())
+            .filter(Boolean)
+        : typeof rawTableQuery === 'string'
+          ? rawTableQuery
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean)
+          : [];
+
+      const safeRequestedTables = requestedTables.filter((table) =>
+        /^[a-zA-Z0-9_]+$/.test(table)
+      );
+
+      const dbRows = await select('SELECT DATABASE() AS db_name');
+      const dbName = dbRows?.[0]?.db_name;
+      if (!dbName) {
+        res.status(500).json({
+          error: 'DB_NAME_NOT_RESOLVED',
+          message: 'Could not resolve current database name',
+        });
+        return;
+      }
+
+      const tableFilterSql = safeRequestedTables.length
+        ? ` AND c.TABLE_NAME IN (${safeRequestedTables
+            .map(() => '?')
+            .join(',')})`
+        : '';
+      const tableFilterParams = safeRequestedTables.length
+        ? safeRequestedTables
+        : [];
+
+      const columns = await select(
+        `SELECT
+          c.TABLE_NAME,
+          c.COLUMN_NAME,
+          c.COLUMN_TYPE,
+          c.IS_NULLABLE,
+          c.COLUMN_DEFAULT,
+          c.COLUMN_KEY,
+          c.EXTRA
+         FROM information_schema.COLUMNS c
+         WHERE c.TABLE_SCHEMA = ?${tableFilterSql}
+         ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION`,
+        [dbName, ...tableFilterParams]
+      );
+
+      const foreignKeys = await select(
+        `SELECT
+          k.TABLE_NAME,
+          k.COLUMN_NAME,
+          k.REFERENCED_TABLE_NAME,
+          k.REFERENCED_COLUMN_NAME
+         FROM information_schema.KEY_COLUMN_USAGE k
+         WHERE k.TABLE_SCHEMA = ?
+           AND k.REFERENCED_TABLE_NAME IS NOT NULL${
+             safeRequestedTables.length
+               ? ` AND k.TABLE_NAME IN (${safeRequestedTables
+                   .map(() => '?')
+                   .join(',')})`
+               : ''
+           }
+         ORDER BY k.TABLE_NAME, k.COLUMN_NAME`,
+        [dbName, ...tableFilterParams]
+      );
+
+      res.json({
+        database: dbName,
+        requestedTables: safeRequestedTables,
+        columns,
+        foreignKeys,
+      });
+    } catch (err: any) {
+      console.error('[Internal] Schema endpoint error:', err);
+      res.status(500).json({
+        error: 'SCHEMA_FETCH_FAILED',
+        message: err.message,
+      });
+    }
+  });
+
+  /**
    * POST /api/internal/seed
    *
    * Seed the database with test data.

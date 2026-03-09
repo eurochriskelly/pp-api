@@ -1,0 +1,18 @@
+name: 12.card-fixture-1
+phase: setup
+method: POST
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_1_ID/carded
+headers:
+  Content-Type: application/json
+body:
+  team: Auto Team A
+  cardColor: yellow
+  playerNumber: 7
+  playerName: Auto Player
+expect:
+  status: 200
+  json:
+    - path: data.cardAdded
+      equals: true
+capture:
+  CARD_ID: data.cardId

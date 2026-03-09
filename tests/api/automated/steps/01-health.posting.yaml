@@ -1,0 +1,9 @@
+name: 01.health
+phase: setup
+method: GET
+path: /health
+expect:
+  status: 200
+  json:
+    - path: status
+      equals: ok

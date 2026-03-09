@@ -478,6 +478,19 @@ export async function parseCoachPdfToJson(
         }
       }
 
+      // Fallback format: "ID Name ID Name" (no DOB columns)
+      if (playersData.length === 0 && dataLine) {
+        const idNameRegex = /(\d+)\s+([^0-9]+?)(?=\s+\d+\s+|$)/g;
+        let match: RegExpExecArray | null;
+        while ((match = idNameRegex.exec(dataLine)) !== null) {
+          playersData.push({
+            dob: '',
+            id: parseInt(match[1], 10),
+            name: match[2].trim(),
+          });
+        }
+      }
+
       // Process each player
       for (let j = 0; j < Math.min(nameParts.length, playersData.length); j++) {
         const playerData = playersData[j];

@@ -39,7 +39,7 @@ echo "App: ${APP}"
 echo "Use Mock: ${USE_MOCK}"
 echo "Log File: ${LOG_FILE}"
 
-node dist/server.js
+node dist/src/server.js
   
   echo "--- Variables before starting Node.js ---"
   echo "PP_DBN: ${PP_DBN}"
@@ -49,7 +49,7 @@ node dist/server.js
   echo "DATABASE: ${DATABASE}"
   echo "-----------------------------------------"
   
-npx nodemon --watch dist/ dist/server.js
+npx nodemon --watch dist/ dist/src/server.js
 
 echo "=== Server stopped at $(date) ==="
 else
@@ -79,7 +79,7 @@ else
     echo "-----------------------------------------"
 
     # Now start the server
-if node dist/server.js
+if node dist/src/server.js
     then
       echo "Server exited cleanly"
       break

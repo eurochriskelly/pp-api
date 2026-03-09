@@ -1,0 +1,10 @@
+name: 90.cleanup-event
+phase: cleanup
+method: DELETE
+path: /api/events/$EVENT_ID
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status:
+    - 204
+    - 404

@@ -24,3 +24,23 @@ backend/
 ├── lib/
 │   ├── logging.js         # Unchanged
 │   └── utils.js           # Unchanged (jsonToCsv, sendXsls, etc.)
+
+## Automated API tests
+
+Run sequential API tests with:
+
+```bash
+make test-api
+```
+
+Optional cleanup:
+
+```bash
+make test-api CLEANUP=true
+```
+
+This command:
+- runs sequential `.posting.yaml` steps from `tests/api/automated/steps/`
+- loads variables from `tests/api/automated/common.env`
+- stores per-step request/response artifacts under `tests/api/automated/artifacts/<timestamp>/`
+- if `CLEANUP=true`, runs cleanup steps at the end to remove created test data

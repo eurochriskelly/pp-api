@@ -1,0 +1,19 @@
+name: 04.create-listing
+phase: setup
+method: POST
+path: /api/listings
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  title: Automated Listing $RUN_ID
+  slug: $TEST_LISTING_SLUG
+  description: Automated listing created by API test run $RUN_ID
+  eventIds: []
+expect:
+  status: 201
+  json:
+    - path: data.id
+      exists: true
+capture:
+  LISTING_ID: data.id

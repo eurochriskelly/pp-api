@@ -1,0 +1,10 @@
+name: 90.cleanup-pitches
+phase: cleanup
+whenVars:
+  - TOURNAMENT_ID
+method: DELETE
+path: /api/tournaments/$TOURNAMENT_ID/pitches
+expect:
+  status:
+    - 200
+    - 404

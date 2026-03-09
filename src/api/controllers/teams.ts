@@ -6,7 +6,7 @@ type TeamParams = {
   id: string;
 };
 
-export default (db: any, useMock: boolean) => {
+function teamsController(db: any, useMock: boolean) {
   const factory = useMock ? mockServiceFactory : serviceFactory;
   const dbSvc: any = factory(db);
 
@@ -193,3 +193,5 @@ export default (db: any, useMock: boolean) => {
     },
   };
 };
+
+export = teamsController;

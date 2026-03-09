@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup clean follow kill diagnostics-sql-on diagnostics-sql-off
+.PHONY: help start mocks logs backup clean follow kill diagnostics-sql-on diagnostics-sql-off test-api
 
 DEFAULT_GOAL := help
 
@@ -18,6 +18,9 @@ start:  ## Start server with auto-restart (usage: make start [env=production|acc
 
 test:  ## Run unit tests
 	npm run test:unit
+
+test-api: ## Run sequential automated API tests (usage: make test-api [CLEANUP=true])
+	./scripts/make/test-api.sh
 
 backup:  ## Create a database backup (usage: make backup ENV=<environment>)
 	@if [ -z "$(ENV)" ]; then \

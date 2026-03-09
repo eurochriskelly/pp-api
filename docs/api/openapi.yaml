@@ -1,175 +1,4376 @@
 openapi: 3.0.3
 info:
-  title: Gaelic Tournametn API
-  description: API for managing tournaments, squads, players, fixtures, and related data for the EuroTourno application.
+  title: Gaelic Tournament API
   version: 1.0.0
-
+  description: Auto-generated OpenAPI specification from mounted Express routes in pp-api.
+  license:
+    name: UNLICENSED
+    url: https://example.com/license
 servers:
-  - url: http://localhost:4000/api
-    description: Local development server
-
+  - url: http://localhost:4001
+    description: Local API server
+security:
+  - {}
+  - bearerAuth: []
+tags:
+  - name: auth
+    description: Authentication and account flows
+  - name: tournaments
+    description: Tournament lifecycle and reporting
+  - name: fixtures
+    description: Fixture scheduling and match state
+  - name: regions
+    description: Regions and regional club data
+  - name: general
+    description: General cross-domain read endpoints
+  - name: system
+    description: System diagnostics and health
+  - name: clubs
+    description: Club management and media
+  - name: annual-reports
+    description: Annual reporting data
+  - name: teams
+    description: Team management and media
+  - name: events
+    description: Events CRUD and search
+  - name: listings
+    description: Public listings and iCal endpoints
+  - name: users
+    description: User and role management
+  - name: internal
+    description: Non-production internal test endpoints
 paths:
+  /api/tournaments:
+    post:
+      tags:
+        - tournaments
+      summary: Create tournaments
+      operationId: post_api_tournaments
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    get:
+      tags:
+        - tournaments
+      summary: Get tournaments
+      operationId: get_api_tournaments
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/tournaments/summary:
+    get:
+      tags:
+        - tournaments
+      summary: Get summary
+      operationId: get_api_tournaments_summary
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/tournaments/by-status/{status}:
+    get:
+      tags:
+        - tournaments
+      summary: Get by status
+      operationId: get_api_tournaments_by_status_status
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: status
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}:
+    get:
+      tags:
+        - tournaments
+      summary: Get tournaments
+      operationId: get_api_tournaments_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - tournaments
+      summary: Update tournaments
+      operationId: put_api_tournaments_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - tournaments
+      summary: Delete tournaments
+      operationId: delete_api_tournaments_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/report:
+    get:
+      tags:
+        - tournaments
+      summary: Get report
+      operationId: get_api_tournaments_id_report
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - tournaments
+      summary: Update report
+      operationId: put_api_tournaments_id_report
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{id}/report-cache:
+    get:
+      tags:
+        - tournaments
+      summary: Get report cache
+      operationId: get_api_tournaments_id_report_cache
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/status/{status}:
+    put:
+      tags:
+        - tournaments
+      summary: Update status
+      operationId: put_api_tournaments_tournamentId_status_status
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/by-uuid/{uuid}:
+    get:
+      tags:
+        - tournaments
+      summary: Get by uuid
+      operationId: get_api_tournaments_by_uuid_uuid
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/reset:
+    post:
+      tags:
+        - tournaments
+      summary: Create reset
+      operationId: post_api_tournaments_id_reset
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{id}/validate-tsv:
+    post:
+      tags:
+        - tournaments
+      summary: Create validate tsv
+      operationId: post_api_tournaments_id_validate_tsv
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/generate-fixtures:
+    post:
+      tags:
+        - tournaments
+      summary: Create generate fixtures
+      operationId: post_api_tournaments_tournamentId_generate_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{id}/recent-matches:
+    get:
+      tags:
+        - tournaments
+      summary: Get recent matches
+      operationId: get_api_tournaments_id_recent_matches
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/categories:
+    get:
+      tags:
+        - tournaments
+      summary: Get categories
+      operationId: get_api_tournaments_id_categories
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/group-fixtures:
+    get:
+      tags:
+        - tournaments
+      summary: Get group fixtures
+      operationId: get_api_tournaments_id_group_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/group-standings:
+    get:
+      tags:
+        - tournaments
+      summary: Get group standings
+      operationId: get_api_tournaments_id_group_standings
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/knockout-fixtures:
+    get:
+      tags:
+        - tournaments
+      summary: Get knockout fixtures
+      operationId: get_api_tournaments_id_knockout_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/finals-results:
+    get:
+      tags:
+        - tournaments
+      summary: Get finals results
+      operationId: get_api_tournaments_id_finals_results
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/all-matches:
+    get:
+      tags:
+        - tournaments
+      summary: Get all matches
+      operationId: get_api_tournaments_id_all_matches
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/clubs:
+    get:
+      tags:
+        - tournaments
+      summary: Get clubs
+      operationId: get_api_tournaments_tournamentId_clubs
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/filters:
+    get:
+      tags:
+        - tournaments
+      summary: Get filters
+      operationId: get_api_tournaments_tournamentId_filters
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/code-check/{code}:
+    get:
+      tags:
+        - tournaments
+      summary: Get code check
+      operationId: get_api_tournaments_id_code_check_code
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/matches-by-pitch:
+    get:
+      tags:
+        - tournaments
+      summary: Get matches by pitch
+      operationId: get_api_tournaments_tournamentId_matches_by_pitch
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/carded-players:
+    get:
+      tags:
+        - tournaments
+      summary: Get carded players
+      operationId: get_api_tournaments_tournamentId_carded_players
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/squads:
+    post:
+      tags:
+        - tournaments
+      summary: Create squads
+      operationId: post_api_tournaments_tournamentId_squads
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    get:
+      tags:
+        - tournaments
+      summary: Get squads
+      operationId: get_api_tournaments_tournamentId_squads
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/squads/{id}:
+    get:
+      tags:
+        - tournaments
+      summary: Get squads
+      operationId: get_api_tournaments_tournamentId_squads_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - tournaments
+      summary: Update squads
+      operationId: put_api_tournaments_tournamentId_squads_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - tournaments
+      summary: Delete squads
+      operationId: delete_api_tournaments_tournamentId_squads_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/squads/{squadId}/players:
+    post:
+      tags:
+        - tournaments
+      summary: Create players
+      operationId: post_api_tournaments_tournamentId_squads_squadId_players
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    get:
+      tags:
+        - tournaments
+      summary: Get players
+      operationId: get_api_tournaments_tournamentId_squads_squadId_players
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/squads/{squadId}/players/{id}:
+    get:
+      tags:
+        - tournaments
+      summary: Get players
+      operationId: get_api_tournaments_tournamentId_squads_squadId_players_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - tournaments
+      summary: Update players
+      operationId: put_api_tournaments_tournamentId_squads_squadId_players_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - tournaments
+      summary: Delete players
+      operationId: delete_api_tournaments_tournamentId_squads_squadId_players_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/fixtures:
+    delete:
+      tags:
+        - tournaments
+      summary: Delete fixtures
+      operationId: delete_api_tournaments_id_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    post:
+      tags:
+        - tournaments
+      summary: Create fixtures
+      operationId: post_api_tournaments_id_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    get:
+      tags:
+        - fixtures
+      summary: Get fixtures
+      operationId: get_api_tournaments_id_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/pitches:
+    delete:
+      tags:
+        - tournaments
+      summary: Delete pitches
+      operationId: delete_api_tournaments_id_pitches
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    post:
+      tags:
+        - tournaments
+      summary: Create pitches
+      operationId: post_api_tournaments_id_pitches
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    get:
+      tags:
+        - general
+      summary: Get pitches
+      operationId: get_api_tournaments_id_pitches
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/cards:
+    delete:
+      tags:
+        - tournaments
+      summary: Delete cards
+      operationId: delete_api_tournaments_id_cards
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/overview:
+    get:
+      tags:
+        - tournaments
+      summary: Get overview
+      operationId: get_api_tournaments_id_overview
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{id}/integrity-check:
+    get:
+      tags:
+        - tournaments
+      summary: Get integrity check
+      operationId: get_api_tournaments_id_integrity_check
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/organizers:
+    get:
+      tags:
+        - tournaments
+      summary: Get organizers
+      operationId: get_api_tournaments_tournamentId_organizers
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/organizers/{userId}:
+    put:
+      tags:
+        - tournaments
+      summary: Update organizers
+      operationId: put_api_tournaments_tournamentId_organizers_userId
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/club/{clubId}/logo:
+    get:
+      tags:
+        - tournaments
+      summary: Get logo
+      operationId: get_api_tournaments_tournamentId_club_clubId_logo
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/fixtures/nextup:
+    get:
+      tags:
+        - fixtures
+      summary: Get nextup
+      operationId: get_api_tournaments_tournamentId_fixtures_nextup
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/fixtures/pitches/{pitch}/fixtures:
+    get:
+      tags:
+        - fixtures
+      summary: Get fixtures
+      operationId: get_api_tournaments_tournamentId_fixtures_pitches_pitch_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pitch
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/fixtures/{fixtureId}/rewind:
+    put:
+      tags:
+        - fixtures
+      summary: Update rewind
+      operationId: put_api_tournaments_tournamentId_fixtures_fixtureId_rewind
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fixtureId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{fixtureId}/carded-players:
+    get:
+      tags:
+        - fixtures
+      summary: Get carded players
+      operationId: get_api_tournaments_tournamentId_fixtures_fixtureId_carded_players
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fixtureId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/fixtures/{fixtureId}:
+    get:
+      tags:
+        - fixtures
+      summary: Get fixtures
+      operationId: get_api_tournaments_tournamentId_fixtures_fixtureId
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fixtureId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/fixtures/filtered:
+    post:
+      tags:
+        - fixtures
+      summary: Create filtered
+      operationId: post_api_tournaments_tournamentId_fixtures_filtered
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/update-calculated-fixtures:
+    put:
+      tags:
+        - fixtures
+      summary: Update update calculated fixtures
+      operationId: put_api_tournaments_tournamentId_fixtures_update_calculated_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{fixtureId}/update-calculated-fixtures:
+    put:
+      tags:
+        - fixtures
+      summary: Update update calculated fixtures
+      operationId: put_api_tournaments_tournamentId_fixtures_fixtureId_update_calculated_fixtures
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fixtureId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{id}/start:
+    post:
+      tags:
+        - fixtures
+      summary: Create start
+      operationId: post_api_tournaments_tournamentId_fixtures_id_start
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{id}/end:
+    post:
+      tags:
+        - fixtures
+      summary: Create end
+      operationId: post_api_tournaments_tournamentId_fixtures_id_end
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{id}/reschedule:
+    post:
+      tags:
+        - fixtures
+      summary: Create reschedule
+      operationId: post_api_tournaments_tournamentId_fixtures_id_reschedule
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{id}/score:
+    post:
+      tags:
+        - fixtures
+      summary: Create score
+      operationId: post_api_tournaments_tournamentId_fixtures_id_score
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{id}/carded:
+    post:
+      tags:
+        - fixtures
+      summary: Create carded
+      operationId: post_api_tournaments_tournamentId_fixtures_id_carded
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{id}/carded/{cardId}:
+    delete:
+      tags:
+        - fixtures
+      summary: Delete carded
+      operationId: delete_api_tournaments_tournamentId_fixtures_id_carded_cardId
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/regions:
+    get:
+      tags:
+        - regions
+      summary: Get regions
+      operationId: get_api_regions
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/regions/{region}:
+    get:
+      tags:
+        - regions
+      summary: Get regions
+      operationId: get_api_regions_region
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/regions/{region}/clubs:
+    get:
+      tags:
+        - regions
+      summary: Get clubs
+      operationId: get_api_regions_region_clubs
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: region
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/teams:
+    get:
+      tags:
+        - general
+      summary: Get teams
+      operationId: get_api_tournaments_tournamentId_teams
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/tournaments/{tournamentId}/standings:
+    get:
+      tags:
+        - general
+      summary: Get standings
+      operationId: get_api_tournaments_tournamentId_standings
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/users:
+    get:
+      tags:
+        - general
+      summary: Get users
+      operationId: get_api_users
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - users
+      summary: Create users
+      operationId: post_api_users
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/signup:
+    post:
+      tags:
+        - auth
+      summary: Create signup
+      operationId: post_api_auth_signup
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /auth/signup:
-    $ref: './paths/auth/auth-signup.yaml'
+    post:
+      tags:
+        - auth
+      summary: Create signup
+      operationId: post_auth_signup
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/verify:
+    post:
+      tags:
+        - auth
+      summary: Create verify
+      operationId: post_api_auth_verify
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /auth/verify:
-    $ref: './paths/auth/auth-verify.yaml'
+    post:
+      tags:
+        - auth
+      summary: Create verify
+      operationId: post_auth_verify
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/register:
+    post:
+      tags:
+        - auth
+      summary: Create register
+      operationId: post_api_auth_register
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /auth/register:
-    $ref: './paths/auth/auth-register.yaml'
+    post:
+      tags:
+        - auth
+      summary: Create register
+      operationId: post_auth_register
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/login:
+    post:
+      tags:
+        - auth
+      summary: Create login
+      operationId: post_api_auth_login
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /auth/login:
-    $ref: './paths/auth/auth-login.yaml'
+    post:
+      tags:
+        - auth
+      summary: Create login
+      operationId: post_auth_login
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/logout:
+    post:
+      tags:
+        - auth
+      summary: Create logout
+      operationId: post_api_auth_logout
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /auth/logout:
-    $ref: './paths/auth/auth-logout.yaml'
+    post:
+      tags:
+        - auth
+      summary: Create logout
+      operationId: post_auth_logout
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/me:
+    get:
+      tags:
+        - auth
+      summary: Get me
+      operationId: get_api_auth_me
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /auth/me:
-    $ref: './paths/auth/auth-me.yaml'
+    get:
+      tags:
+        - auth
+      summary: Get me
+      operationId: get_auth_me
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/auth/users:
+    get:
+      tags:
+        - auth
+      summary: Get users
+      operationId: get_api_auth_users
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /auth/users:
-    $ref: './paths/auth/auth-users.yaml'
-  /tournaments/{tournamentId}/fixtures:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures.yaml'
-  /tournaments/{tournamentId}/fixtures/nextup:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-nextup.yaml'
-  /tournaments/{tournamentId}/fixtures/pitches/{pitch}/fixtures:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-pitches-pitch-fixtures.yaml'
-  /tournaments/{tournamentId}/fixtures/{fixtureId}/rewind:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid-rewind.yaml'
-  /tournaments/{tournamentId}/fixtures/{fixtureId}/carded-players:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid-carded-players.yaml'
-  /tournaments/{tournamentId}/fixtures/{fixtureId}:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid.yaml'
-  /tournaments/{tournamentId}/fixtures/filtered:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-filtered.yaml'
-  /tournaments/{tournamentId}/fixtures/update-calculated-fixtures:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-update-calculated-fixtures.yaml'
-  /tournaments/{tournamentId}/fixtures/{fixtureId}/update-calculated-fixtures:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-fixtureid-update-calculated-fixtures.yaml'
-  /tournaments/{tournamentId}/fixtures/{id}/start:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-start.yaml'
-  /tournaments/{tournamentId}/fixtures/{id}/end:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-end.yaml'
-  /tournaments/{tournamentId}/fixtures/{id}/reschedule:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-reschedule.yaml'
-  /tournaments/{tournamentId}/fixtures/{id}/score:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-score.yaml'
-  /tournaments/{tournamentId}/fixtures/{id}/carded:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-carded.yaml'
-  /tournaments/{tournamentId}/fixtures/{id}/carded/{cardId}:
-    $ref: './paths/fixtures/tournaments-tournamentid-fixtures-id-carded-cardid.yaml'
-  /general/tournaments/{tournamentId}/pitches:
-    $ref: './paths/general/general-tournaments-tournamentid-pitches.yaml'
-  /general/tournaments/{tournamentId}/teams:
-    $ref: './paths/general/general-tournaments-tournamentid-teams.yaml'
-  /general/tournaments/{tournamentId}/standings:
-    $ref: './paths/general/general-tournaments-tournamentid-standings.yaml'
-  /general/users:
-    $ref: './paths/general/general-users.yaml'
-  /regions:
-    $ref: './paths/regions/regions.yaml'
-  /regions/{region}:
-    $ref: './paths/regions/regions-region.yaml'
+    get:
+      tags:
+        - auth
+      summary: Get users
+      operationId: get_auth_users
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/auth/check-email:
+    post:
+      tags:
+        - auth
+      summary: Create check email
+      operationId: post_api_auth_check_email
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /auth/check-email:
+    post:
+      tags:
+        - auth
+      summary: Create check email
+      operationId: post_auth_check_email
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /api/system/diagnostics/print-sql-statements:
-    $ref: './paths/system/api-system-diagnostics-print-sql-statements.yaml'
-  /tournaments:
-    $ref: './paths/tournaments/tournaments.yaml'
-  /tournaments/summary:
-    $ref: './paths/tournaments/tournaments-summary.yaml'
-  /tournaments/by-status/{status}:
-    $ref: './paths/tournaments/tournaments-by-status-status.yaml'
-  /tournaments/{id}:
-    $ref: './paths/tournaments/tournaments-id.yaml'
-  /tournaments/{id}/report:
-    $ref: './paths/tournaments/tournaments-id-report.yaml'
-  /tournaments/{tournamentId}/status/{status}:
-    $ref: './paths/tournaments/tournaments-tournamentid-status-status.yaml'
-  /tournaments/by-uuid/{uuid}:
-    $ref: './paths/tournaments/tournaments-by-uuid-uuid.yaml'
-  /tournaments/{id}/reset:
-    $ref: './paths/tournaments/tournaments-id-reset.yaml'
-  /tournaments/{id}/validate-tsv:
-    $ref: './paths/tournaments/tournaments-id-validate-tsv.yaml'
-  /tournaments/{tournamentId}/generate-fixtures:
-    $ref: './paths/tournaments/tournaments-tournamentid-generate-fixtures.yaml'
-  /tournaments/{id}/recent-matches:
-    $ref: './paths/tournaments/tournaments-id-recent-matches.yaml'
-  /tournaments/{id}/categories:
-    $ref: './paths/tournaments/tournaments-id-categories.yaml'
-  /tournaments/{id}/group-fixtures:
-    $ref: './paths/tournaments/tournaments-id-group-fixtures.yaml'
-  /tournaments/{id}/group-standings:
-    $ref: './paths/tournaments/tournaments-id-group-standings.yaml'
-  /tournaments/{id}/knockout-fixtures:
-    $ref: './paths/tournaments/tournaments-id-knockout-fixtures.yaml'
-  /tournaments/{id}/finals-results:
-    $ref: './paths/tournaments/tournaments-id-finals-results.yaml'
-  /tournaments/{id}/all-matches:
-    $ref: './paths/tournaments/tournaments-id-all-matches.yaml'
-  /tournaments/{tournamentId}/filters:\n    $ref: './paths/tournaments/tournaments-tournamentid-filters.yaml'\n  /annual-reports:\n    $ref: './paths/annual-reports/annual-reports.yaml'\n  /annual-reports/{year}:\n    $ref: './paths/annual-reports/annual-reports-year.yaml'
-  /tournaments/{id}/code-check/{code}:
-    $ref: './paths/tournaments/tournaments-id-code-check-code.yaml'
-  /tournaments/{tournamentId}/matches-by-pitch:
-    $ref: './paths/tournaments/tournaments-tournamentid-matches-by-pitch.yaml'
-  /tournaments/{tournamentId}/carded-players:
-    $ref: './paths/tournaments/tournaments-tournamentid-carded-players.yaml'
-  /tournaments/{tournamentId}/squads:
-    $ref: './paths/tournaments/tournaments-tournamentid-squads.yaml'
-  /tournaments/{tournamentId}/squads/{id}:
-    $ref: './paths/tournaments/tournaments-tournamentid-squads-id.yaml'
-  /tournaments/{tournamentId}/squads/{squadId}/players:
-    $ref: './paths/tournaments/tournaments-tournamentid-squads-squadid-players.yaml'
-  /tournaments/{tournamentId}/squads/{squadId}/players/{id}:
-    $ref: './paths/tournaments/tournaments-tournamentid-squads-squadid-players-id.yaml'
-  /tournaments/{id}/fixtures:
-    $ref: './paths/tournaments/tournaments-id-fixtures.yaml'
-  /tournaments/{id}/pitches:
-    $ref: './paths/tournaments/tournaments-id-pitches.yaml'
-  /tournaments/{id}/cards:
-    $ref: './paths/tournaments/tournaments-id-cards.yaml'
-  /tournaments/{id}/overview:
-    $ref: './paths/tournaments/tournaments-id-overview.yaml'
-  /tournaments/{id}/integrity-check:
-    $ref: './paths/tournaments/tournaments-id-integrity-check.yaml'
-  /tournaments/{tournamentId}/organizers:
-    $ref: './paths/tournaments/tournaments-tournamentid-organizers.yaml'
-  /tournaments/{tournamentId}/organizers/{userId}:
-    $ref: './paths/tournaments/tournaments-tournamentid-organizers-userid.yaml'
-
+    put:
+      tags:
+        - system
+      summary: Update print sql statements
+      operationId: put_api_system_diagnostics_print_sql_statements
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - system
+      summary: Delete print sql statements
+      operationId: delete_api_system_diagnostics_print_sql_statements
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/system/mode:
+    get:
+      tags:
+        - system
+      summary: Get mode
+      operationId: get_api_system_mode
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/clubs:
+    get:
+      tags:
+        - clubs
+      summary: Get clubs
+      operationId: get_api_clubs
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - clubs
+      summary: Create clubs
+      operationId: post_api_clubs
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/clubs/{id}:
+    get:
+      tags:
+        - clubs
+      summary: Get clubs
+      operationId: get_api_clubs_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - clubs
+      summary: Update clubs
+      operationId: put_api_clubs_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - clubs
+      summary: Delete clubs
+      operationId: delete_api_clubs_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/clubs/{id}/logo:
+    get:
+      tags:
+        - clubs
+      summary: Get logo
+      operationId: get_api_clubs_id_logo
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    post:
+      tags:
+        - clubs
+      summary: Upload a club logo image
+      operationId: post_api_clubs_id_logo
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          image/*:
+            schema:
+              type: string
+              format: binary
+  /api/annual-reports:
+    get:
+      tags:
+        - annual-reports
+      summary: Get annual reports
+      operationId: get_api_annual_reports
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/annual-reports/{year}:
+    get:
+      tags:
+        - annual-reports
+      summary: Get annual reports
+      operationId: get_api_annual_reports_year
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/teams/batch:
+    post:
+      tags:
+        - teams
+      summary: Create batch
+      operationId: post_api_teams_batch
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/teams/assign-tournament:
+    post:
+      tags:
+        - teams
+      summary: Create assign tournament
+      operationId: post_api_teams_assign_tournament
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/teams:
+    get:
+      tags:
+        - teams
+      summary: Get teams
+      operationId: get_api_teams
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - teams
+      summary: Create teams
+      operationId: post_api_teams
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/teams/{id}:
+    get:
+      tags:
+        - teams
+      summary: Get teams
+      operationId: get_api_teams_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - teams
+      summary: Update teams
+      operationId: put_api_teams_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/teams/{id}/logo:
+    get:
+      tags:
+        - teams
+      summary: Get logo
+      operationId: get_api_teams_id_logo
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    post:
+      tags:
+        - teams
+      summary: Upload a team logo image
+      operationId: post_api_teams_id_logo
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+  /api/events:
+    get:
+      tags:
+        - events
+      summary: Get events
+      operationId: get_api_events
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - events
+      summary: Create events
+      operationId: post_api_events
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/events/search:
+    get:
+      tags:
+        - events
+      summary: Get search
+      operationId: get_api_events_search
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/events/{id}:
+    get:
+      tags:
+        - events
+      summary: Get events
+      operationId: get_api_events_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - events
+      summary: Update events
+      operationId: put_api_events_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - events
+      summary: Delete events
+      operationId: delete_api_events_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/listings:
+    get:
+      tags:
+        - listings
+      summary: Get listings
+      operationId: get_api_listings
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - listings
+      summary: Create listings
+      operationId: post_api_listings
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/listings/{id}:
+    get:
+      tags:
+        - listings
+      summary: Get listings
+      operationId: get_api_listings_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    put:
+      tags:
+        - listings
+      summary: Update listings
+      operationId: put_api_listings_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - listings
+      summary: Delete listings
+      operationId: delete_api_listings_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/listings/{id}/events:
+    get:
+      tags:
+        - listings
+      summary: Get events
+      operationId: get_api_listings_id_events
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/listings/{id}/timeline:
+    get:
+      tags:
+        - listings
+      summary: Get timeline
+      operationId: get_api_listings_id_timeline
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/listings/{id}/ical:
+    get:
+      tags:
+        - listings
+      summary: Get ical
+      operationId: get_api_listings_id_ical
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/users/{id}:
+    put:
+      tags:
+        - users
+      summary: Update users
+      operationId: put_api_users_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - users
+      summary: Delete users
+      operationId: delete_api_users_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+    get:
+      tags:
+        - users
+      summary: Get users
+      operationId: get_api_users_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/roles:
+    post:
+      tags:
+        - users
+      summary: Create roles
+      operationId: post_api_roles
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/roles/{id}:
+    put:
+      tags:
+        - users
+      summary: Update roles
+      operationId: put_api_roles_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+    delete:
+      tags:
+        - users
+      summary: Delete roles
+      operationId: delete_api_roles_id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/internal/cleanup:
+    post:
+      tags:
+        - internal
+      summary: Create cleanup
+      operationId: post_api_internal_cleanup
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      description: Internal/test endpoint. Available when NODE_ENV is not production.
+      x-internal-only: true
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/internal/reset-mocks:
+    post:
+      tags:
+        - internal
+      summary: Create reset mocks
+      operationId: post_api_internal_reset_mocks
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      description: Internal/test endpoint. Available when NODE_ENV is not production.
+      x-internal-only: true
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/internal/health:
+    get:
+      tags:
+        - internal
+      summary: Get health
+      operationId: get_api_internal_health
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      description: Internal/test endpoint. Available when NODE_ENV is not production.
+      x-internal-only: true
+  /api/internal/seed:
+    post:
+      tags:
+        - internal
+      summary: Create seed
+      operationId: post_api_internal_seed
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      description: Internal/test endpoint. Available when NODE_ENV is not production.
+      x-internal-only: true
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/club/{clubId}/teamsheet:
+    post:
+      tags:
+        - tournaments
+      summary: Upload teamsheet PDF for a tournament club
+      operationId: post_api_tournaments_tournamentId_club_clubId_teamsheet
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+  /api/upload:
+    post:
+      tags:
+        - system
+      summary: Upload a file payload
+      operationId: post_api_upload
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+  /health:
+    get:
+      tags:
+        - system
+      summary: Health check
+      operationId: get_health
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
-    TournamentCreate:
-      $ref: './components/schemas/TournamentCreate.yaml'
-    TournamentSummary:
-      $ref: './components/schemas/TournamentSummary.yaml'
-    Tournament:
-      $ref: './components/schemas/Tournament.yaml'
-    SquadCreate:
-      $ref: './components/schemas/SquadCreate.yaml'
-    Squad:
-      $ref: './components/schemas/Squad.yaml'
-    PlayerCreate:
-      $ref: './components/schemas/PlayerCreate.yaml'
-    Player:
-      $ref: './components/schemas/Player.yaml'
-    Match:
-      $ref: './components/schemas/Match.yaml'
-    Fixture:
-      $ref: './components/schemas/Fixture.yaml'
-    Standing:
-      $ref: './components/schemas/Standing.yaml'
-    FinalsResult:
-      $ref: './components/schemas/FinalsResult.yaml'
-    CardedPlayer:
-      $ref: './components/schemas/CardedPlayer.yaml'
-    Pitch:
-      $ref: './components/schemas/Pitch.yaml'
-    PitchEvent:
-      $ref: './components/schemas/PitchEvent.yaml'
-    NextUpFixture:
-      $ref: './components/schemas/NextUpFixture.yaml'
-    MatchResult:
-      $ref: './components/schemas/MatchResult.yaml'
-    Category:
-      $ref: './components/schemas/Category.yaml'
-    ClubTeam:
-      $ref: './components/schemas/ClubTeam.yaml'
-    GroupStanding:
-      $ref: './components/schemas/GroupStanding.yaml'
     Error:
-      $ref: './components/schemas/Error.yaml'
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string

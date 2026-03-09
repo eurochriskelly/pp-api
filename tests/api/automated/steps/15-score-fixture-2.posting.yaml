@@ -1,0 +1,19 @@
+name: 15.score-fixture-2
+phase: setup
+method: POST
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_2_ID/score
+headers:
+  Content-Type: application/json
+body:
+  scores:
+    team1:
+      name: Auto Team C
+      goals: 2
+      points: 4
+    team2:
+      name: Auto Team D
+      goals: 1
+      points: 3
+  outcome: played
+expect:
+  status: 200

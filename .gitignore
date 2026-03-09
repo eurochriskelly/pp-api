@@ -13,3 +13,5 @@ config
 backups/
 .env.local
 docs/external/
+tests/api/automated/artifacts/*
+!tests/api/automated/artifacts/.gitkeep

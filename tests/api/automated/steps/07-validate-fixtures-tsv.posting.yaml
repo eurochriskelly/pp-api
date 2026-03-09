@@ -1,0 +1,13 @@
+name: 07.validate-fixtures-tsv
+phase: setup
+method: POST
+path: /api/tournaments/$TOURNAMENT_ID/validate-tsv
+headers:
+  Content-Type: application/json
+body:
+  key: $TSV_BASE64
+expect:
+  status: 201
+  json:
+    - path: data.rows
+      exists: true

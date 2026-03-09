@@ -18,6 +18,19 @@ import * as os from 'os';
 import * as crypto from 'crypto';
 import * as zlib from 'zlib';
 
+// Type definitions for database results
+interface Fixture {
+  id: number;
+  category?: string;
+  stage?: string;
+  team1Id?: string;
+  team2Id?: string;
+  umpireTeamId?: string;
+  scheduled?: string;
+  groupNumber?: number | string;
+  [key: string]: unknown;
+}
+
 // Helper function to calculate lifecycle status
 function calculateLifecycleStatus(
   dbStatus: string,
@@ -347,10 +360,10 @@ export default (db: any) => {
         throw new Error(`Invalid role: ${role}`);
       }
 
-      const [row] = await select(
+      const [row] = (await select(
         `SELECT ${roleCodeMap[role]} AS roleCode FROM tournaments WHERE id = ?`,
         [tournamentId]
-      );
+      )) as { roleCode: string }[];
 
       DD(
         `Checking code for role ${role} in tournament ${tournamentId}: expected ${row?.roleCode}, got ${code}`
@@ -435,12 +448,12 @@ export default (db: any) => {
         foirreannId: string;
       }
     ) => {
-      const result = await insert(
+      const playerId = await insert(
         `INSERT INTO players (firstName, secondName, dateOfBirth, foirreannId, teamId) 
          VALUES (?, ?, ?, ?, ?)`,
         [firstName, secondName, dateOfBirth, foirreannId, squadId]
       );
-      return result.insertId;
+      return playerId;
     },
 
     getPlayers: async (squadId: number) => {
@@ -737,7 +750,7 @@ export default (db: any) => {
         notes: string;
       }
     ) => {
-      const result = await insert(
+      const squadId = await insert(
         `INSERT INTO squads (teamName, groupLetter, category, teamSheetSubmitted, notes, tournamentId) 
          VALUES (?, ?, ?, ?, ?, ?)`,
         [
@@ -749,7 +762,7 @@ export default (db: any) => {
           tournamentId,
         ]
       );
-      return result.insertId;
+      return squadId;
     },
 
     deleteCards: (tournamentId: number) => deleteCards(dbDelete, tournamentId),
@@ -763,6 +776,14 @@ export default (db: any) => {
     },
 
     deleteSquad: async (id: number) => {
+      try {
+        await dbDelete(`DELETE FROM players WHERE teamId = ?`, [id]);
+      } catch (err: any) {
+        // Legacy schemas may not include players.teamId.
+        if (err?.code !== 'ER_BAD_FIELD_ERROR') {
+          throw err;
+        }
+      }
       await dbDelete(`DELETE FROM squads WHERE id = ?`, [id]);
     },
 
@@ -873,10 +894,10 @@ export default (db: any) => {
         }
       } else {
         // Legacy behavior without head-to-head
-        const groups = await select(
+        const groups = (await select(
           `SELECT DISTINCT grp as gnum, category FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`,
           [id]
-        );
+        )) as { gnum: string; category: string }[];
         for (const { gnum, category } of groups) {
           const rows = await select(
             `SELECT category, grp, team, tournamentId, MatchesPlayed, Wins, Draws, Losses, PointsFrom, PointsDifference, TotalPoints 
@@ -972,10 +993,10 @@ export default (db: any) => {
     },
     getTournamentOverview: async (tournamentId: number) => {
       // Get all fixtures for the tournament
-      const fixtures = await select(
+      const fixtures = (await select(
         `SELECT * FROM fixtures WHERE tournamentId = ? ORDER BY scheduled`,
         [tournamentId]
-      );
+      )) as Fixture[];
 
       // Get tournament details
       const [tournament] = await select(
@@ -1631,9 +1652,9 @@ export default (db: any) => {
       clubId: number,
       pdfBuffer: Buffer
     ) => {
-      // Get tournament UUID for eventUuid
+      // Get tournament UUID (and date fallback) for teamsheet ingestion
       const tournamentRows = await select(
-        'SELECT eventUuid FROM tournaments WHERE id = ?',
+        'SELECT eventUuid, Date FROM tournaments WHERE id = ?',
         [tournamentId]
       );
 
@@ -1641,7 +1662,12 @@ export default (db: any) => {
         throw new Error('Tournament not found');
       }
 
-      const eventUuid = tournamentRows[0].eventUuid;
+      const eventUuid = tournamentRows[0].eventUuid as string;
+      const tournamentDate = tournamentRows[0].Date as
+        | string
+        | Date
+        | null
+        | undefined;
 
       // Create temporary file for PDF
       const tempDir = os.tmpdir();
@@ -1737,6 +1763,18 @@ export default (db: any) => {
           );
         }
 
+        // intake_forms.start_date is NOT NULL. Use parsed date, tournament date, then today's date.
+        const fallbackStartDate = (() => {
+          if (parsedData.intakeForm.startDate) return parsedData.intakeForm.startDate;
+          if (tournamentDate) {
+            const d = new Date(tournamentDate);
+            if (!Number.isNaN(d.getTime())) {
+              return d.toISOString().slice(0, 10);
+            }
+          }
+          return new Date().toISOString().slice(0, 10);
+        })();
+
         // Insert intake form (provide defaults for missing fields)
         const intakeFormId = await insert(
           `INSERT INTO intake_forms (event_uuid, club_id, club_name, team_full_name, event, start_date, clubLogo)
@@ -1747,7 +1785,7 @@ export default (db: any) => {
             parsedData.intakeForm.clubName || 'Unknown Club',
             parsedData.intakeForm.teamFullName || 'Unknown Team',
             parsedData.intakeForm.event || 'Unknown Event',
-            parsedData.intakeForm.startDate || null,
+            fallbackStartDate,
             parsedData.clubLogo,
           ]
         );
@@ -1774,7 +1812,51 @@ export default (db: any) => {
           }
         }
 
-        return parsedData;
+        // Sync a tournament squad + players from parsed teamsheet data.
+        const squadTeamName =
+          parsedData.intakeForm.teamFullName || `Club ${clubId}`;
+
+        const existingSquads = await select(
+          `SELECT id FROM squads WHERE tournamentId = ? AND teamName = ? LIMIT 1`,
+          [tournamentId, squadTeamName]
+        );
+
+        let squadId: number;
+        if (existingSquads.length > 0) {
+          squadId = Number(existingSquads[0].id);
+          await update(
+            `UPDATE squads SET teamSheetSubmitted = 1, notes = ? WHERE id = ?`,
+            [`Imported from teamsheet (club ${clubId})`, squadId]
+          );
+        } else {
+          squadId = await insert(
+            `INSERT INTO squads (teamName, groupLetter, category, teamSheetSubmitted, notes, tournamentId)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              squadTeamName,
+              'A',
+              'MEN',
+              true,
+              `Imported from teamsheet (club ${clubId})`,
+              tournamentId,
+            ]
+          );
+        }
+
+        // Player records for this upload are persisted in intake_people linked to this tournament event UUID.
+        const playersCreated = parsedData.intakePeople.filter((person) => {
+          const role = (person.peopleRole || '').toLowerCase();
+          if (role && role !== 'player') return false;
+          return Boolean(person.peopleFullName && person.peopleFullName.trim());
+        }).length;
+
+        return {
+          ...parsedData,
+          sync: {
+            squadId,
+            playersCreated,
+          },
+        };
       } finally {
         // Clean up temporary file
         try {
