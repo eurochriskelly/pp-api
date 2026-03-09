@@ -1,6 +1,6 @@
 const express = require('express');
 
-const fixtureController = require('../controllers/fixtures');
+const fixtureController = require('../../../controllers/fixtures');
 
 module.exports = (db, useMock) => {
   const router = express.Router({ mergeParams: true });

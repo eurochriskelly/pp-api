@@ -1,5 +1,5 @@
 const express = require('express');
-const systemController = require('../controllers/system');
+const systemController = require('../../controllers/system');
 
 module.exports = (db, useMock) => {
   const router = express.Router();

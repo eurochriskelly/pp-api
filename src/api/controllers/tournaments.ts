@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/tournaments';
 import mockServiceFactory from '../services/mocks/tournaments';
-import { createTournamentReportCache } from '../../services/tournament-report-cache';
+import { createTournamentReportCache } from '../services/tournaments/report-cache';
 
 function prettyPrintStages(stages: any) {
   let output = '';

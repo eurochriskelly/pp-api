@@ -1,5 +1,5 @@
 import express from 'express';
-import teamsController from '../controllers/teams';
+import teamsController from '../../controllers/teams';
 
 export default (db: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });

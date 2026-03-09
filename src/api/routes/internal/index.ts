@@ -41,7 +41,7 @@ export default (db: any, useMock: boolean, isDev: boolean) => {
    */
   router.post('/cleanup', async (req, res) => {
     try {
-      const { select, remove } = require('../../lib/db-helper')(db);
+      const { select, remove } = require('../../../lib/db-helper')(db);
       const tables = req.body.tables || ['test_resources', 'temp_data'];
       const keepUsers = req.body.keepUsers !== false;
 
@@ -101,11 +101,11 @@ export default (db: any, useMock: boolean, isDev: boolean) => {
 
       // Dynamically import all mock services
       const mockModules = [
-        '../services/mocks/tournaments',
-        '../services/mocks/listings',
-        '../services/mocks/fixtures',
-        '../services/mocks/auth',
-        '../services/mocks/users',
+        '../../services/mocks/tournaments',
+        '../../services/mocks/listings',
+        '../../services/mocks/fixtures',
+        '../../services/mocks/auth',
+        '../../services/mocks/users',
       ];
 
       for (const modulePath of mockModules) {
@@ -147,7 +147,7 @@ export default (db: any, useMock: boolean, isDev: boolean) => {
    */
   router.get('/health', async (req, res) => {
     try {
-      const { select } = require('../../lib/db-helper')(db);
+      const { select } = require('../../../lib/db-helper')(db);
 
       // Check database connectivity
       const startTime = Date.now();
@@ -212,7 +212,7 @@ export default (db: any, useMock: boolean, isDev: boolean) => {
 
       // Example: Seed tournaments
       const tournamentService =
-        require('../services/mocks/tournaments').default();
+        require('../../services/mocks/tournaments').default();
       seeded.tournaments = [];
       for (let i = 0; i < count; i++) {
         const t = await tournamentService.createTournament('test-user', {
