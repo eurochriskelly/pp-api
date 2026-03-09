@@ -1,6 +1,6 @@
 const express = require('express');
-const clubsController = require('../controllers/clubs');
-const authMiddlewareFactory = require('../middleware/auth');
+const clubsController = require('../../controllers/clubs');
+const authMiddlewareFactory = require('../../middleware/auth');
 
 module.exports = (db, useMock) => {
   const router = express.Router({ mergeParams: true });

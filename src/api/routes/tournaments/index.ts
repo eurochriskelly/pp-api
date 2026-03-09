@@ -1,6 +1,6 @@
 import express from 'express';
-import tournamentController from '../controllers/tournaments';
-const authMiddlewareFactory = require('../middleware/auth');
+import tournamentController from '../../controllers/tournaments';
+const authMiddlewareFactory = require('../../middleware/auth');
 
 const PPP_CONTENT_TYPES = new Set([
   'application/zip',

@@ -7,7 +7,7 @@ import {
   extractH2HMatches,
   cleanStandingsData,
 } from '../../lib/headToHead';
-import { buildReport } from './tournaments/builld-report/index.js';
+import { buildReport } from './tournaments/build-report/index.js';
 import TSVValidator from './fixtures/validate-tsv';
 import { buildFixturesInsertSQL } from './tournaments/import-fixtures.js';
 import { generateFixturesForCompetition } from './tournaments/generate-fixtures.js';

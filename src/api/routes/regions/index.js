@@ -1,5 +1,5 @@
 const express = require('express');
-const regionController = require('../controllers/regions');
+const regionController = require('../../controllers/regions');
 
 module.exports = (db, useMock) => {
   const router = express.Router({ mergeParams: true });

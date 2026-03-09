@@ -1,6 +1,6 @@
 const express = require('express');
-const listingsController = require('../controllers/listings');
-const authMiddleware = require('../middleware/auth');
+const listingsController = require('../../controllers/listings');
+const authMiddleware = require('../../middleware/auth');
 
 module.exports = (dbs, useMock) => {
   const router = express.Router();

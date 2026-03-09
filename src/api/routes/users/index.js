@@ -1,6 +1,6 @@
 const express = require('express');
-const controllerFactory = require('../controllers/users');
-const authMiddlewareFactory = require('../middleware/auth');
+const controllerFactory = require('../../controllers/users');
+const authMiddlewareFactory = require('../../middleware/auth');
 
 module.exports = (db) => {
   const router = express.Router();

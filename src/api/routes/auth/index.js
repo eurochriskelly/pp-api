@@ -1,5 +1,5 @@
 const express = require('express');
-const authController = require('../controllers/auth');
+const authController = require('../../controllers/auth');
 
 module.exports = (db, useMock) => {
   const router = express.Router({ mergeParams: true });

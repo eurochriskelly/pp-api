@@ -1,6 +1,6 @@
 const express = require('express');
-const eventsController = require('../controllers/events');
-const authMiddleware = require('../middleware/auth');
+const eventsController = require('../../controllers/events');
+const authMiddleware = require('../../middleware/auth');
 
 module.exports = (dbs, useMock) => {
   const router = express.Router();
