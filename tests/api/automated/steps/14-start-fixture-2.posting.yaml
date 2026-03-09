@@ -1,0 +1,9 @@
+name: 14.start-fixture-2
+phase: setup
+method: POST
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_2_ID/start
+expect:
+  status: 200
+  json:
+    - path: data.started
+      exists: true

@@ -1,0 +1,11 @@
+name: 92.cleanup-teamsheet-squad
+phase: cleanup
+whenVars:
+  - TOURNAMENT_ID
+  - TEAMSHEET_SQUAD_ID
+method: DELETE
+path: /api/tournaments/$TOURNAMENT_ID/squads/$TEAMSHEET_SQUAD_ID
+expect:
+  status:
+    - 200
+    - 404

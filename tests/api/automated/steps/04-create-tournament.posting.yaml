@@ -1,0 +1,25 @@
+name: 04.create-tournament
+phase: setup
+method: POST
+path: /api/tournaments
+headers:
+  Content-Type: application/json
+body:
+  userId: $USER_ID
+  region: AutomatedTest
+  title: Automated Tournament $RUN_ID
+  date: '2030-06-15'
+  location: Test Grounds
+  lat: 52.3676
+  lon: 4.9041
+  codeOrganizer: A123
+  winPoints: 2
+  drawPoints: 1
+  lossPoints: 0
+expect:
+  status: 201
+  json:
+    - path: id
+      exists: true
+capture:
+  TOURNAMENT_ID: id

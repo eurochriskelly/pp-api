@@ -1,0 +1,10 @@
+name: 90.cleanup-fixtures
+phase: cleanup
+whenVars:
+  - TOURNAMENT_ID
+method: DELETE
+path: /api/tournaments/$TOURNAMENT_ID/fixtures
+expect:
+  status:
+    - 200
+    - 404

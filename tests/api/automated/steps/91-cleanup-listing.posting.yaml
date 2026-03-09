@@ -1,0 +1,8 @@
+name: 91.cleanup-listing
+phase: cleanup
+method: DELETE
+path: /api/listings/$LISTING_ID
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status: 204

@@ -1,0 +1,14 @@
+name: 09.list-fixtures
+phase: setup
+method: GET
+path: /api/tournaments/$TOURNAMENT_ID/fixtures
+expect:
+  status: 200
+  json:
+    - path: data.0.id
+      exists: true
+    - path: data.1.id
+      exists: true
+capture:
+  FIXTURE_1_ID: data.0.id
+  FIXTURE_2_ID: data.1.id

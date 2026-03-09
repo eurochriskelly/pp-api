@@ -1,0 +1,16 @@
+name: 03.login
+phase: setup
+method: POST
+path: /api/auth/login
+headers:
+  Content-Type: application/json
+body:
+  email: $TEST_EMAIL
+  password: $TEST_PASSWORD
+expect:
+  status: 200
+  json:
+    - path: token
+      exists: true
+capture:
+  TOKEN: token

@@ -1,0 +1,9 @@
+name: 08.verify-listing
+phase: setup
+method: GET
+path: /api/listings/$LISTING_ID
+expect:
+  status: 200
+  json:
+    - path: data.id
+      equals: $LISTING_ID

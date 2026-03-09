@@ -1,0 +1,24 @@
+name: 05.create-event
+phase: setup
+method: POST
+path: /api/events
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  title: $TEST_EVENT_TITLE
+  description: Event created by automated API tests
+  startDate: '2030-01-01T10:00:00.000Z'
+  endDate: '2030-01-01T12:00:00.000Z'
+  location: $TEST_EVENT_LOCATION
+  region: $TEST_REGION
+  organizerId: $USER_ID
+  sports:
+    - Gaelic Football
+expect:
+  status: 201
+  json:
+    - path: data.id
+      exists: true
+capture:
+  EVENT_ID: data.id

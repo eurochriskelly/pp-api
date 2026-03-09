@@ -1,0 +1,11 @@
+name: 91.cleanup-squad-b
+phase: cleanup
+whenVars:
+  - TOURNAMENT_ID
+  - SQUAD_B_ID
+method: DELETE
+path: /api/tournaments/$TOURNAMENT_ID/squads/$SQUAD_B_ID
+expect:
+  status:
+    - 200
+    - 404

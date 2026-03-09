@@ -1,0 +1,11 @@
+name: 92.cleanup-user
+phase: cleanup
+whenVars:
+  - USER_ID
+  - TOKEN
+method: DELETE
+path: /api/users/$USER_ID
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status: 200

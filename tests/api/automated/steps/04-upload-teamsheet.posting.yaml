@@ -1,0 +1,17 @@
+name: 04.upload-teamsheet
+phase: setup
+method: POST
+path: /api/tournaments/$TOURNAMENT_ID/club/$TEST_CLUB_ID/teamsheet
+body:
+  file: tests/api/automated/steps/attachments/team-sheet.pdf
+  content_type: application/pdf
+expect:
+  status: 201
+  json:
+    - path: sync.squadId
+      exists: true
+    - path: sync.playersCreated
+      exists: true
+capture:
+  TEAMSHEET_SQUAD_ID: sync.squadId
+  TEAMSHEET_PLAYERS_CREATED: sync.playersCreated

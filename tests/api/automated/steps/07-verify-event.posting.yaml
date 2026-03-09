@@ -1,0 +1,9 @@
+name: 07.verify-event
+phase: setup
+method: GET
+path: /api/events/$EVENT_ID
+expect:
+  status: 200
+  json:
+    - path: data.id
+      equals: $EVENT_ID

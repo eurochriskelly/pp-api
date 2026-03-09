@@ -90,7 +90,7 @@ echo -e "${GREEN}[BUILD]${RESET} Compiling..." | tee -a "$logfile"
 npm run build >> "$logfile" 2>&1 || { echo -e "${RED}[ERROR]${RESET} Build failed" | tee -a "$logfile"; exit 1; }
 
 echo -e "${GREEN}[LAUNCH]${RESET} Starting on port $port at [$(date)]" | tee -a "$logfile"
-PP_ENV="$env" PP_DATABASE="$dbn" PP_PORT_API="$port" PP_API_APP="$param" node dist/server.js >> "$logfile" 2>&1 &
+PP_ENV="$env" PP_DATABASE="$dbn" PP_PORT_API="$port" PP_API_APP="$param" node dist/src/server.js >> "$logfile" 2>&1 &
 server_pid=$!
 
 trap "kill $server_pid 2>/dev/null || true" EXIT

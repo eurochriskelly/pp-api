@@ -92,7 +92,7 @@ function isUuid(value: string): boolean {
   );
 }
 
-export default (db: any, useMock: boolean) => {
+function tournamentsController(db: any, useMock: boolean) {
   const factory = useMock ? mockServiceFactory : serviceFactory;
   const dbSvc: any = factory(db);
   const reportCache = createTournamentReportCache({
@@ -865,3 +865,5 @@ export default (db: any, useMock: boolean) => {
     },
   };
 };
+
+export = tournamentsController;

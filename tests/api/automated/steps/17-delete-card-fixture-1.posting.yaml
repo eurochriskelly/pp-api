@@ -1,0 +1,8 @@
+name: 17.delete-card-fixture-1
+phase: setup
+whenVars:
+  - CARD_ID
+method: DELETE
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_1_ID/carded/$CARD_ID
+expect:
+  status: 200

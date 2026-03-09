@@ -1,0 +1,18 @@
+name: 07.create-fixtures
+phase: setup
+method: POST
+path: /api/tournaments/$TOURNAMENT_ID/fixtures
+headers:
+  Content-Type: application/json
+body:
+  - TIME: '11:00'
+    MATCH: M.1
+    CATEGORY: MEN
+    PITCH: Pitch 1
+    TEAM1: Auto Team A $RUN_ID
+    STAGE: Gp.1
+    TEAM2: Auto Team B $RUN_ID
+    UMPIRES: Auto Team A $RUN_ID
+    DURATION: '20'
+expect:
+  status: 201

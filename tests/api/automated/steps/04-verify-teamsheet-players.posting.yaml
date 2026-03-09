@@ -1,0 +1,9 @@
+name: 04.verify-teamsheet-players
+phase: setup
+method: GET
+path: /api/tournaments/$TOURNAMENT_ID/squads/$TEAMSHEET_SQUAD_ID/players
+expect:
+  status: 200
+  json:
+    - path: data.0.id
+      exists: true
