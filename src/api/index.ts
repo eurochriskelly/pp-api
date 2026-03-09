@@ -16,6 +16,7 @@ import eventsRoutes from './routes/events';
 import listingsRoutes from './routes/listings';
 import usersRoutes from './routes/users';
 import teamsRoutes from './routes/teams';
+import seriesRoutes from './routes/series';
 import { II } from '../lib/logging';
 import tournamentControllerFactory from './controllers/tournaments';
 import clubsControllerFactory from './controllers/clubs';
@@ -162,6 +163,7 @@ function setupApi(dbs: Dbs, ARGS: Args) {
   app.use('/api/clubs', clubsRoutes(dbMain, ARGS.useMock));
   app.use('/api/annual-reports', annualReportsRoutes(dbMain, ARGS.useMock));
   app.use('/api/teams', teamsRoutes(dbMain, ARGS.useMock));
+  app.use('/api/series', seriesRoutes(dbMain, ARGS.useMock));
 
   // New schemas
   app.use('/api/events', eventsRoutes(dbs, ARGS.useMock));
