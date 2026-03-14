@@ -495,6 +495,8 @@ export default (db: any) => {
         lat,
         lon,
         codeOrganizer,
+        championshipId,
+        roundNumber,
         winPoints = 2,
         drawPoints = 1,
         lossPoints = 0,
@@ -506,6 +508,8 @@ export default (db: any) => {
         lat: number;
         lon: number;
         codeOrganizer: string;
+        championshipId?: number;
+        roundNumber?: number;
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
@@ -515,9 +519,9 @@ export default (db: any) => {
       await insert(
         `INSERT INTO tournaments (
            region, Title, Date, Location, Lat, Lon, eventUuid, code, status,
-           pointsForWin, pointsForDraw, pointsForLoss
+           championshipId, roundNumber, pointsForWin, pointsForDraw, pointsForLoss
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           region,
           title,
@@ -528,6 +532,8 @@ export default (db: any) => {
           eventUuid,
           codeOrganizer,
           'in-design',
+          championshipId || null,
+          roundNumber || null,
           winPoints,
           drawPoints,
           lossPoints,
@@ -626,6 +632,8 @@ export default (db: any) => {
         lat,
         lon,
         codeOrganizer,
+        championshipId,
+        roundNumber,
         winPoints = 3,
         drawPoints = 1,
         lossPoints = 0,
@@ -637,6 +645,8 @@ export default (db: any) => {
         lat: number;
         lon: number;
         codeOrganizer: string;
+        championshipId?: number;
+        roundNumber?: number;
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
@@ -645,7 +655,7 @@ export default (db: any) => {
       await update(
         `UPDATE tournaments 
          SET Region = ?, Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ?, 
-         code = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
+         code = ?, championshipId = ?, roundNumber = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
          WHERE id = ?`,
         [
           region,
@@ -655,6 +665,8 @@ export default (db: any) => {
           lat,
           lon,
           codeOrganizer,
+          championshipId || null,
+          roundNumber || null,
           winPoints,
           drawPoints,
           lossPoints,
