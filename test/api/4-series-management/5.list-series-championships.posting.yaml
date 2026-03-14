@@ -1,0 +1,7 @@
+name: 5.list-series-championships
+method: GET
+url: $T_HOST/api/series/1/championships
+body:
+  content: ''
+  content_type: ''
+headers: []

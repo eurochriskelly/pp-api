@@ -1,0 +1,9 @@
+name: 54.list-series-championships
+phase: setup
+method: GET
+path: /api/series/1/championships
+expect:
+  status: 200
+  json:
+    - path: data
+      exists: true

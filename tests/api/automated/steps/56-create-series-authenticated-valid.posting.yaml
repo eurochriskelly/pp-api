@@ -1,0 +1,20 @@
+name: 56.create-series-authenticated-valid
+phase: setup
+method: POST
+path: /api/series
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  name: Test Series Created
+  description: Test description
+  sport: football
+expect:
+  status: 201
+  json:
+    - path: data.id
+      exists: true
+    - path: data.name
+      equals: Test Series Created
+capture:
+  TEST_SERIES_ID: data.id

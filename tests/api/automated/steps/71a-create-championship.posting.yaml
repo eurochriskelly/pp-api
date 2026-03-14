@@ -1,0 +1,19 @@
+name: 71a.create-championship
+phase: setup
+method: POST
+path: /api/championships
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  seriesId: $SERIES_ID
+  name: API Test Championship $RUN_ID
+  year: 2026
+  numRounds: 3
+expect:
+  status: 201
+  json:
+    - path: data.id
+      exists: true
+capture:
+  CHAMPIONSHIP_ID: data.id

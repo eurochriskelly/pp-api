@@ -1,0 +1,7 @@
+name: 5.get-championship-by-id-not-found
+method: GET
+url: $T_HOST/api/championships/99999
+body:
+  content: ''
+  content_type: ''
+headers: []

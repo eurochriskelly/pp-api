@@ -1,0 +1,14 @@
+name: 9.create-series-authenticated-missing-name
+method: POST
+url: $T_HOST/api/series
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: |-
+    {
+      "description": "Missing name field"
+    }
+  content_type: application/json

@@ -1,0 +1,12 @@
+name: 75.create-championship-unauthenticated
+phase: setup
+method: POST
+path: /api/championships
+headers:
+  Content-Type: application/json
+body:
+  seriesId: 1
+  name: Test Championship
+  year: 2026
+expect:
+  status: 401

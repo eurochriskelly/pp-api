@@ -1,0 +1,16 @@
+name: 14.create-entrant-authenticated-valid
+method: POST
+url: $T_HOST/api/championships/1/entrants
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: |-
+    {
+      "entrantType": "club",
+      "displayName": "New Test Club",
+      "clubId": 101
+    }
+  content_type: application/json

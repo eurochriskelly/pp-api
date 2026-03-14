@@ -1,0 +1,15 @@
+name: 58.update-series-authenticated-valid
+phase: setup
+method: PUT
+path: /api/series/1
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  name: Updated Series Name
+  description: Updated description
+expect:
+  status: 200
+  json:
+    - path: data.name
+      equals: Updated Series Name

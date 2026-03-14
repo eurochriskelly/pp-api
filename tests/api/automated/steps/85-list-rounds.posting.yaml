@@ -1,0 +1,9 @@
+name: 85.list-rounds
+phase: setup
+method: GET
+path: /api/championships/1/rounds
+expect:
+  status: 200
+  json:
+    - path: data
+      exists: true

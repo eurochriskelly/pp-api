@@ -1,0 +1,14 @@
+name: 10.update-championship-invalid-id
+method: PUT
+url: $T_HOST/api/championships/invalid
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: |-
+    {
+      "name": "Should Fail"
+    }
+  content_type: application/json

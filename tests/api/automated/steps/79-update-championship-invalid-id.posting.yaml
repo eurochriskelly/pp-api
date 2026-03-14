@@ -1,0 +1,11 @@
+name: 79.update-championship-invalid-id
+phase: setup
+method: PUT
+path: /api/championships/invalid
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  name: Should Fail
+expect:
+  status: 400

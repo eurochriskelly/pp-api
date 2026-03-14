@@ -1,0 +1,11 @@
+name: 51.get-series-by-id-valid
+phase: setup
+method: GET
+path: /api/series/$SERIES_ID
+expect:
+  status: 200
+  json:
+    - path: data.id
+      exists: true
+    - path: data.name
+      exists: true

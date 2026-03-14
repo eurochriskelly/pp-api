@@ -1,0 +1,11 @@
+name: 80.delete-championship-authenticated
+phase: setup
+method: DELETE
+path: /api/championships/2
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status: 200
+  json:
+    - path: data.message
+      equals: Championship archived

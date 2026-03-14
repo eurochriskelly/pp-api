@@ -1,0 +1,6 @@
+name: 52.get-series-by-id-invalid
+phase: setup
+method: GET
+path: /api/series/invalid
+expect:
+  status: 400

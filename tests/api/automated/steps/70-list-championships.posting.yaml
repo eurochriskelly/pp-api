@@ -1,0 +1,9 @@
+name: 70.list-championships
+phase: setup
+method: GET
+path: /api/championships
+expect:
+  status: 200
+  json:
+    - path: data
+      exists: true

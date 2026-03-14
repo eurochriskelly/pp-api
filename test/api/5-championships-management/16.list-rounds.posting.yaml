@@ -1,0 +1,7 @@
+name: 16.list-rounds
+method: GET
+url: $T_HOST/api/championships/1/rounds
+body:
+  content: ''
+  content_type: ''
+headers: []

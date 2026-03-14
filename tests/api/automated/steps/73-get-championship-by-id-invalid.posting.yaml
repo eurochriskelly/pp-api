@@ -1,0 +1,6 @@
+name: 73.get-championship-by-id-invalid
+phase: setup
+method: GET
+path: /api/championships/invalid
+expect:
+  status: 400

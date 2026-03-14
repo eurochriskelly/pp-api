@@ -1,0 +1,6 @@
+name: 74.get-championship-by-id-not-found
+phase: setup
+method: GET
+path: /api/championships/99999
+expect:
+  status: 404

@@ -1,0 +1,19 @@
+name: 8.create-series-authenticated-valid
+method: POST
+url: $T_HOST/api/series
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: |-
+    {
+      "name": "Test Series Created",
+      "description": "Test description",
+      "sport": "football"
+    }
+  content_type: application/json
+response:
+  json:
+    data.id: $CREATED_SERIES_ID

@@ -1,0 +1,14 @@
+name: 6.create-championship-unauthenticated
+method: POST
+url: $T_HOST/api/championships
+headers:
+  - name: Content-Type
+    value: application/json
+body:
+  content: |-
+    {
+      "seriesId": 1,
+      "name": "Test Championship",
+      "year": 2026
+    }
+  content_type: application/json

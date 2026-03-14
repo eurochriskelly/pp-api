@@ -1,0 +1,9 @@
+name: 81.list-entrants
+phase: setup
+method: GET
+path: /api/championships/1/entrants
+expect:
+  status: 200
+  json:
+    - path: data
+      exists: true

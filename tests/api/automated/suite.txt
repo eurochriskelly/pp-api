@@ -22,6 +22,40 @@
 17-delete-card-fixture-1.posting.yaml
 18-tournament-overview.posting.yaml
 
+# Series management tests
+50-list-series.posting.yaml
+50a-create-series.posting.yaml
+51-get-series-by-id-valid.posting.yaml
+52-get-series-by-id-invalid.posting.yaml
+53-get-series-by-id-not-found.posting.yaml
+54-list-series-championships.posting.yaml
+55-create-series-unauthenticated.posting.yaml
+56-create-series-authenticated-valid.posting.yaml
+57-create-series-authenticated-missing-name.posting.yaml
+58-update-series-authenticated-valid.posting.yaml
+59-update-series-invalid-id.posting.yaml
+60-delete-series-authenticated.posting.yaml
+
+# Championships management tests
+70-list-championships.posting.yaml
+71-list-championships-with-filters.posting.yaml
+71a-create-championship.posting.yaml
+72-get-championship-by-id-valid.posting.yaml
+73-get-championship-by-id-invalid.posting.yaml
+74-get-championship-by-id-not-found.posting.yaml
+75-create-championship-unauthenticated.posting.yaml
+76-create-championship-authenticated-valid.posting.yaml
+77-create-championship-authenticated-missing-fields.posting.yaml
+78-update-championship-authenticated-valid.posting.yaml
+79-update-championship-invalid-id.posting.yaml
+80-delete-championship-authenticated.posting.yaml
+81-list-entrants.posting.yaml
+82-create-entrant-unauthenticated.posting.yaml
+83-create-entrant-authenticated-valid.posting.yaml
+84-create-entrant-authenticated-missing-fields.posting.yaml
+85-list-rounds.posting.yaml
+86-get-standings.posting.yaml
+
 # Cleanup
 90-cleanup-fixtures.posting.yaml
 90-cleanup-pitches.posting.yaml
