@@ -1,10 +1,16 @@
 import {
   deriveGroupPlaceholderAssignments,
+  derivePredictiveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
   deriveBestPlaceholderAssignments,
   evaluatePlaceholderDelta,
   planGroupZeroAssignments,
 } from './stage-completion-utils';
+import {
+  applyHeadToHeadTiebreaker,
+  cleanStandingsData,
+  extractH2HMatches,
+} from '../../../lib/headToHead';
 
 export interface StageCompletionDependencies {
   dbHelpers: {
@@ -16,6 +22,7 @@ export interface StageCompletionDependencies {
     DD: (msg: string) => void;
   };
   sqlGroupStandings: (winAward: number) => string;
+  sqlGroupStandingsWithH2H: (winAward: number) => string;
   sqlGroupRankings: (position: number) => string;
 }
 
@@ -28,15 +35,11 @@ export interface Fixture {
 }
 
 export interface StandingsRow {
-  teamId: string;
-  teamName: string;
-  played: number;
-  won: number;
-  drawn: number;
-  lost: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  points: number;
+  team?: string;
+  position?: number;
+  TotalPoints?: number;
+  PointsDifference?: number;
+  PointsFrom?: number;
   [key: string]: any;
 }
 
@@ -54,12 +57,14 @@ export default function stageCompletionFactory({
   dbHelpers,
   loggers,
   sqlGroupStandings,
+  sqlGroupStandingsWithH2H,
   sqlGroupRankings,
 }: StageCompletionDependencies) {
   const { select, update } = dbHelpers;
   const { II, DD } = loggers;
   const winAward = 3;
   const standingsQuery = sqlGroupStandings(winAward);
+  const standingsWithH2HQuery = sqlGroupStandingsWithH2H(winAward);
 
   const fetchFixturesForPlaceholder = async (
     tournamentId: number,
@@ -89,53 +94,56 @@ export default function stageCompletionFactory({
       return false;
     }
     const { tournamentId, stage, groupNumber, category } = fixture;
+    if (stage !== 'group') {
+      DD(
+        `Fixture [${fixtureId}] is in stage [${stage}]. Predictive group placeholder recalculation is skipped.`
+      );
+      return false;
+    }
+
     const remainingCount = await _getRemainingFixtureCount(fixture);
     if (remainingCount === 0) {
       II(
         `Stage [${stage}/${groupNumber}/${category}] for tournament [${tournamentId}] is complete.`
       );
-
-      const standings = await _getGroupStandings(fixture);
-      if (!standings || standings.length === 0) {
-        II(
-          `No standings found for completed stage [${stage}/${groupNumber}/${category}]. Cannot update dependent fixtures.`
-        );
-        return false;
-      }
-
-      const { groupPositions, bestPositions, groupZeroPositions } =
-        await _getNumPositionsToUpdate(fixture);
-      if (
-        groupPositions === 0 &&
-        bestPositions === 0 &&
-        groupZeroPositions === 0
-      ) {
-        II(
-          `Determined 0 positions to update for stage [${stage}/${groupNumber}/${category}]. No dependent fixtures will be updated.`
-        );
-        return false;
-      }
-
-      II(
-        `Updating positions in dependent fixtures based on stage [${stage}/${groupNumber}/${category}] standings...`
-      );
-      const totalUpdated = await _updateDependentFixtures(
-        fixture,
-        standings,
-        groupPositions,
-        bestPositions,
-        groupZeroPositions
-      );
-      II(
-        `Finished updating dependent fixtures. Total rows affected: ${totalUpdated}.`
-      );
-      return totalUpdated > 0;
     } else {
       II(
-        `Stage [${stage}/${groupNumber}/${category}] has ${remainingCount} remaining match(es). No updates needed yet.`
+        `Stage [${stage}/${groupNumber}/${category}] has ${remainingCount} remaining match(es). Recomputing predictive placeholder assignments.`
+      );
+    }
+
+    const standings = await _getGroupStandings(fixture);
+    const groupFixtures = await _getStageFixtures(fixture);
+    if (!standings || standings.length === 0) {
+      II(
+        `No standings found for stage [${stage}/${groupNumber}/${category}]. Cannot update dependent fixtures.`
       );
       return false;
     }
+
+    const { groupPositions, bestPositions, groupZeroPositions } =
+      await _getNumPositionsToUpdate(fixture);
+    if (groupPositions === 0 && bestPositions === 0 && groupZeroPositions === 0) {
+      II(
+        `Determined 0 positions to update for stage [${stage}/${groupNumber}/${category}]. No dependent fixtures will be updated.`
+      );
+      return false;
+    }
+
+    II(
+      `Updating positions in dependent fixtures based on stage [${stage}/${groupNumber}/${category}] standings...`
+    );
+    const totalUpdated = await _updateDependentFixtures(
+      fixture,
+      standings,
+      groupFixtures,
+      groupPositions,
+      bestPositions,
+      groupZeroPositions,
+      remainingCount
+    );
+    II(`Finished updating dependent fixtures. Total rows affected: ${totalUpdated}.`);
+    return totalUpdated > 0;
   }
 
   async function _getFixtureDetails(
@@ -174,13 +182,39 @@ export default function stageCompletionFactory({
     DD(
       `Fetching group standings for stage [${stage}], group [${groupNumber}], category [${category}] in tournament [${tournamentId}]`
     );
-    const standings = await select(
-      `SELECT * FROM ${standingsQuery}
-       WHERE tournamentId = ? AND grp = ? AND category = ?`,
+    const rawRows = await select(
+      `SELECT * FROM (${standingsWithH2HQuery}) AS h2h_data
+       WHERE tournamentId = ? AND grp = ? AND category = ?
+       ORDER BY TotalPoints DESC, PointsDifference DESC, PointsFrom DESC`,
       [tournamentId, groupNumber, category]
+    );
+    const h2hMatches = extractH2HMatches(rawRows);
+    const cleanRows = cleanStandingsData(rawRows);
+    const uniqueTeams = new Map<string, any>();
+
+    cleanRows.forEach((row) => {
+      if (!uniqueTeams.has(row.team)) {
+        uniqueTeams.set(row.team, row);
+      }
+    });
+
+    const standings = applyHeadToHeadTiebreaker(
+      Array.from(uniqueTeams.values()),
+      h2hMatches,
+      true
     );
     DD(`Fetched ${standings.length} standings rows.`);
     return standings;
+  }
+
+  async function _getStageFixtures(fixture: Fixture): Promise<any[]> {
+    const { tournamentId, stage, groupNumber, category } = fixture;
+    return await select(
+      `SELECT team1Id AS team1, team2Id AS team2, goals1, points1, goals2, points2, outcome
+         FROM fixtures
+         WHERE tournamentId = ? AND stage = ? AND groupNumber = ? AND category = ?`,
+      [tournamentId, stage, groupNumber, category]
+    );
   }
 
   async function _getCategoryStandings({
@@ -306,16 +340,18 @@ export default function stageCompletionFactory({
   async function _updateDependentFixtures(
     fixture: Fixture,
     standings: StandingsRow[],
+    groupFixtures: any[],
     groupPositions: number,
     bestPositions: number,
-    groupZeroPositions: number
+    groupZeroPositions: number,
+    remainingCount: number
   ): Promise<number> {
     const { tournamentId, stage, groupNumber, category } = fixture;
     let totalUpdated = 0;
 
     const updateTeamInFixtures = async (
       teamField: 'team1' | 'team2' | 'umpireTeam',
-      newValue: string,
+      newValue: string | null,
       placeHolder: string
     ): Promise<number> => {
       const beforeRows = await fetchFixturesForPlaceholder(
@@ -371,23 +407,26 @@ export default function stageCompletionFactory({
       return affectedRows;
     };
 
-    const groupAssignments = deriveGroupPlaceholderAssignments({
-      stage,
-      groupNumber,
-      totalPositions: groupPositions,
-      standings,
-    });
+    const groupAssignments =
+      remainingCount === 0
+        ? deriveGroupPlaceholderAssignments({
+            stage,
+            groupNumber,
+            totalPositions: groupPositions,
+            standings,
+          })
+        : derivePredictiveGroupPlaceholderAssignments({
+            stage,
+            groupNumber,
+            totalPositions: groupPositions,
+            standings,
+            fixtures: groupFixtures,
+            winPoints: winAward,
+          });
 
     for (let index = 0; index < groupAssignments.length; index += 1) {
       const { placeholder, teamId } = groupAssignments[index];
       const positionNumber = index + 1;
-
-      if (!teamId) {
-        DD(
-          `Skipping updates for position ${positionNumber} as calculated team ID is null.`
-        );
-        continue;
-      }
 
       let updatesForPosition = 0;
       updatesForPosition += await updateTeamInFixtures(
@@ -407,7 +446,7 @@ export default function stageCompletionFactory({
       );
 
       DD(
-        `Total updates for position ${positionNumber} ('${placeholder}' -> ${teamId}): ${updatesForPosition}`
+        `Total updates for position ${positionNumber} ('${placeholder}' -> ${teamId ?? 'pending'}'): ${updatesForPosition}`
       );
       totalUpdated += updatesForPosition;
     }
