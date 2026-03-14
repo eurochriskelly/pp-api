@@ -4,7 +4,11 @@ import stageCompletionFactory from './fixtures/stage-completion';
 import enhanceFixtureFactory from './fixtures/enhance-fixture';
 import TSVValidator from './fixtures/validate-tsv';
 import { II, DD } from '../../lib/logging';
-import { sqlGroupStandings, sqlGroupRankings } from '../../lib/queries';
+import {
+  sqlGroupStandings,
+  sqlGroupStandingsWithH2H,
+  sqlGroupRankings,
+} from '../../lib/queries';
 
 export interface TeamScore {
   goals: number;
@@ -61,6 +65,7 @@ export default function fixturesService(db: any) {
       dbHelpers,
       loggers,
       sqlGroupStandings,
+      sqlGroupStandingsWithH2H,
       sqlGroupRankings,
     });
   } catch (error) {
@@ -317,47 +322,76 @@ export default function fixturesService(db: any) {
       );
 
       const [fixture] = await select(
-        `SELECT tournamentId, category FROM fixtures WHERE id = ?`,
+        `SELECT tournamentId, category, team1Id, team2Id FROM fixtures WHERE id = ?`,
         [fixtureId]
       );
       if (fixture) {
-        const { category } = fixture;
+        const category = String(fixture.category || '');
+        const team1Id = fixture.team1Id ? String(fixture.team1Id) : null;
+        const team2Id = fixture.team2Id ? String(fixture.team2Id) : null;
         const scoreValue = (team: TeamScore) =>
           (Number(team?.goals) || 0) * 3 + (Number(team?.points) || 0);
         const team1Aggregate = scoreValue(team1);
         const team2Aggregate = scoreValue(team2);
 
-        let winner = team1.name;
-        let loser = team2.name;
+        let winner: string | null = null;
+        let loser: string | null = null;
 
-        if (team1Aggregate < team2Aggregate) {
-          winner = team2.name;
-          loser = team1.name;
+        if (team1Aggregate > team2Aggregate) {
+          winner = team1Id;
+          loser = team2Id;
+        } else if (team1Aggregate < team2Aggregate) {
+          winner = team2Id;
+          loser = team1Id;
         }
 
-        await update(
-          `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
-          [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
+        const syncMatchPlaceholder = async (
+          plannedField: 'team1Planned' | 'team2Planned' | 'umpireTeamPlanned',
+          idField: 'team1Id' | 'team2Id' | 'umpireTeamId',
+          placeholder: string,
+          value: string | null
+        ) => {
+          await update(
+            `UPDATE fixtures SET ${idField} = ? WHERE ${plannedField} = ? AND tournamentId = ? AND category = ?`,
+            [value, placeholder, tournamentId, category]
+          );
+        };
+
+        await syncMatchPlaceholder(
+          'team1Planned',
+          'team1Id',
+          `~match:${fixtureId}/p:1`,
+          winner
         );
-        await update(
-          `UPDATE fixtures SET team2Id = ? WHERE team2Planned = ? AND tournamentId = ? AND category = ?`,
-          [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
+        await syncMatchPlaceholder(
+          'team2Planned',
+          'team2Id',
+          `~match:${fixtureId}/p:1`,
+          winner
         );
-        await update(
-          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId = ? AND category = ?`,
-          [winner, `~match:${fixtureId}/p:1`, tournamentId, category]
+        await syncMatchPlaceholder(
+          'umpireTeamPlanned',
+          'umpireTeamId',
+          `~match:${fixtureId}/p:1`,
+          winner
         );
-        await update(
-          `UPDATE fixtures SET team1Id = ? WHERE team1Planned = ? AND tournamentId = ? AND category = ?`,
-          [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
+        await syncMatchPlaceholder(
+          'team1Planned',
+          'team1Id',
+          `~match:${fixtureId}/p:2`,
+          loser
         );
-        await update(
-          `UPDATE fixtures SET team2Id = ? WHERE team2Planned = ? AND tournamentId = ? AND category = ?`,
-          [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
+        await syncMatchPlaceholder(
+          'team2Planned',
+          'team2Id',
+          `~match:${fixtureId}/p:2`,
+          loser
         );
-        await update(
-          `UPDATE fixtures SET umpireTeamId = ? WHERE umpireTeamPlanned = ? AND tournamentId = ? AND category = ?`,
-          [loser, `~match:${fixtureId}/p:2`, tournamentId, category]
+        await syncMatchPlaceholder(
+          'umpireTeamPlanned',
+          'umpireTeamId',
+          `~match:${fixtureId}/p:2`,
+          loser
         );
       }
       if (stageCompletionProcessor?.processStageCompletion) {

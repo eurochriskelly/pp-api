@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   deriveGroupPlaceholderAssignments,
+  derivePredictiveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
   sortCategoryStandings,
   evaluatePlaceholderDelta,
@@ -38,6 +39,96 @@ test('deriveGroupPlaceholderAssignments fills missing teams with null without co
     { placeholder: '~match:10/p:1', teamId: 'A' },
     { placeholder: '~match:10/p:2', teamId: null },
     { placeholder: '~match:10/p:3', teamId: null },
+  ]);
+});
+
+test('derivePredictiveGroupPlaceholderAssignments resolves an early-clinched leader', () => {
+  const assignments = derivePredictiveGroupPlaceholderAssignments({
+    stage: 'group',
+    groupNumber: 1,
+    totalPositions: 2,
+    standings: [
+      { team: 'A', TotalPoints: 12, PointsDifference: 20, PointsFrom: 40 },
+      { team: 'B', TotalPoints: 6, PointsDifference: 8, PointsFrom: 30 },
+      { team: 'C', TotalPoints: 4, PointsDifference: 1, PointsFrom: 18 },
+    ],
+    fixtures: [
+      { team1: 'A', team2: 'B', goals1: 1, points1: 5, goals2: 0, points2: 4 },
+      { team1: 'A', team2: 'C', goals1: 1, points1: 2, goals2: 0, points2: 3 },
+      { team1: 'B', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
+      { team1: 'A', team2: 'D', goals1: null, points1: null, goals2: null, points2: null },
+      { team1: 'B', team2: 'D', goals1: null, points1: null, goals2: null, points2: null },
+      { team1: 'C', team2: 'D', goals1: null, points1: null, goals2: null, points2: null },
+    ],
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~group:1/p:1', teamId: 'A' },
+    { placeholder: '~group:1/p:2', teamId: null },
+  ]);
+});
+
+test('derivePredictiveGroupPlaceholderAssignments leaves a position unresolved when the team can still move', () => {
+  const assignments = derivePredictiveGroupPlaceholderAssignments({
+    stage: 'group',
+    groupNumber: 2,
+    totalPositions: 2,
+    standings: [
+      { team: 'A', TotalPoints: 6, PointsDifference: 10, PointsFrom: 20 },
+      { team: 'B', TotalPoints: 4, PointsDifference: 2, PointsFrom: 15 },
+      { team: 'C', TotalPoints: 3, PointsDifference: 1, PointsFrom: 12 },
+    ],
+    fixtures: [
+      { team1: 'A', team2: 'B', goals1: 1, points1: 4, goals2: 1, points2: 2 },
+      { team1: 'A', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
+      { team1: 'B', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
+    ],
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~group:2/p:1', teamId: null },
+    { placeholder: '~group:2/p:2', teamId: null },
+  ]);
+});
+
+test('derivePredictiveGroupPlaceholderAssignments uses completed head-to-head to lock equal-points order', () => {
+  const assignments = derivePredictiveGroupPlaceholderAssignments({
+    stage: 'group',
+    groupNumber: 3,
+    totalPositions: 2,
+    standings: [
+      {
+        team: 'A',
+        TotalPoints: 6,
+        PointsDifference: 10,
+        PointsFrom: 20,
+        position: 1,
+      },
+      {
+        team: 'B',
+        TotalPoints: 3,
+        PointsDifference: 5,
+        PointsFrom: 18,
+        position: 2,
+      },
+      {
+        team: 'C',
+        TotalPoints: 0,
+        PointsDifference: -15,
+        PointsFrom: 6,
+        position: 3,
+      },
+    ],
+    fixtures: [
+      { team1: 'A', team2: 'B', goals1: 1, points1: 2, goals2: 0, points2: 4 },
+      { team1: 'A', team2: 'C', goals1: 1, points1: 3, goals2: 0, points2: 1 },
+      { team1: 'B', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
+    ],
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~group:3/p:1', teamId: 'A' },
+    { placeholder: '~group:3/p:2', teamId: null },
   ]);
 });
 
