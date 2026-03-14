@@ -1,0 +1,9 @@
+name: 50.list-series
+phase: setup
+method: GET
+path: /api/series
+expect:
+  status: 200
+  json:
+    - path: data
+      exists: true

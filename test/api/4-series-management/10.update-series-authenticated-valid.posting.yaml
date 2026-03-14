@@ -1,0 +1,15 @@
+name: 10.update-series-authenticated-valid
+method: PUT
+url: $T_HOST/api/series/1
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: |-
+    {
+      "name": "Updated Series Name",
+      "description": "Updated description"
+    }
+  content_type: application/json

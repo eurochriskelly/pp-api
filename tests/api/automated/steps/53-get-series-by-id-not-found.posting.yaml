@@ -1,0 +1,6 @@
+name: 53.get-series-by-id-not-found
+phase: setup
+method: GET
+path: /api/series/99999
+expect:
+  status: 404

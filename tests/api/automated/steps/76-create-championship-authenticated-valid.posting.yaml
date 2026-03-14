@@ -1,0 +1,21 @@
+name: 76.create-championship-authenticated-valid
+phase: setup
+method: POST
+path: /api/championships
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  seriesId: $SERIES_ID
+  name: Test Championship Created
+  year: 2026
+  numRounds: 5
+expect:
+  status: 201
+  json:
+    - path: data.id
+      exists: true
+    - path: data.name
+      equals: Test Championship Created
+capture:
+  TEST_CHAMPIONSHIP_ID: data.id

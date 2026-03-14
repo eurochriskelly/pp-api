@@ -1,0 +1,11 @@
+name: 59.update-series-invalid-id
+phase: setup
+method: PUT
+path: /api/series/invalid
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  name: Should Fail
+expect:
+  status: 400

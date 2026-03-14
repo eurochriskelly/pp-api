@@ -1,0 +1,7 @@
+name: 2.list-championships-with-filters
+method: GET
+url: $T_HOST/api/championships?seriesId=1&year=2026&status=draft
+body:
+  content: ''
+  content_type: ''
+headers: []

@@ -1,0 +1,10 @@
+name: 55.create-series-unauthenticated
+phase: setup
+method: POST
+path: /api/series
+headers:
+  Content-Type: application/json
+body:
+  name: Test Series Unauthenticated
+expect:
+  status: 401

@@ -1,0 +1,11 @@
+name: 84.create-entrant-authenticated-missing-fields
+phase: setup
+method: POST
+path: /api/championships/1/entrants
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  entrantType: club
+expect:
+  status: 400

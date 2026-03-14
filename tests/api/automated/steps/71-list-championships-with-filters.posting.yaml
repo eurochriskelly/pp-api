@@ -1,0 +1,9 @@
+name: 71.list-championships-with-filters
+phase: setup
+method: GET
+path: /api/championships?seriesId=1&year=2026&status=draft
+expect:
+  status: 200
+  json:
+    - path: data
+      exists: true

@@ -1,0 +1,14 @@
+name: 11.update-series-invalid-id
+method: PUT
+url: $T_HOST/api/series/invalid
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: |-
+    {
+      "name": "Should Fail"
+    }
+  content_type: application/json

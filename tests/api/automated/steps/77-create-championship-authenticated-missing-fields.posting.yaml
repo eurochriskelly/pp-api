@@ -1,0 +1,11 @@
+name: 77.create-championship-authenticated-missing-fields
+phase: setup
+method: POST
+path: /api/championships
+headers:
+  Content-Type: application/json
+  Authorization: Bearer $TOKEN
+body:
+  seriesId: 1
+expect:
+  status: 400

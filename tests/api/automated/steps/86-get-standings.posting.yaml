@@ -1,0 +1,9 @@
+name: 86.get-standings
+phase: setup
+method: GET
+path: /api/championships/1/standings
+expect:
+  status: 200
+  json:
+    - path: data
+      exists: true

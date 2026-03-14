@@ -1,0 +1,9 @@
+name: 11.delete-championship-authenticated
+method: DELETE
+url: $T_HOST/api/championships/2
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: ''
+  content_type: ''

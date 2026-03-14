@@ -1,0 +1,16 @@
+name: 6.login-for-auth-tests
+method: POST
+url: $T_HOST/api/auth/login
+headers:
+  - name: Content-Type
+    value: application/json
+body:
+  content: |-
+    {
+      "email": "$T_EMAIL",
+      "password": "$T_PASS"
+    }
+  content_type: application/json
+response:
+  json:
+    token: $SERIES_TEST_TOKEN

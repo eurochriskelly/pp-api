@@ -1,0 +1,11 @@
+name: 72.get-championship-by-id-valid
+phase: setup
+method: GET
+path: /api/championships/$CHAMPIONSHIP_ID
+expect:
+  status: 200
+  json:
+    - path: data.id
+      exists: true
+    - path: data.name
+      exists: true

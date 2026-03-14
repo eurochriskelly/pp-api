@@ -1,0 +1,14 @@
+name: 15.create-entrant-authenticated-missing-fields
+method: POST
+url: $T_HOST/api/championships/1/entrants
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: |-
+    {
+      "entrantType": "club"
+    }
+  content_type: application/json

@@ -1,0 +1,7 @@
+name: 2.get-series-by-id-valid
+method: GET
+url: $T_HOST/api/series/1
+body:
+  content: ''
+  content_type: ''
+headers: []

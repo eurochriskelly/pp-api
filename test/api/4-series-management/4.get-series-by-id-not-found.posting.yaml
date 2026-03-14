@@ -1,0 +1,7 @@
+name: 4.get-series-by-id-not-found
+method: GET
+url: $T_HOST/api/series/99999
+body:
+  content: ''
+  content_type: ''
+headers: []

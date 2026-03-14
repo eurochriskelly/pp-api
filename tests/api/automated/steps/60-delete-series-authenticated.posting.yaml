@@ -1,0 +1,11 @@
+name: 60.delete-series-authenticated
+phase: setup
+method: DELETE
+path: /api/series/2
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status: 200
+  json:
+    - path: data.message
+      equals: Series deactivated

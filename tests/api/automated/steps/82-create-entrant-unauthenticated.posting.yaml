@@ -1,0 +1,11 @@
+name: 82.create-entrant-unauthenticated
+phase: setup
+method: POST
+path: /api/championships/1/entrants
+headers:
+  Content-Type: application/json
+body:
+  entrantType: club
+  displayName: Test Club
+expect:
+  status: 401

@@ -1,0 +1,9 @@
+name: 12.delete-series-authenticated
+method: DELETE
+url: $T_HOST/api/series/2
+headers:
+  - name: Authorization
+    value: Bearer $TOKEN
+body:
+  content: ''
+  content_type: ''
