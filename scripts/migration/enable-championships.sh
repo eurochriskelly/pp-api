@@ -42,6 +42,21 @@ MYSQL_BASE=(mysql --protocol=TCP --skip-ssl -h "$DB_HOST" -u "$DB_USER" -p"$DB_P
 
 "${MYSQL_BASE[@]}" -e "SELECT 1" >/dev/null
 
+if [ "${AUTO_CONFIRM:-}" != "y" ]; then
+  echo ""
+  echo "You are about to apply championship schema changes on:"
+  echo "  Host: $DB_HOST"
+  echo "  Database: $DB_NAME"
+  echo "  User: $DB_USER"
+  echo ""
+  echo -n "Type 'y' to continue: "
+  read -r CONFIRM
+  if [ "$CONFIRM" != "y" ]; then
+    echo "Migration cancelled."
+    exit 1
+  fi
+fi
+
 "${MYSQL_BASE[@]}" "$DB_NAME" <<'SQL'
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -229,4 +244,35 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 SQL
 
+echo ""
+echo "Verification:"
+"${MYSQL_BASE[@]}" "$DB_NAME" -e "
+SELECT
+  table_name AS tableName,
+  CASE WHEN COUNT(*) > 0 THEN 'OK' ELSE 'MISSING' END AS status
+FROM information_schema.tables
+WHERE table_schema = DATABASE()
+  AND table_name IN (
+    'rulesets',
+    'series',
+    'championships',
+    'championship_entrants',
+    'amalgamation_clubs',
+    'tournament_teams',
+    'team_entrants'
+  )
+GROUP BY table_name
+ORDER BY table_name;
+"
+
+"${MYSQL_BASE[@]}" "$DB_NAME" -e "
+SELECT column_name AS columnName
+FROM information_schema.columns
+WHERE table_schema = DATABASE()
+  AND table_name = 'tournaments'
+  AND column_name IN ('championshipId', 'roundNumber')
+ORDER BY column_name;
+"
+
+echo ""
 echo "Championship migration completed successfully."
