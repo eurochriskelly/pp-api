@@ -105,7 +105,6 @@ const run = async () => {
     console.error(
       '╚══════════════════════════════════════════════════════════╝'
     );
-    effectiveArgs.errorMsg = 'Bad news. Something went wrong. Check the logs.';
     effectiveArgs.useMock = true;
     apiSetup({ main: null, club: null }, effectiveArgs as any);
   }

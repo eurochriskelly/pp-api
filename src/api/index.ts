@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import cors from 'cors';
 import tournamentRoutes from './routes/tournaments';
 import fixtureRoutes from './routes/tournaments/fixtures';
+import tournamentTeamsRoutes from './routes/tournaments/teams';
 import regionRoutes from './routes/regions';
 import generalRoutes from './routes/general';
 import authRoutes from './routes/auth';
@@ -17,6 +18,8 @@ import listingsRoutes from './routes/listings';
 import usersRoutes from './routes/users';
 import teamsRoutes from './routes/teams';
 import seriesRoutes from './routes/series';
+import championshipsRoutes from './routes/championships';
+import rulesetsRoutes from './routes/rulesets';
 import { II } from '../lib/logging';
 import tournamentControllerFactory from './controllers/tournaments';
 import clubsControllerFactory from './controllers/clubs';
@@ -155,6 +158,10 @@ function setupApi(dbs: Dbs, ARGS: Args) {
     '/api/tournaments/:tournamentId/fixtures',
     fixtureRoutes(dbMain, ARGS.useMock)
   );
+  app.use(
+    '/api/tournaments/:tournamentId/teams',
+    tournamentTeamsRoutes(dbMain, ARGS.useMock)
+  );
   app.use('/api/regions', regionRoutes(dbMain, ARGS.useMock));
   app.use('/api', generalRoutes(dbMain, ARGS.useMock));
   app.use('/api/auth', authRoutes(dbMain, ARGS.useMock));
@@ -164,6 +171,8 @@ function setupApi(dbs: Dbs, ARGS: Args) {
   app.use('/api/annual-reports', annualReportsRoutes(dbMain, ARGS.useMock));
   app.use('/api/teams', teamsRoutes(dbMain, ARGS.useMock));
   app.use('/api/series', seriesRoutes(dbMain, ARGS.useMock));
+  app.use('/api/rulesets', rulesetsRoutes(dbMain, ARGS.useMock));
+  app.use('/api/championships', championshipsRoutes(dbMain, ARGS.useMock));
 
   // New schemas
   app.use('/api/events', eventsRoutes(dbs, ARGS.useMock));
