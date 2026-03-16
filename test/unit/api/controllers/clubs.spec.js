@@ -62,7 +62,7 @@ test('listClubs filters by search query', async () => {
 });
 
 test('getClubById returns club details', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { clubId: '1' } };
   const res = createMockRes();
 
   await controller.getClubById(req, res, mockNext);
@@ -73,7 +73,7 @@ test('getClubById returns club details', async () => {
 });
 
 test('getClubById returns 404 for non-existent club', async () => {
-  const req = { params: { id: '99999' } };
+  const req = { params: { clubId: '99999' } };
   const res = createMockRes();
 
   await controller.getClubById(req, res, mockNext);
@@ -83,7 +83,7 @@ test('getClubById returns 404 for non-existent club', async () => {
 });
 
 test('getClubById returns 400 for invalid ID', async () => {
-  const req = { params: { id: 'invalid' } };
+  const req = { params: { clubId: 'invalid' } };
   const res = createMockRes();
 
   await controller.getClubById(req, res, mockNext);
@@ -136,7 +136,7 @@ test('updateClub updates club details', async () => {
 
   // Update it
   const req = {
-    params: { id: String(clubId) },
+    params: { clubId: String(clubId) },
     body: { city: 'New City', clubCode: 'NEW' },
   };
   const res = createMockRes();
@@ -151,7 +151,7 @@ test('updateClub updates club details', async () => {
 
 test('updateClub returns 400 for invalid ID', async () => {
   const req = {
-    params: { id: 'invalid' },
+    params: { clubId: 'invalid' },
     body: { city: 'New City' },
   };
   const res = createMockRes();
@@ -175,7 +175,7 @@ test('deleteClub deactivates club', async () => {
   const clubId = createRes.data.data.clubId;
 
   // Delete it
-  const req = { params: { id: String(clubId) } };
+  const req = { params: { clubId: String(clubId) } };
   const res = createMockRes();
 
   await controller.deleteClub(req, res, mockNext);
@@ -186,7 +186,7 @@ test('deleteClub deactivates club', async () => {
 });
 
 test('deleteClub returns 400 for invalid ID', async () => {
-  const req = { params: { id: 'invalid' } };
+  const req = { params: { clubId: 'invalid' } };
   const res = createMockRes();
 
   await controller.deleteClub(req, res, mockNext);
@@ -210,7 +210,7 @@ test('uploadLogo uploads logo blob', async () => {
   // Upload logo
   const logoBuffer = Buffer.from('fake-image-data');
   const req = {
-    params: { id: String(clubId) },
+    params: { clubId: String(clubId) },
     body: logoBuffer,
   };
   const res = createMockRes();
@@ -224,7 +224,7 @@ test('uploadLogo uploads logo blob', async () => {
 
 test('uploadLogo returns 400 when logo data is missing', async () => {
   const req = {
-    params: { id: '1' },
+    params: { clubId: '1' },
     body: null,
   };
   const res = createMockRes();
@@ -237,7 +237,7 @@ test('uploadLogo returns 400 when logo data is missing', async () => {
 
 test('uploadLogo returns 400 for invalid ID', async () => {
   const req = {
-    params: { id: 'invalid' },
+    params: { clubId: 'invalid' },
     body: Buffer.from('fake-image-data'),
   };
   const res = createMockRes();
@@ -263,14 +263,14 @@ test('getLogo returns logo image', async () => {
   // Upload logo
   const logoBuffer = Buffer.from('fake-image-data');
   const uploadReq = {
-    params: { id: String(clubId) },
+    params: { clubId: String(clubId) },
     body: logoBuffer,
   };
   const uploadRes = createMockRes();
   await controller.uploadLogo(uploadReq, uploadRes, mockNext);
 
   // Get logo
-  const req = { params: { id: String(clubId) } };
+  const req = { params: { clubId: String(clubId) } };
   const res = createMockRes();
 
   await controller.getLogo(req, res, mockNext);
@@ -293,7 +293,7 @@ test('getLogo returns 404 when logo not found', async () => {
   const clubId = createRes.data.data.clubId;
 
   // Try to get logo
-  const req = { params: { id: String(clubId) } };
+  const req = { params: { clubId: String(clubId) } };
   const res = createMockRes();
 
   await controller.getLogo(req, res, mockNext);
@@ -303,7 +303,7 @@ test('getLogo returns 404 when logo not found', async () => {
 });
 
 test('getLogo returns 400 for invalid ID', async () => {
-  const req = { params: { id: 'invalid' } };
+  const req = { params: { clubId: 'invalid' } };
   const res = createMockRes();
 
   await controller.getLogo(req, res, mockNext);

@@ -36,7 +36,7 @@ test('listChampionships returns rows', async () => {
 });
 
 test('getChampionshipById returns row', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { championshipId: '1' } };
   const res = createMockRes();
 
   await controller.getChampionshipById(req, res, mockNext);
@@ -46,7 +46,7 @@ test('getChampionshipById returns row', async () => {
 });
 
 test('getChampionshipById validates id', async () => {
-  const req = { params: { id: 'abc' } };
+  const req = { params: { championshipId: 'abc' } };
   const res = createMockRes();
 
   await controller.getChampionshipById(req, res, mockNext);
@@ -85,7 +85,7 @@ test('createChampionship creates row', async () => {
 });
 
 test('listEntrants returns rows', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { championshipId: '1' } };
   const res = createMockRes();
 
   await controller.listEntrants(req, res, mockNext);
@@ -97,7 +97,7 @@ test('listEntrants returns rows', async () => {
 
 test('createEntrant validates fields', async () => {
   const req = {
-    params: { id: '1' },
+    params: { championshipId: '1' },
     body: { entrantType: 'club' },
   };
   const res = createMockRes();
@@ -112,7 +112,7 @@ test('createEntrant validates fields', async () => {
 
 test('createEntrant creates entrant', async () => {
   const req = {
-    params: { id: '1' },
+    params: { championshipId: '1' },
     body: {
       entrantType: 'club',
       displayName: 'Brussels Harps',
@@ -128,7 +128,7 @@ test('createEntrant creates entrant', async () => {
 });
 
 test('listRounds returns round summaries', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { championshipId: '1' } };
   const res = createMockRes();
 
   await controller.listRounds(req, res, mockNext);
@@ -139,7 +139,7 @@ test('listRounds returns round summaries', async () => {
 });
 
 test('getStandings returns standings rows', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { championshipId: '1' } };
   const res = createMockRes();
 
   await controller.getStandings(req, res, mockNext);
@@ -151,7 +151,7 @@ test('getStandings returns standings rows', async () => {
 });
 
 test('getEntrantById returns entrant', async () => {
-  const req = { params: { championshipId: '1', id: '1' } };
+  const req = { params: { championshipId: '1', entrantId: '1' } };
   const res = createMockRes();
 
   await controller.getEntrantById(req, res, mockNext);
@@ -161,7 +161,7 @@ test('getEntrantById returns entrant', async () => {
 });
 
 test('getEntrantById validates ids', async () => {
-  const req = { params: { championshipId: 'x', id: '1' } };
+  const req = { params: { championshipId: 'x', entrantId: '1' } };
   const res = createMockRes();
 
   await controller.getEntrantById(req, res, mockNext);
@@ -174,7 +174,7 @@ test('getEntrantById validates ids', async () => {
 
 test('updateEntrant updates entrant', async () => {
   const req = {
-    params: { championshipId: '1', id: '1' },
+    params: { championshipId: '1', entrantId: '1' },
     body: { displayName: 'Amsterdam GAC Updated', status: 'active' },
   };
   const res = createMockRes();
@@ -187,7 +187,7 @@ test('updateEntrant updates entrant', async () => {
 });
 
 test('deleteEntrant marks entrant withdrawn', async () => {
-  const req = { params: { championshipId: '1', id: '1' } };
+  const req = { params: { championshipId: '1', entrantId: '1' } };
   const res = createMockRes();
 
   await controller.deleteEntrant(req, res, mockNext);
@@ -198,7 +198,7 @@ test('deleteEntrant marks entrant withdrawn', async () => {
 
 test('addAmalgamationClub validates ids', async () => {
   const req = {
-    params: { championshipId: '1', id: '2' },
+    params: { championshipId: '1', entrantId: '2' },
     body: { clubId: 'x' },
   };
   const res = createMockRes();
@@ -213,7 +213,7 @@ test('addAmalgamationClub validates ids', async () => {
 
 test('addAmalgamationClub links club for amalgamation entrant', async () => {
   const req = {
-    params: { championshipId: '1', id: '2' },
+    params: { championshipId: '1', entrantId: '2' },
     body: { clubId: 303 },
   };
   const res = createMockRes();
@@ -223,28 +223,4 @@ test('addAmalgamationClub links club for amalgamation entrant', async () => {
   assert.equal(res.statusCode, 201);
   assert.equal(res.data.data.entrantId, 2);
   assert.equal(res.data.data.clubId, 303);
-});
-
-test('getEntrantById supports compatibility param shape', async () => {
-  const req = { params: { id: '1', entrantId: '2' } };
-  const res = createMockRes();
-
-  await controller.getEntrantById(req, res, mockNext);
-
-  assert.equal(res.statusCode, 200);
-  assert.equal(res.data.data.championshipId, 1);
-  assert.equal(res.data.data.id, 2);
-});
-
-test('updateEntrant supports compatibility param shape', async () => {
-  const req = {
-    params: { id: '1', entrantId: '2' },
-    body: { displayName: 'Compat Updated Name' },
-  };
-  const res = createMockRes();
-
-  await controller.updateEntrant(req, res, mockNext);
-
-  assert.equal(res.statusCode, 200);
-  assert.equal(res.data.data.displayName, 'Compat Updated Name');
 });
