@@ -1,6 +1,7 @@
 import express from 'express';
 import controllerFactory from '../../controllers/users';
 import authMiddlewareFactory from '../../middleware/auth';
+import { validateNumericId } from '../../middleware/validation';
 
 export default (db: any, useMock: boolean) => {
   const router = express.Router();
@@ -9,14 +10,34 @@ export default (db: any, useMock: boolean) => {
 
   // Users
   router.post('/users', ctrl.createUser);
-  router.put('/users/:id', auth, ctrl.updateUser);
-  router.delete('/users/:id', auth, ctrl.deleteUser);
-  router.get('/users/:id', auth, ctrl.getUser);
+  router.put(
+    '/users/:userId',
+    auth,
+    validateNumericId('userId'),
+    ctrl.updateUser
+  );
+  router.delete(
+    '/users/:userId',
+    auth,
+    validateNumericId('userId'),
+    ctrl.deleteUser
+  );
+  router.get('/users/:userId', auth, validateNumericId('userId'), ctrl.getUser);
 
   // Roles
   router.post('/roles', auth, ctrl.createRole);
-  router.put('/roles/:id', auth, ctrl.updateRole);
-  router.delete('/roles/:id', auth, ctrl.deleteRole);
+  router.put(
+    '/roles/:roleId',
+    auth,
+    validateNumericId('roleId'),
+    ctrl.updateRole
+  );
+  router.delete(
+    '/roles/:roleId',
+    auth,
+    validateNumericId('roleId'),
+    ctrl.deleteRole
+  );
 
   return router;
 };

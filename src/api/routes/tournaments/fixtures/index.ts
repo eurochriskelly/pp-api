@@ -1,5 +1,6 @@
 import express from 'express';
 import fixtureController from '../../../controllers/fixtures';
+import { validateNumericId } from '../../../middleware/validation';
 
 export default (db: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
@@ -8,27 +9,61 @@ export default (db: any, useMock: boolean) => {
   router.get('/', ctrl.getFixtures);
   router.get('/nextup', ctrl.nextFixtures);
   router.get('/pitches/:pitch/fixtures', ctrl.getFixtures);
-  router.put('/:fixtureId/rewind', ctrl.rewindFixture);
-  router.get('/:fixtureId/carded-players', ctrl.getCardedPlayers);
-  router.get('/:fixtureId', ctrl.getFixture);
+  router.put(
+    '/:fixtureId/rewind',
+    validateNumericId('fixtureId'),
+    ctrl.rewindFixture
+  );
+  router.get(
+    '/:fixtureId/carded-players',
+    validateNumericId('fixtureId'),
+    ctrl.getCardedPlayers
+  );
+  router.get('/:fixtureId', validateNumericId('fixtureId'), ctrl.getFixture);
   router.post('/filtered', ctrl.getFilteredFixtures);
 
   // modify
   router.put('/update-calculated-fixtures', ctrl.updateCalculatedFixtures);
   router.put(
     '/:fixtureId/update-calculated-fixtures',
+    validateNumericId('fixtureId'),
     ctrl.updateCalculatedFixtures
   );
 
   // create
-  router.post('/:id/start', ctrl.startFixture);
-  router.post('/:id/end', ctrl.endFixture);
-  router.post('/:id/reschedule', ctrl.reschedule);
-  router.post('/:id/score', ctrl.updateScore);
-  router.post('/:id/carded', ctrl.cardPlayers);
+  router.post(
+    '/:fixtureId/start',
+    validateNumericId('fixtureId'),
+    ctrl.startFixture
+  );
+  router.post(
+    '/:fixtureId/end',
+    validateNumericId('fixtureId'),
+    ctrl.endFixture
+  );
+  router.post(
+    '/:fixtureId/reschedule',
+    validateNumericId('fixtureId'),
+    ctrl.reschedule
+  );
+  router.post(
+    '/:fixtureId/score',
+    validateNumericId('fixtureId'),
+    ctrl.updateScore
+  );
+  router.post(
+    '/:fixtureId/carded',
+    validateNumericId('fixtureId'),
+    ctrl.cardPlayers
+  );
 
   // Add the new DELETE route
-  router.delete('/:id/carded/:cardId', ctrl.deleteCard);
+  router.delete(
+    '/:fixtureId/carded/:cardId',
+    validateNumericId('fixtureId'),
+    validateNumericId('cardId'),
+    ctrl.deleteCard
+  );
 
   return router;
 };

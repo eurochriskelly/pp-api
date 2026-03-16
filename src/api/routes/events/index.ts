@@ -1,6 +1,7 @@
 import express from 'express';
 import eventsController from '../../controllers/events';
 import authMiddleware from '../../middleware/auth';
+import { validateNumericId } from '../../middleware/validation';
 
 export default (dbs: any, useMock: boolean) => {
   const router = express.Router();
@@ -9,11 +10,21 @@ export default (dbs: any, useMock: boolean) => {
 
   router.get('/', ctrl.getEvents);
   router.get('/search', ctrl.searchEvents);
-  router.get('/:id', ctrl.getEvent);
+  router.get('/:eventId', validateNumericId('eventId'), ctrl.getEvent);
 
   router.post('/', protect, ctrl.createEvent);
-  router.put('/:id', protect, ctrl.updateEvent);
-  router.delete('/:id', protect, ctrl.deleteEvent);
+  router.put(
+    '/:eventId',
+    protect,
+    validateNumericId('eventId'),
+    ctrl.updateEvent
+  );
+  router.delete(
+    '/:eventId',
+    protect,
+    validateNumericId('eventId'),
+    ctrl.deleteEvent
+  );
 
   return router;
 };

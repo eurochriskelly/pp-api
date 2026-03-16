@@ -18,6 +18,7 @@ import express from 'express';
  */
 export default (db: any, useMock: boolean, isDev: boolean) => {
   const router = express.Router();
+  const debugApiEnabled = process.env.PP_ALLOW_DEBUG_API === '1';
 
   // Only mount in dev/test environments
   if (!isDev) {
@@ -290,6 +291,109 @@ export default (db: any, useMock: boolean, isDev: boolean) => {
       });
     }
   });
+
+  if (debugApiEnabled) {
+    /**
+     * GET /api/internal/table-counts
+     *
+     * Return exact row counts for all base tables in the current database.
+     * This is intended for before/after test comparisons.
+     *
+     * Query params:
+     *   - table?: string | string[] (comma-separated or repeated)
+     */
+    router.get('/table-counts', async (req, res) => {
+      if (!db) {
+        res.status(400).json({
+          error: 'DB_CONNECTION_REQUIRED',
+          message: 'Table counts require a live DB connection',
+        });
+        return;
+      }
+
+      try {
+        const { select } = require('../../../lib/db-helper')(db);
+
+        const rawTableQuery = req.query.table;
+        const requestedTables = Array.isArray(rawTableQuery)
+          ? rawTableQuery
+              .flatMap((value) => String(value).split(','))
+              .map((value) => value.trim())
+              .filter(Boolean)
+          : typeof rawTableQuery === 'string'
+            ? rawTableQuery
+                .split(',')
+                .map((value) => value.trim())
+                .filter(Boolean)
+            : [];
+
+        const safeRequestedTables = requestedTables.filter((table) =>
+          /^[a-zA-Z0-9_]+$/.test(table)
+        );
+
+        const dbRows = await select('SELECT DATABASE() AS db_name');
+        const dbName = dbRows?.[0]?.db_name;
+        if (!dbName) {
+          res.status(500).json({
+            error: 'DB_NAME_NOT_RESOLVED',
+            message: 'Could not resolve current database name',
+          });
+          return;
+        }
+
+        const tableFilterSql = safeRequestedTables.length
+          ? ` AND TABLE_NAME IN (${safeRequestedTables.map(() => '?').join(',')})`
+          : '';
+        const tableRows = await select(
+          `SELECT TABLE_NAME
+             FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = ?
+               AND TABLE_TYPE = 'BASE TABLE'${tableFilterSql}
+             ORDER BY TABLE_NAME`,
+          [dbName, ...safeRequestedTables]
+        );
+
+        const counts = [];
+        for (const row of tableRows) {
+          const tableName = String(row.TABLE_NAME || '');
+          if (!tableName || !/^[a-zA-Z0-9_]+$/.test(tableName)) {
+            continue;
+          }
+
+          const [countRow] = await select(
+            `SELECT COUNT(*) AS rowCount FROM \`${tableName}\``
+          );
+
+          counts.push({
+            table: tableName,
+            rowCount: Number(countRow?.rowCount) || 0,
+          });
+        }
+
+        res.json({
+          database: dbName,
+          requestedTables: safeRequestedTables,
+          capturedAt: new Date().toISOString(),
+          tableCount: counts.length,
+          totalRows: counts.reduce(
+            (sum: number, entry: { rowCount: number }) => sum + entry.rowCount,
+            0
+          ),
+          counts,
+        });
+      } catch (err: any) {
+        console.error('[Internal] Table counts endpoint error:', err);
+        res.status(500).json({
+          error: 'TABLE_COUNTS_FAILED',
+          message: err.message,
+        });
+      }
+    });
+  } else {
+    console.log(
+      '[Internal] Debug routes disabled (set PP_ALLOW_DEBUG_API=1 to enable)'
+    );
+  }
 
   /**
    * POST /api/internal/seed

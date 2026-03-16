@@ -1,6 +1,7 @@
 import express from 'express';
 import clubsController from '../../controllers/clubs';
 import authMiddlewareFactory from '../../middleware/auth';
+import { validateNumericId } from '../../middleware/validation';
 
 export default (db: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
@@ -9,13 +10,13 @@ export default (db: any, useMock: boolean) => {
 
   // Public endpoints
   router.get('/', ctrl.listClubs);
-  router.get('/:id', ctrl.getClubById);
-  router.get('/:id/logo', ctrl.getLogo);
+  router.get('/:clubId', validateNumericId('clubId'), ctrl.getClubById);
+  router.get('/:clubId/logo', validateNumericId('clubId'), ctrl.getLogo);
 
   // Protected endpoints
   router.post('/', auth, ctrl.createClub);
-  router.put('/:id', auth, ctrl.updateClub);
-  router.delete('/:id', auth, ctrl.deleteClub);
+  router.put('/:clubId', auth, validateNumericId('clubId'), ctrl.updateClub);
+  router.delete('/:clubId', auth, validateNumericId('clubId'), ctrl.deleteClub);
 
   return router;
 };
