@@ -7,4 +7,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo "Running automated API tests..."
+if [ -n "${SUITE:-}" ]; then
+  echo "Using suite: ${SUITE}"
+fi
 node scripts/run-api-automated-tests.js

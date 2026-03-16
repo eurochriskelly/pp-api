@@ -1,0 +1,12 @@
+name: 93.cleanup-test-series
+phase: cleanup
+whenVars:
+  - TEST_SERIES_ID
+method: DELETE
+path: /api/series/$TEST_SERIES_ID
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status:
+    - 200
+    - 404

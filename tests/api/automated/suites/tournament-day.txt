@@ -1,0 +1,37 @@
+# Tournament-day E2E story
+01-health.posting.yaml
+02-create-user.posting.yaml
+03-login.posting.yaml
+03a-select-club.posting.yaml
+04-create-tournament.posting.yaml
+04-upload-teamsheet.posting.yaml
+05-create-squad-a.posting.yaml
+06-create-squad-b.posting.yaml
+06-create-squad-c.posting.yaml
+06-create-squad-d.posting.yaml
+07-validate-fixtures-tsv.posting.yaml
+08-create-fixtures.posting.yaml
+09-list-fixtures.posting.yaml
+10-start-fixture-1.posting.yaml
+10a-get-fixture-1-after-start.posting.yaml
+11-score-fixture-1.posting.yaml
+11a-group-standings-after-fixture-1.posting.yaml
+12-card-fixture-1.posting.yaml
+13-end-fixture-1.posting.yaml
+14-start-fixture-2.posting.yaml
+15-score-fixture-2.posting.yaml
+16-end-fixture-2.posting.yaml
+16a-list-standings-after-two-results.posting.yaml
+17-delete-card-fixture-1.posting.yaml
+18-tournament-overview.posting.yaml
+
+# Cleanup
+90-cleanup-fixtures.posting.yaml
+90-cleanup-pitches.posting.yaml
+91-cleanup-squad-d.posting.yaml
+92-cleanup-squad-c.posting.yaml
+91-cleanup-squad-b.posting.yaml
+92-cleanup-squad-a.posting.yaml
+92-cleanup-teamsheet-squad.posting.yaml
+93-cleanup-tournament.posting.yaml
+92-cleanup-user.posting.yaml

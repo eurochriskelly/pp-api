@@ -1,0 +1,11 @@
+name: 16a.list-standings-after-two-results
+phase: setup
+method: GET
+path: /api/tournaments/$TOURNAMENT_ID/standings?category=MEN
+expect:
+  status: 200
+  json:
+    - path: groups
+      exists: true
+    - path: data.0.team
+      exists: true

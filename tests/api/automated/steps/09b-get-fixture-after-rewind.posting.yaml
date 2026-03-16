@@ -1,0 +1,11 @@
+name: 09b.get-fixture-after-rewind
+phase: setup
+method: GET
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_ID
+expect:
+  status: 200
+  json:
+    - path: data.id
+      exists: true
+    - path: data.started
+      equals: null

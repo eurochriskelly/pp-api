@@ -1,0 +1,15 @@
+name: 10a.get-fixture-1-after-start
+phase: setup
+method: GET
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_1_ID
+expect:
+  status: 200
+  json:
+    - path: data.id
+      exists: true
+    - path: data.started
+      exists: true
+    - path: data.team1
+      equals: Auto Team A
+    - path: data.team2
+      equals: Auto Team B

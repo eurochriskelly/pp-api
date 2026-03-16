@@ -1,0 +1,11 @@
+name: 12a.get-carded-players-fixture-1
+phase: setup
+method: GET
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_1_ID/carded-players
+expect:
+  status: 200
+  json:
+    - path: 0.playerName
+      equals: Auto Player
+    - path: 0.cardColor
+      equals: yellow

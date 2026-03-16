@@ -16,3 +16,5 @@ expect:
       exists: true
     - path: data.displayName
       equals: New Test Club
+capture:
+  ENTRANT_ID: data.id

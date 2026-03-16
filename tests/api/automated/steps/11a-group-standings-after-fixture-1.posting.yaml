@@ -1,0 +1,11 @@
+name: 11a.group-standings-after-fixture-1
+phase: setup
+method: GET
+path: /api/tournaments/$TOURNAMENT_ID/group-standings
+expect:
+  status: 200
+  json:
+    - path: data.MEN.1.0.team
+      equals: Auto Team A
+    - path: data.MEN.1.0.TotalPoints
+      exists: true

@@ -1,0 +1,9 @@
+name: 09d.rewind-fixture-blocked-when-started
+phase: setup
+method: PUT
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_ID/rewind
+expect:
+  status: 409
+  json:
+    - path: error
+      equals: TOURNAMENT_STATUS_INVALID_FOR_REWIND

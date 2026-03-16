@@ -1,0 +1,9 @@
+name: 09a.rewind-fixture-in-design
+phase: setup
+method: PUT
+path: /api/tournaments/$TOURNAMENT_ID/fixtures/$FIXTURE_ID/rewind
+expect:
+  status: 200
+  json:
+    - path: message
+      exists: true
