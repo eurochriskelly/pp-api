@@ -1,0 +1,12 @@
+name: 92.cleanup-championship
+phase: cleanup
+whenVars:
+  - CHAMPIONSHIP_ID
+method: DELETE
+path: /api/championships/$CHAMPIONSHIP_ID
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status:
+    - 200
+    - 404

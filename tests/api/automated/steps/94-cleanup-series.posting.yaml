@@ -1,0 +1,12 @@
+name: 94.cleanup-series
+phase: cleanup
+whenVars:
+  - SERIES_ID
+method: DELETE
+path: /api/series/$SERIES_ID
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status:
+    - 200
+    - 404

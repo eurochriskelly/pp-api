@@ -1,0 +1,9 @@
+name: 09c.set-tournament-started
+phase: setup
+method: PUT
+path: /api/tournaments/$TOURNAMENT_ID/status/started
+expect:
+  status: 200
+  json:
+    - path: status
+      equals: started

@@ -1,0 +1,23 @@
+# Pre-tournament admin/simulation story
+01-health.posting.yaml
+02-create-user.posting.yaml
+03-login.posting.yaml
+04-create-tournament.posting.yaml
+05-create-squad-a.posting.yaml
+06-create-squad-b.posting.yaml
+07-create-fixtures.posting.yaml
+08-list-fixtures.posting.yaml
+09-start-fixture.posting.yaml
+09a-rewind-fixture-in-design.posting.yaml
+09b-get-fixture-after-rewind.posting.yaml
+09-start-fixture.posting.yaml
+09c-set-tournament-started.posting.yaml
+09d-rewind-fixture-blocked-when-started.posting.yaml
+
+# Cleanup
+90-cleanup-fixtures.posting.yaml
+90-cleanup-pitches.posting.yaml
+91-cleanup-squad-b.posting.yaml
+92-cleanup-squad-a.posting.yaml
+93-cleanup-tournament.posting.yaml
+92-cleanup-user.posting.yaml

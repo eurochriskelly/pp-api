@@ -15,7 +15,8 @@ make test-api CLEANUP=true
 ## Files
 
 - `common.env`: shared variables used by all test steps
-- `suite.txt`: explicit ordered list of step files to execute
+- `suite.txt`: legacy default suite list
+- `suites/*.txt`: story-based suite definitions
 - `steps/*.posting.yaml`: sequential step files
 - `artifacts/<timestamp>/`: request/response artifacts and summary for each run
 
@@ -36,10 +37,8 @@ Each step supports:
 
 Variables can be referenced as `$VAR_NAME`.
 
-This suite is intentionally focused on the primary domain:
-- tournaments
-- squads
-- fixture TSV validation/import
-- fixture lifecycle (start, score, card, end)
+Story-based suites:
 
-Event/listing APIs should be covered by a separate suite.
+- `make test-api`: tournament-day flow
+- `make test-api-pre-tournament`: pre-tournament admin/simulation flow
+- `make test-api-championships`: series/championships flow

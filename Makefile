@@ -1,4 +1,4 @@
-.PHONY: help start mocks logs backup clean follow kill diagnostics-sql-on diagnostics-sql-off test-api
+.PHONY: help start mocks logs backup clean follow kill diagnostics-sql-on diagnostics-sql-off test-api test-api-tournament test-api-pre-tournament test-api-championships
 
 DEFAULT_GOAL := help
 
@@ -19,8 +19,17 @@ start:  ## Start server with auto-restart (usage: make start [env=production|acc
 test:  ## Run unit tests
 	npm run test:unit
 
-test-api: ## Run sequential automated API tests (usage: make test-api [CLEANUP=true])
-	./scripts/make/test-api.sh
+test-api: ## Run tournament-day E2E API story (usage: make test-api [CLEANUP=true])
+	SUITE=suites/tournament-day.txt ./scripts/make/test-api.sh
+
+test-api-tournament: ## Run tournament-day E2E API story
+	SUITE=suites/tournament-day.txt ./scripts/make/test-api.sh
+
+test-api-pre-tournament: ## Run pre-tournament simulation/admin API story
+	SUITE=suites/pre-tournament-admin.txt ./scripts/make/test-api.sh
+
+test-api-championships: ## Run championships/series API story
+	SUITE=suites/championships.txt ./scripts/make/test-api.sh
 
 backup:  ## Create a database backup (usage: make backup ENV=<environment>)
 	@if [ -z "$(ENV)" ]; then \

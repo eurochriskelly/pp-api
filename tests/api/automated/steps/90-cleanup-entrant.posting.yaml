@@ -1,0 +1,13 @@
+name: 90.cleanup-entrant
+phase: cleanup
+whenVars:
+  - CHAMPIONSHIP_ID
+  - ENTRANT_ID
+method: DELETE
+path: /api/championships/$CHAMPIONSHIP_ID/entrants/$ENTRANT_ID
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status:
+    - 200
+    - 404

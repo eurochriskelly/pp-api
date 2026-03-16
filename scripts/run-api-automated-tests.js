@@ -9,7 +9,18 @@ const AUTOMATED_DIR = path.join(ROOT, 'tests', 'api', 'automated');
 const STEPS_DIR = path.join(AUTOMATED_DIR, 'steps');
 const ARTIFACTS_ROOT = path.join(AUTOMATED_DIR, 'artifacts');
 const COMMON_ENV_PATH = path.join(AUTOMATED_DIR, 'common.env');
-const SUITE_PATH = path.join(AUTOMATED_DIR, 'suite.txt');
+const DEFAULT_SUITE_PATH = path.join(AUTOMATED_DIR, 'suite.txt');
+
+function resolveSuitePath() {
+  const requestedSuite = process.env.SUITE || process.env.API_TEST_SUITE;
+  if (!requestedSuite) {
+    return DEFAULT_SUITE_PATH;
+  }
+
+  return path.isAbsolute(requestedSuite)
+    ? requestedSuite
+    : path.join(AUTOMATED_DIR, requestedSuite);
+}
 
 function readEnvFile(filePath) {
   const out = {};
@@ -83,14 +94,15 @@ function getByPath(obj, pathExpr) {
 }
 
 function loadStepFiles() {
+  const suitePath = resolveSuitePath();
   if (!fs.existsSync(STEPS_DIR)) {
     throw new Error(`Missing steps directory: ${STEPS_DIR}`);
   }
   let stepFiles = [];
 
-  if (fs.existsSync(SUITE_PATH)) {
+  if (fs.existsSync(suitePath)) {
     stepFiles = fs
-      .readFileSync(SUITE_PATH, 'utf8')
+      .readFileSync(suitePath, 'utf8')
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line && !line.startsWith('#'));
@@ -404,6 +416,7 @@ async function main() {
 
   console.log(`API automated tests`);
   console.log(`Base URL: ${vars.BASE_URL}`);
+  console.log(`Suite: ${path.relative(ROOT, resolveSuitePath())}`);
   console.log(`Artifacts: ${artifactDir}`);
   console.log(`Setup steps: ${setupSteps.length}`);
   console.log(`Cleanup steps: ${cleanupSteps.length}`);
