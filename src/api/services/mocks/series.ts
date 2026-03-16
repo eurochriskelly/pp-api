@@ -71,7 +71,17 @@ export default function mockSeriesService() {
     },
 
     getSeriesById: async (id: number) => {
-      return series.find((s) => s.id === id) || null;
+      const s = series.find((s) => s.id === id);
+      if (!s) return null;
+
+      const championshipIds = championships
+        .filter((c) => c.seriesId === id)
+        .map((c) => c.id);
+
+      return {
+        ...s,
+        championshipIds,
+      };
     },
 
     createSeries: async (data: Partial<MockSeries>) => {
@@ -103,14 +113,41 @@ export default function mockSeriesService() {
       return series[index];
     },
 
-    deleteSeries: async (id: number) => {
-      const row = series.find((s) => s.id === id);
-      if (!row) {
+    deleteSeries: async (id: number, hard: boolean = false) => {
+      const rowIndex = series.findIndex((s) => s.id === id);
+      if (rowIndex === -1) {
         throw new Error('Series not found');
       }
 
-      row.status = 'inactive';
-      return { id, message: 'Series deactivated' };
+      if (hard) {
+        // Hard delete - remove from arrays
+        series.splice(rowIndex, 1);
+
+        // Remove all championships for this series
+        for (let i = championships.length - 1; i >= 0; i--) {
+          if (championships[i].seriesId === id) {
+            championships.splice(i, 1);
+          }
+        }
+
+        return { id, message: 'Series hard deleted' };
+      } else {
+        // Soft delete
+        const row = series[rowIndex];
+        if (row.status === 'inactive') {
+          return { id, message: 'Series already inactive' };
+        }
+
+        row.status = 'inactive';
+
+        championships.forEach((c) => {
+          if (c.seriesId === id && c.status !== 'archived') {
+            c.status = 'archived';
+          }
+        });
+
+        return { id, message: 'Series deactivated' };
+      }
     },
 
     listSeriesChampionships: async (seriesId: number) => {

@@ -256,6 +256,34 @@ export default function fixturesService(db: any) {
     },
 
     rewindLatestFixture: async (tournamentId: number) => {
+      const [tournament] = await select(
+        `SELECT id, status FROM tournaments WHERE id = ?`,
+        [tournamentId]
+      );
+      if (!tournament) {
+        const error = new Error('Tournament not found') as Error & {
+          statusCode?: number;
+          code?: string;
+        };
+        error.statusCode = 404;
+        error.code = 'TOURNAMENT_NOT_FOUND';
+        throw error;
+      }
+
+      const tournamentStatus = String(tournament.status || '').toLowerCase();
+      const allowedStatuses = new Set(['in-design', 'new', 'published']);
+      if (!allowedStatuses.has(tournamentStatus)) {
+        const error = new Error(
+          `Rewind is only available before the tournament starts. Current status is '${tournament.status}'.`
+        ) as Error & {
+          statusCode?: number;
+          code?: string;
+        };
+        error.statusCode = 409;
+        error.code = 'TOURNAMENT_STATUS_INVALID_FOR_REWIND';
+        throw error;
+      }
+
       const [latest] = await select(
         `SELECT id, category, stage FROM fixtures 
          WHERE tournamentId = ? AND started IS NOT NULL 
@@ -453,13 +481,15 @@ export default function fixturesService(db: any) {
       }
     },
 
-    getCardedPlayers: async (tournamentId: number) => {
+    getCardedPlayers: async (tournamentId: number, fixtureId?: number) => {
+      const hasFixtureFilter =
+        fixtureId !== undefined && fixtureId !== null && !isNaN(fixtureId);
       return await select(
-        `SELECT c.playerId, p.firstName, p.secondName, c.team, c.cardColor
+        `SELECT c.id, c.fixtureId, c.playerId, p.firstName, p.secondName, c.team, c.cardColor, c.playerNumber, c.playerName
          FROM cards c JOIN players p ON c.playerId = p.id 
-         WHERE c.tournamentId = ? 
+         WHERE c.tournamentId = ?${hasFixtureFilter ? ' AND c.fixtureId = ?' : ''}
          ORDER BY c.team, p.firstName`,
-        [tournamentId]
+        hasFixtureFilter ? [tournamentId, fixtureId] : [tournamentId]
       );
     },
 
