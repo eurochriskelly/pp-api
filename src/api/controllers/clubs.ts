@@ -30,13 +30,13 @@ function clubsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
-        if (isNaN(id)) {
+        const clubId = parseInt(req.params.clubId, 10);
+        if (isNaN(clubId)) {
           res.status(400).json({ error: 'Invalid club ID' });
           return;
         }
 
-        const club = await dbSvc.getClubById(id);
+        const club = await dbSvc.getClubById(clubId);
         if (!club) {
           res.status(404).json({ error: 'Club not found' });
           return;
@@ -73,13 +73,13 @@ function clubsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
-        if (isNaN(id)) {
+        const clubId = parseInt(req.params.clubId, 10);
+        if (isNaN(clubId)) {
           res.status(400).json({ error: 'Invalid club ID' });
           return;
         }
 
-        const club = await dbSvc.updateClub(id, req.body);
+        const club = await dbSvc.updateClub(clubId, req.body);
         res.json({ data: club });
       } catch (err) {
         res.status(400).json({ error: (err as Error).message });
@@ -92,13 +92,13 @@ function clubsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
-        if (isNaN(id)) {
+        const clubId = parseInt(req.params.clubId, 10);
+        if (isNaN(clubId)) {
           res.status(400).json({ error: 'Invalid club ID' });
           return;
         }
 
-        const result = await dbSvc.deleteClub(id);
+        const result = await dbSvc.deleteClub(clubId);
         res.json({ data: result });
       } catch (err) {
         next(err);
@@ -111,8 +111,8 @@ function clubsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
-        if (isNaN(id)) {
+        const clubId = parseInt(req.params.clubId, 10);
+        if (isNaN(clubId)) {
           res.status(400).json({ error: 'Invalid club ID' });
           return;
         }
@@ -122,7 +122,7 @@ function clubsController(db: any, useMock: boolean) {
           return;
         }
 
-        const result = await dbSvc.uploadLogo(id, req.body as Buffer);
+        const result = await dbSvc.uploadLogo(clubId, req.body as Buffer);
         res.json({ data: result });
       } catch (err) {
         next(err);
@@ -135,13 +135,13 @@ function clubsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
-        if (isNaN(id)) {
+        const clubId = parseInt(req.params.clubId, 10);
+        if (isNaN(clubId)) {
           res.status(400).json({ error: 'Invalid club ID' });
           return;
         }
 
-        const logo = await dbSvc.getLogo(id);
+        const logo = await dbSvc.getLogo(clubId);
         if (!logo) {
           res.status(404).json({ error: 'Logo not found' });
           return;

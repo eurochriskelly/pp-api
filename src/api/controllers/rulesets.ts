@@ -31,7 +31,7 @@ function rulesetsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseId(req.params.id);
+        const id = parseId(req.params.rulesetId);
         if (id === null) {
           res.status(400).json({ error: 'Invalid ruleset ID' });
           return;
@@ -74,7 +74,7 @@ function rulesetsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseId(req.params.id);
+        const id = parseId(req.params.rulesetId);
         if (id === null) {
           res.status(400).json({ error: 'Invalid ruleset ID' });
           return;

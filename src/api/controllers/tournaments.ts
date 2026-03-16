@@ -39,12 +39,12 @@ function prettyPrintStages(stages: any) {
 }
 
 type TournamentParams = {
-  id: string;
   tournamentId: string;
   uuid?: string;
   status: string;
   squadId: string;
   code: string;
+  playerId: string;
 };
 
 type TournamentQuery = {
@@ -225,7 +225,7 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
+        const { tournamentId } = req.params as TournamentParams;
         const {
           region,
           title,
@@ -240,7 +240,7 @@ function tournamentsController(db: any, useMock: boolean) {
           drawPoints = 1,
           lossPoints = 0,
         } = req.body;
-        await dbSvc.updateTournament(id, {
+        await dbSvc.updateTournament(tournamentId, {
           region,
           title,
           date,
@@ -254,7 +254,7 @@ function tournamentsController(db: any, useMock: boolean) {
           drawPoints,
           lossPoints,
         });
-        const tournament = await dbSvc.getTournament(id);
+        const tournament = await dbSvc.getTournament(tournamentId);
         res.status(200).json(tournament);
       } catch (err) {
         next(err);
@@ -294,9 +294,10 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
+        const { tournamentId: tournamentIdParam } =
+          req.params as TournamentParams;
         const { category } = req.query as { category?: string };
-        const tournamentId = await resolveTournamentId(id);
+        const tournamentId = await resolveTournamentId(tournamentIdParam);
         if (!tournamentId) {
           res.status(404).json({ error: 'TOURNAMENT_NOT_FOUND' });
           return;
@@ -316,9 +317,10 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
+        const { tournamentId: tournamentIdParam } =
+          req.params as TournamentParams;
         const { lastUpdate } = req.query as { lastUpdate?: string };
-        const tournamentId = await resolveTournamentId(id);
+        const tournamentId = await resolveTournamentId(tournamentIdParam);
         if (!tournamentId) {
           res.status(404).json({
             error: 'TOURNAMENT_NOT_FOUND',
@@ -374,8 +376,9 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const tournamentId = await resolveTournamentId(id);
+        const { tournamentId: tournamentIdParam } =
+          req.params as TournamentParams;
+        const tournamentId = await resolveTournamentId(tournamentIdParam);
         if (!tournamentId) {
           res.status(404).json({ error: 'TOURNAMENT_NOT_FOUND' });
           return;
@@ -439,21 +442,23 @@ function tournamentsController(db: any, useMock: boolean) {
     },
 
     getTournament: async (req: Request, res: Response) => {
-      const { id, uuid } = req.params as TournamentParams;
-      const tournament = await dbSvc.getTournament(id, uuid);
+      const { tournamentId, uuid } = req.params as TournamentParams & {
+        uuid?: string;
+      };
+      const tournament = await dbSvc.getTournament(tournamentId, uuid);
       res.json({ data: tournament });
     },
 
     deleteTournament: async (req: Request, res: Response) => {
-      const { id } = req.params as TournamentParams;
-      await dbSvc.deleteTournament(id);
+      const { tournamentId } = req.params as TournamentParams;
+      await dbSvc.deleteTournament(tournamentId);
       res.json({ message: 'Tournament deleted' });
     },
 
     resetTournament: async (req: Request, res: Response) => {
-      const { id } = req.params as TournamentParams;
+      const { tournamentId } = req.params as TournamentParams;
       try {
-        await dbSvc.resetTournament(id);
+        await dbSvc.resetTournament(tournamentId);
         res.json({ message: 'Tournament reset successfully' });
       } catch (err) {
         console.log(err);
@@ -485,18 +490,22 @@ function tournamentsController(db: any, useMock: boolean) {
     // ... (other squad and player methods with similar type annotations)
 
     codeCheck: async (req: Request, res: Response) => {
-      const { id, code } = req.params as TournamentParams;
+      const { tournamentId, code } = req.params as TournamentParams;
       const { role } = req.query as TournamentQuery;
       try {
-        const result = await dbSvc.codeCheck(id, code.toUpperCase(), role);
+        const result = await dbSvc.codeCheck(
+          tournamentId,
+          code.toUpperCase(),
+          role
+        );
         res.status(200).json({
           authorized: result,
-          data: { role, tournamentId: id },
+          data: { role, tournamentId },
         });
       } catch (err: any) {
         res.status(400).json({
           authorized: false,
-          data: { role, tournamentId: id },
+          data: { role, tournamentId },
           error:
             err.message ||
             'Invalid code or internal server error while checking pin code',
@@ -542,8 +551,8 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getRecentMatches(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getRecentMatches(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -555,8 +564,8 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getTournamentCategories(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getTournamentCategories(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -568,8 +577,8 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getGroupFixtures(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getGroupFixtures(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -581,8 +590,8 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getGroupStandings(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getGroupStandings(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -594,8 +603,8 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getKnockoutFixtures(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getKnockoutFixtures(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -607,8 +616,8 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getFinalsResults(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getFinalsResults(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -616,8 +625,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     getAllMatches: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getAllMatches(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getAllMatches(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -656,8 +665,8 @@ function tournamentsController(db: any, useMock: boolean) {
       next: NextFunction
     ) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const data = await dbSvc.getTournamentOverview(id);
+        const { tournamentId } = req.params as TournamentParams;
+        const data = await dbSvc.getTournamentOverview(tournamentId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -674,8 +683,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     getSquad: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { tournamentId, id } = req.params as TournamentParams;
-        const data = await dbSvc.getSquad(tournamentId, id);
+        const { tournamentId, squadId } = req.params as TournamentParams;
+        const data = await dbSvc.getSquad(tournamentId, squadId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -683,9 +692,9 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     updateSquad: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { tournamentId, id } = req.params as TournamentParams;
-        await dbSvc.updateSquad(tournamentId, id, req.body);
-        const squad = await dbSvc.getSquad(tournamentId, id);
+        const { tournamentId, squadId } = req.params as TournamentParams;
+        await dbSvc.updateSquad(tournamentId, squadId, req.body);
+        const squad = await dbSvc.getSquad(tournamentId, squadId);
         res.status(200).json(squad);
       } catch (err) {
         next(err);
@@ -693,8 +702,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     deleteSquad: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { tournamentId, id } = req.params as TournamentParams;
-        await dbSvc.deleteSquad(tournamentId, id);
+        const { tournamentId, squadId } = req.params as TournamentParams;
+        await dbSvc.deleteSquad(tournamentId, squadId);
         res.json({ message: 'Squad deleted' });
       } catch (err) {
         next(err);
@@ -725,8 +734,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     getPlayer: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { tournamentId, squadId, id } = req.params as any;
-        const data = await dbSvc.getPlayer(tournamentId, squadId, id);
+        const { tournamentId, squadId, playerId } = req.params as any;
+        const data = await dbSvc.getPlayer(tournamentId, squadId, playerId);
         res.json({ data });
       } catch (err) {
         next(err);
@@ -734,9 +743,9 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     updatePlayer: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { tournamentId, squadId, id } = req.params as any;
-        await dbSvc.updatePlayer(tournamentId, squadId, id, req.body);
-        const player = await dbSvc.getPlayer(tournamentId, squadId, id);
+        const { tournamentId, squadId, playerId } = req.params as any;
+        await dbSvc.updatePlayer(tournamentId, squadId, playerId, req.body);
+        const player = await dbSvc.getPlayer(tournamentId, squadId, playerId);
         res.status(200).json(player);
       } catch (err) {
         next(err);
@@ -744,8 +753,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     deletePlayer: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { tournamentId, squadId, id } = req.params as any;
-        await dbSvc.deletePlayer(tournamentId, squadId, id);
+        const { tournamentId, squadId, playerId } = req.params as any;
+        await dbSvc.deletePlayer(tournamentId, squadId, playerId);
         res.json({ message: 'Player deleted' });
       } catch (err) {
         next(err);
@@ -755,8 +764,8 @@ function tournamentsController(db: any, useMock: boolean) {
     integrityCheck: async (req: Request, res: Response, next: NextFunction) => {
       try {
         console.log('icheck');
-        const { id } = req.params as TournamentParams;
-        const result = await dbSvc.integrityCheck(parseInt(id, 10));
+        const { tournamentId } = req.params as TournamentParams;
+        const result = await dbSvc.integrityCheck(parseInt(tournamentId, 10));
         res.json(result);
       } catch (err) {
         next(err);
@@ -765,8 +774,8 @@ function tournamentsController(db: any, useMock: boolean) {
 
     deleteFixtures: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TournamentParams;
-        await dbSvc.deleteFixtures(id);
+        const { tournamentId } = req.params as TournamentParams;
+        await dbSvc.deleteFixtures(tournamentId);
         res.json({ message: 'Fixtures deleted' });
       } catch (err) {
         next(err);
@@ -774,8 +783,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     deletePitches: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TournamentParams;
-        await dbSvc.deletePitches(id);
+        const { tournamentId } = req.params as TournamentParams;
+        await dbSvc.deletePitches(tournamentId);
         res.json({ message: 'Pitches deleted' });
       } catch (err) {
         next(err);
@@ -783,8 +792,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     deleteCards: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TournamentParams;
-        await dbSvc.deleteCards(id);
+        const { tournamentId } = req.params as TournamentParams;
+        await dbSvc.deleteCards(tournamentId);
         res.json({ message: 'Cards deleted' });
       } catch (err) {
         next(err);
@@ -792,8 +801,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     createPitches: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const pitches = await dbSvc.createPitches(id, req.body);
+        const { tournamentId } = req.params as TournamentParams;
+        const pitches = await dbSvc.createPitches(tournamentId, req.body);
         res.status(201).json({ data: pitches });
       } catch (err) {
         next(err);
@@ -801,8 +810,8 @@ function tournamentsController(db: any, useMock: boolean) {
     },
     createFixtures: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TournamentParams;
-        const fixtures = await dbSvc.createFixtures(id, req.body);
+        const { tournamentId } = req.params as TournamentParams;
+        const fixtures = await dbSvc.createFixtures(tournamentId, req.body);
         res.status(201).json({ data: fixtures });
       } catch (err) {
         next(err);
@@ -872,6 +881,6 @@ function tournamentsController(db: any, useMock: boolean) {
       }
     },
   };
-};
+}
 
 export = tournamentsController;

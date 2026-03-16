@@ -24,7 +24,7 @@ function usersController(db: any) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.userId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid user ID' });
           return;
@@ -42,7 +42,7 @@ function usersController(db: any) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.userId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid user ID' });
           return;
@@ -60,7 +60,7 @@ function usersController(db: any) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.userId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid user ID' });
           return;
@@ -96,7 +96,7 @@ function usersController(db: any) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.userId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid role ID' });
           return;
@@ -114,7 +114,7 @@ function usersController(db: any) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.userId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid role ID' });
           return;
