@@ -26,7 +26,7 @@ function seriesController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.seriesId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid series ID' });
           return;
@@ -69,7 +69,7 @@ function seriesController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.seriesId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid series ID' });
           return;
@@ -88,15 +88,20 @@ function seriesController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.seriesId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid series ID' });
           return;
         }
 
-        const row = await dbSvc.deleteSeries(id);
+        const hard = req.query.hard === 'true';
+        const row = await dbSvc.deleteSeries(id, hard);
         res.json({ data: row });
       } catch (err) {
+        if ((err as Error).message.includes('not found')) {
+          res.status(404).json({ error: 'Series not found' });
+          return;
+        }
         next(err);
       }
     },
@@ -107,7 +112,7 @@ function seriesController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.id, 10);
+        const id = parseInt(req.params.seriesId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid series ID' });
           return;

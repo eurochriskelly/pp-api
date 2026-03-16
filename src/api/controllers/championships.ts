@@ -11,18 +11,6 @@ function championshipsController(db: any, useMock: boolean) {
     return isNaN(id) ? null : id;
   };
 
-  const parseEntrantRouteIds = (
-    params: Record<string, string | undefined>
-  ): { championshipId: number | null; entrantId: number | null } => {
-    const hasCompatParam = params.entrantId !== undefined;
-    const championshipRaw = hasCompatParam ? params.id : params.championshipId;
-    const entrantRaw = hasCompatParam ? params.entrantId : params.id;
-    return {
-      championshipId: championshipRaw ? parseId(championshipRaw) : null,
-      entrantId: entrantRaw ? parseId(entrantRaw) : null,
-    };
-  };
-
   return {
     listChampionships: async (
       req: Request,
@@ -47,13 +35,13 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseId(req.params.id);
-        if (id === null) {
+        const championshipId = parseId(req.params.championshipId);
+        if (championshipId === null) {
           res.status(400).json({ error: 'Invalid championship ID' });
           return;
         }
 
-        const row = await dbSvc.getChampionshipById(id);
+        const row = await dbSvc.getChampionshipById(championshipId);
         if (!row) {
           res.status(404).json({ error: 'Championship not found' });
           return;
@@ -92,13 +80,13 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseId(req.params.id);
-        if (id === null) {
+        const championshipId = parseId(req.params.championshipId);
+        if (championshipId === null) {
           res.status(400).json({ error: 'Invalid championship ID' });
           return;
         }
 
-        const row = await dbSvc.updateChampionship(id, req.body);
+        const row = await dbSvc.updateChampionship(championshipId, req.body);
         res.json({ data: row });
       } catch (err) {
         res.status(400).json({ error: (err as Error).message });
@@ -111,13 +99,13 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseId(req.params.id);
-        if (id === null) {
+        const championshipId = parseId(req.params.championshipId);
+        if (championshipId === null) {
           res.status(400).json({ error: 'Invalid championship ID' });
           return;
         }
 
-        const row = await dbSvc.deleteChampionship(id);
+        const row = await dbSvc.deleteChampionship(championshipId);
         res.json({ data: row });
       } catch (err) {
         next(err);
@@ -130,7 +118,7 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const championshipId = parseId(req.params.id);
+        const championshipId = parseId(req.params.championshipId);
         if (championshipId === null) {
           res.status(400).json({ error: 'Invalid championship ID' });
           return;
@@ -149,7 +137,7 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const championshipId = parseId(req.params.id);
+        const championshipId = parseId(req.params.championshipId);
         if (championshipId === null) {
           res.status(400).json({ error: 'Invalid championship ID' });
           return;
@@ -176,7 +164,8 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { championshipId, entrantId } = parseEntrantRouteIds(req.params);
+        const championshipId = parseId(req.params.championshipId);
+        const entrantId = parseId(req.params.entrantId);
 
         if (championshipId === null || entrantId === null) {
           res
@@ -203,7 +192,8 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { championshipId, entrantId } = parseEntrantRouteIds(req.params);
+        const championshipId = parseId(req.params.championshipId);
+        const entrantId = parseId(req.params.entrantId);
 
         if (championshipId === null || entrantId === null) {
           res
@@ -229,7 +219,8 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { championshipId, entrantId } = parseEntrantRouteIds(req.params);
+        const championshipId = parseId(req.params.championshipId);
+        const entrantId = parseId(req.params.entrantId);
 
         if (championshipId === null || entrantId === null) {
           res
@@ -251,7 +242,8 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { championshipId, entrantId } = parseEntrantRouteIds(req.params);
+        const championshipId = parseId(req.params.championshipId);
+        const entrantId = parseId(req.params.entrantId);
         const clubId = parseId(String(req.body.clubId));
 
         if (championshipId === null || entrantId === null || clubId === null) {
@@ -278,7 +270,7 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const championshipId = parseId(req.params.id);
+        const championshipId = parseId(req.params.championshipId);
         if (championshipId === null) {
           res.status(400).json({ error: 'Invalid championship ID' });
           return;
@@ -297,7 +289,7 @@ function championshipsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const championshipId = parseId(req.params.id);
+        const championshipId = parseId(req.params.championshipId);
         if (championshipId === null) {
           res.status(400).json({ error: 'Invalid championship ID' });
           return;

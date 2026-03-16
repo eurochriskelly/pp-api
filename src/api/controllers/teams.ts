@@ -3,7 +3,7 @@ import serviceFactory from '../services/teams';
 import mockServiceFactory from '../services/mocks/teams';
 
 type TeamParams = {
-  id: string;
+  teamId: string;
 };
 
 function teamsController(db: any, useMock: boolean) {
@@ -41,8 +41,8 @@ function teamsController(db: any, useMock: boolean) {
 
     getTeam: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TeamParams;
-        const numericId = parseInt(id, 10);
+        const { teamId } = req.params as TeamParams;
+        const numericId = parseInt(teamId, 10);
         if (isNaN(numericId)) {
           res.status(400).json({ error: 'INVALID_ID' });
           return;
@@ -129,8 +129,8 @@ function teamsController(db: any, useMock: boolean) {
 
     updateTeam: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TeamParams;
-        const numericId = parseInt(id, 10);
+        const { teamId } = req.params as TeamParams;
+        const numericId = parseInt(teamId, 10);
         if (isNaN(numericId)) {
           res.status(400).json({ error: 'INVALID_ID' });
           return;
@@ -151,8 +151,8 @@ function teamsController(db: any, useMock: boolean) {
 
     uploadLogo: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TeamParams;
-        const numericId = parseInt(id, 10);
+        const { teamId } = req.params as TeamParams;
+        const numericId = parseInt(teamId, 10);
         if (isNaN(numericId)) {
           res.status(400).json({ error: 'INVALID_ID' });
           return;
@@ -172,8 +172,8 @@ function teamsController(db: any, useMock: boolean) {
 
     getLogo: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { id } = req.params as TeamParams;
-        const numericId = parseInt(id, 10);
+        const { teamId } = req.params as TeamParams;
+        const numericId = parseInt(teamId, 10);
         if (isNaN(numericId)) {
           res.status(400).json({ error: 'INVALID_ID' });
           return;
@@ -192,6 +192,6 @@ function teamsController(db: any, useMock: boolean) {
       }
     },
   };
-};
+}
 
 export = teamsController;
