@@ -299,9 +299,15 @@ export default function mockFixturesService() {
       };
     },
 
-    getCardedPlayers: async (tournamentId: number) => {
-      II(`Mock: getCardedPlayers called for tournament [${tournamentId}]`);
-      const result = mockCards.filter((c) => c.tournamentId === tournamentId);
+    getCardedPlayers: async (tournamentId: number, fixtureId?: number) => {
+      II(
+        `Mock: getCardedPlayers called for tournament [${tournamentId}], fixture [${fixtureId ?? 'all'}]`
+      );
+      const result = mockCards.filter(
+        (c) =>
+          c.tournamentId === tournamentId &&
+          (fixtureId === undefined || c.fixtureId === fixtureId)
+      );
       DD(`Mock: Found ${result.length} carded players`);
       return result;
     },

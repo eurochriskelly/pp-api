@@ -721,7 +721,9 @@ export default (db: any) => {
 
       const sql = `
         SELECT DISTINCT 
-          t.Id, t.Date, t.endDate, t.Title, t.Location, t.region, t.season, t.eventUuid, t.status, t.code 
+          t.Id, t.Date, t.endDate, t.Title, t.Location, t.region, t.season, t.eventUuid, t.status, t.code,
+          (SELECT COUNT(*) FROM fixtures f WHERE f.tournamentId = t.Id) as fixtureCount,
+          (SELECT COUNT(*) FROM squads s WHERE s.tournamentId = t.Id) as teamsCount
         FROM tournaments t
         ${userId && role ? 'JOIN sec_roles sr ON t.Id = sr.tournamentId' : ''}
         ${whereClause}
@@ -800,6 +802,33 @@ export default (db: any) => {
     },
 
     deleteTournament: async (id: number) => {
+      // Delete child records in reverse dependency order to respect foreign key constraints
+      // 1. Delete cards (reference fixtures and tournaments)
+      await deleteCards(dbDelete, id);
+
+      // 2. Delete fixtures (reference tournaments)
+      await deleteFixtures(dbDelete, id);
+
+      // 3. Delete pitches (reference tournaments)
+      await deletePitches(dbDelete, id);
+
+      // 4. Delete players (reference squads) - handle legacy schemas without teamId
+      try {
+        await dbDelete(
+          `DELETE FROM players WHERE teamId IN (SELECT id FROM squads WHERE tournamentId = ?)`,
+          [id]
+        );
+      } catch (err: any) {
+        // Legacy schemas may not include players.teamId
+        if (err?.code !== 'ER_BAD_FIELD_ERROR') {
+          throw err;
+        }
+      }
+
+      // 5. Delete squads (reference tournaments with ON DELETE SET NULL, but we delete them explicitly)
+      await dbDelete(`DELETE FROM squads WHERE tournamentId = ?`, [id]);
+
+      // 6. Finally delete the tournament
       await dbDelete(`DELETE FROM tournaments WHERE id = ?`, [id]);
     },
 
@@ -1777,7 +1806,8 @@ export default (db: any) => {
 
         // intake_forms.start_date is NOT NULL. Use parsed date, tournament date, then today's date.
         const fallbackStartDate = (() => {
-          if (parsedData.intakeForm.startDate) return parsedData.intakeForm.startDate;
+          if (parsedData.intakeForm.startDate)
+            return parsedData.intakeForm.startDate;
           if (tournamentDate) {
             const d = new Date(tournamentDate);
             if (!Number.isNaN(d.getTime())) {
