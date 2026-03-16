@@ -12,6 +12,8 @@
     "build": "rm -rf dist && tsc",
     "start": "npm run build && node dist/src/server.js",
     "dev": "tsx watch src/server.ts",
+    "cli": "tsx src/cli/index.ts",
+    "cli:help": "tsx src/cli/index.ts --help",
     "backup": "bash scripts/backup.sh",
     "interactive": "node test/interactive.js",
     "start:prod": "make start-production",
