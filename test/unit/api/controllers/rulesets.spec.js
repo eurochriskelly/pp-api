@@ -36,7 +36,7 @@ test('listRulesets returns rows', async () => {
 });
 
 test('getRulesetById returns row', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { rulesetId: '1' } };
   const res = createMockRes();
 
   await controller.getRulesetById(req, res, mockNext);
@@ -73,7 +73,7 @@ test('createRuleset creates row', async () => {
 
 test('updateRuleset updates row', async () => {
   const req = {
-    params: { id: '1' },
+    params: { rulesetId: '1' },
     body: { description: 'Updated description' },
   };
   const res = createMockRes();

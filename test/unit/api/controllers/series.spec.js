@@ -36,7 +36,7 @@ test('listSeries returns list', async () => {
 });
 
 test('getSeriesById returns row', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { seriesId: '1' } };
   const res = createMockRes();
 
   await controller.getSeriesById(req, res, mockNext);
@@ -46,7 +46,7 @@ test('getSeriesById returns row', async () => {
 });
 
 test('getSeriesById returns 400 for invalid id', async () => {
-  const req = { params: { id: 'x' } };
+  const req = { params: { seriesId: 'x' } };
   const res = createMockRes();
 
   await controller.getSeriesById(req, res, mockNext);
@@ -81,7 +81,7 @@ test('createSeries validates name', async () => {
 });
 
 test('listSeriesChampionships returns championships', async () => {
-  const req = { params: { id: '1' } };
+  const req = { params: { seriesId: '1' } };
   const res = createMockRes();
 
   await controller.listSeriesChampionships(req, res, mockNext);
