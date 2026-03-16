@@ -1,6 +1,7 @@
 import express from 'express';
 import listingsController from '../../controllers/listings';
 import authMiddleware from '../../middleware/auth';
+import { validateNumericId } from '../../middleware/validation';
 
 export default (dbs: any, useMock: boolean) => {
   const router = express.Router();
@@ -8,14 +9,36 @@ export default (dbs: any, useMock: boolean) => {
   const protect = authMiddleware(dbs.main, useMock);
 
   router.get('/', ctrl.getListings);
-  router.get('/:id', ctrl.getListing);
-  router.get('/:id/events', ctrl.getListingEvents);
-  router.get('/:id/timeline', ctrl.getListingTimeline);
-  router.get('/:id/ical', ctrl.getListingIcal);
+  router.get('/:listingId', validateNumericId('listingId'), ctrl.getListing);
+  router.get(
+    '/:listingId/events',
+    validateNumericId('listingId'),
+    ctrl.getListingEvents
+  );
+  router.get(
+    '/:listingId/timeline',
+    validateNumericId('listingId'),
+    ctrl.getListingTimeline
+  );
+  router.get(
+    '/:listingId/ical',
+    validateNumericId('listingId'),
+    ctrl.getListingIcal
+  );
 
   router.post('/', protect, ctrl.createListing);
-  router.put('/:id', protect, ctrl.updateListing);
-  router.delete('/:id', protect, ctrl.deleteListing);
+  router.put(
+    '/:listingId',
+    protect,
+    validateNumericId('listingId'),
+    ctrl.updateListing
+  );
+  router.delete(
+    '/:listingId',
+    protect,
+    validateNumericId('listingId'),
+    ctrl.deleteListing
+  );
 
   return router;
 };
