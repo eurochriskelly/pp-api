@@ -2,12 +2,23 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import serviceFactory from '../services/fixtures';
 
+const teamScoreSchema = z
+  .object({
+    goals: z.number({ required_error: 'Goals are required' }),
+    points: z.number({ required_error: 'Points are required' }),
+    goalsExtra: z.number().nullable().optional(),
+    pointsExtra: z.number().nullable().optional(),
+    goalsPenalties: z.number().nullable().optional(),
+    name: z.string().optional(),
+  })
+  .passthrough();
+
 // Define Zod schema for score updates
 const updateScoreSchema = z.object({
   scores: z.object(
     {
-      team1: z.number({ required_error: 'Team 1 score is required' }),
-      team2: z.number({ required_error: 'Team 2 score is required' }),
+      team1: teamScoreSchema,
+      team2: teamScoreSchema,
     },
     { required_error: 'scores object is required' }
   ),
