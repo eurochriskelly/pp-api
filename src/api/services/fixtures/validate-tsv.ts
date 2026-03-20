@@ -652,6 +652,11 @@ export class TSVValidator {
       };
     }
 
+    // Allow real team names as umpires for knockout stages
+    if (isUmp && this._isRealTeam(up)) {
+      return { value: up, warnings: [] };
+    }
+
     return this._fw(
       col,
       r,
