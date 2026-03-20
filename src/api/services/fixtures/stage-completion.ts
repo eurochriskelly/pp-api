@@ -348,6 +348,7 @@ export default function stageCompletionFactory({
   ): Promise<number> {
     const { tournamentId, stage, groupNumber, category } = fixture;
     let totalUpdated = 0;
+    let remainingCategoryMatches: number | null = null;
 
     const updateTeamInFixtures = async (
       teamField: 'team1' | 'team2' | 'umpireTeam',
@@ -407,6 +408,31 @@ export default function stageCompletionFactory({
       return affectedRows;
     };
 
+    const clearBestPlaceholders = async (): Promise<number> => {
+      let clearedRows = 0;
+
+      clearedRows += await update(
+        `UPDATE fixtures
+         SET team1Id = NULL
+         WHERE tournamentId = ? AND category = ? AND team1Planned LIKE '~best:%/p:%'`,
+        [tournamentId, category]
+      );
+      clearedRows += await update(
+        `UPDATE fixtures
+         SET team2Id = NULL
+         WHERE tournamentId = ? AND category = ? AND team2Planned LIKE '~best:%/p:%'`,
+        [tournamentId, category]
+      );
+      clearedRows += await update(
+        `UPDATE fixtures
+         SET umpireTeamId = NULL
+         WHERE tournamentId = ? AND category = ? AND umpireTeamPlanned LIKE '~best:%/p:%'`,
+        [tournamentId, category]
+      );
+
+      return clearedRows;
+    };
+
     const groupAssignments =
       remainingCount === 0
         ? deriveGroupPlaceholderAssignments({
@@ -451,66 +477,88 @@ export default function stageCompletionFactory({
       totalUpdated += updatesForPosition;
     }
 
-    const bestRankCache = new Map<number, StandingsRow[]>();
-    for (let pos = 1; pos <= bestPositions; pos++) {
-      if (!bestRankCache.has(pos)) {
-        const rankedQuery = `
-          SELECT *
-          FROM (${sqlGroupRankings(pos)}) AS ranked
-          WHERE tournamentId = ? AND category = ?
-        `;
-        const rankedTeams = await select(rankedQuery, [tournamentId, category]);
-        bestRankCache.set(pos, rankedTeams || []);
+    if (bestPositions > 0) {
+      if (remainingCategoryMatches === null) {
+        remainingCategoryMatches = await _getRemainingCategoryGroupMatches({
+          tournamentId,
+          category,
+        });
       }
 
-      const rankedTeams = bestRankCache.get(pos);
-      if (!Array.isArray(rankedTeams) || rankedTeams.length === 0) {
-        DD(
-          `Skipping ~best:/p:${pos} placeholders — no ranked teams available for tournament [${tournamentId}], category [${category}].`
+      if (remainingCategoryMatches > 0) {
+        const clearedBestRows = await clearBestPlaceholders();
+        II(
+          `StageCompletion: cleared and skipped ~best updates for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`
         );
-        continue;
-      }
+        totalUpdated += clearedBestRows;
+      } else {
+        const bestRankCache = new Map<number, StandingsRow[]>();
+        for (let pos = 1; pos <= bestPositions; pos++) {
+          if (!bestRankCache.has(pos)) {
+            const rankedQuery = `
+              SELECT *
+              FROM (${sqlGroupRankings(pos)}) AS ranked
+              WHERE tournamentId = ? AND category = ?
+            `;
+            const rankedTeams = await select(rankedQuery, [
+              tournamentId,
+              category,
+            ]);
+            bestRankCache.set(pos, rankedTeams || []);
+          }
 
-      const bestAssignments = deriveBestPlaceholderAssignments({
-        position: pos,
-        standings: rankedTeams,
-      });
+          const rankedTeams = bestRankCache.get(pos);
+          if (!Array.isArray(rankedTeams) || rankedTeams.length === 0) {
+            DD(
+              `Skipping ~best:/p:${pos} placeholders — no ranked teams available for tournament [${tournamentId}], category [${category}].`
+            );
+            continue;
+          }
 
-      for (const { placeholder, teamId } of bestAssignments) {
-        if (!teamId) {
-          DD(`Skipping best placeholder ${placeholder} — not enough teams`);
-          continue;
+          const bestAssignments = deriveBestPlaceholderAssignments({
+            position: pos,
+            standings: rankedTeams,
+          });
+
+          for (const { placeholder, teamId } of bestAssignments) {
+            if (!teamId) {
+              DD(`Skipping best placeholder ${placeholder} — not enough teams`);
+              continue;
+            }
+
+            let updatesForBest = 0;
+            updatesForBest += await updateTeamInFixtures(
+              'team1',
+              teamId,
+              placeholder
+            );
+            updatesForBest += await updateTeamInFixtures(
+              'team2',
+              teamId,
+              placeholder
+            );
+            updatesForBest += await updateTeamInFixtures(
+              'umpireTeam',
+              teamId,
+              placeholder
+            );
+
+            DD(
+              `Best placeholder ${placeholder} resolved to team ${teamId}, updated ${updatesForBest} rows`
+            );
+            totalUpdated += updatesForBest;
+          }
         }
-
-        let updatesForBest = 0;
-        updatesForBest += await updateTeamInFixtures(
-          'team1',
-          teamId,
-          placeholder
-        );
-        updatesForBest += await updateTeamInFixtures(
-          'team2',
-          teamId,
-          placeholder
-        );
-        updatesForBest += await updateTeamInFixtures(
-          'umpireTeam',
-          teamId,
-          placeholder
-        );
-
-        DD(
-          `Best placeholder ${placeholder} resolved to team ${teamId}, updated ${updatesForBest} rows`
-        );
-        totalUpdated += updatesForBest;
       }
     }
 
     if (groupZeroPositions > 0) {
-      const remainingCategoryMatches = await _getRemainingCategoryGroupMatches({
-        tournamentId,
-        category,
-      });
+      if (remainingCategoryMatches === null) {
+        remainingCategoryMatches = await _getRemainingCategoryGroupMatches({
+          tournamentId,
+          category,
+        });
+      }
       if (remainingCategoryMatches > 0) {
         II(
           `StageCompletion: skipping ~group:0 updates for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`
