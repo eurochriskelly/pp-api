@@ -25,6 +25,7 @@ import tournamentControllerFactory from './controllers/tournaments';
 import clubsControllerFactory from './controllers/clubs';
 import teamsControllerFactory from './controllers/teams';
 import authMiddlewareFactory from './middleware/auth';
+import { validateTournamentIdentifier } from './middleware/validation';
 
 interface Args {
   port: number;
@@ -51,6 +52,10 @@ function setupApi(dbs: Dbs, ARGS: Args) {
 
   // Handle dbs being just a single connection object (backward compatibility) or { main, club }
   const dbMain = dbs.main || dbs;
+  const validateTournamentId = validateTournamentIdentifier(
+    dbMain,
+    ARGS.useMock
+  );
 
   if (ARGS.errorMsg) {
     console.error(`Fatal error: ${ARGS.errorMsg}`);
@@ -61,6 +66,7 @@ function setupApi(dbs: Dbs, ARGS: Args) {
   // Define PDF upload route BEFORE global JSON parsing (but after db is available)
   app.post(
     '/api/tournaments/:tournamentId/club/:clubId/teamsheet',
+    validateTournamentId,
     bodyParser.raw({ type: 'application/pdf', limit: '10mb' }),
     (req: Request, res: Response) => {
       console.log(
@@ -156,10 +162,12 @@ function setupApi(dbs: Dbs, ARGS: Args) {
   app.use('/api/tournaments', tournamentRoutes(dbMain, ARGS.useMock));
   app.use(
     '/api/tournaments/:tournamentId/fixtures',
+    validateTournamentId,
     fixtureRoutes(dbMain, ARGS.useMock)
   );
   app.use(
     '/api/tournaments/:tournamentId/teams',
+    validateTournamentId,
     tournamentTeamsRoutes(dbMain, ARGS.useMock)
   );
   app.use('/api/regions', regionRoutes(dbMain, ARGS.useMock));

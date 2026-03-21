@@ -1,6 +1,10 @@
 import express from 'express';
 import tournamentController from '../../controllers/tournaments';
-import { validateNumericId, validateUUID } from '../../middleware/validation';
+import {
+  validateNumericId,
+  validateTournamentIdentifier,
+  validateUUID,
+} from '../../middleware/validation';
 const authMiddlewareFactory = require('../../middleware/auth');
 
 const PPP_CONTENT_TYPES = new Set([
@@ -21,6 +25,7 @@ export default (db: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
   const ctrl = tournamentController(db, useMock);
   const auth = authMiddlewareFactory(db, useMock);
+  const validateTournamentId = validateTournamentIdentifier(db, useMock);
 
   router.post(
     '/',
@@ -45,226 +50,226 @@ export default (db: any, useMock: boolean) => {
   router.get('/by-status/:status', ctrl.getTournamentsByStatus);
   router.get(
     '/:tournamentId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getTournament
   );
   router.get(
     '/:tournamentId/report',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getTournamentReport
   );
   router.get(
     '/:tournamentId/report-cache',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getTournamentReportCache
   );
   router.put(
     '/:tournamentId/report',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.buildTournamentReport
   );
   router.put(
     '/:tournamentId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.updateTournament
   );
   router.put(
     '/:tournamentId/status/:status',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.updateTournamentStatus
   );
   router.delete(
     '/:tournamentId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.deleteTournament
   );
   router.get('/by-uuid/:uuid', validateUUID('uuid'), ctrl.getTournament);
   router.post(
     '/:tournamentId/reset',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.resetTournament
   );
   router.post(
     '/:tournamentId/validate-tsv',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.validateTsv
   );
   router.post(
     '/:tournamentId/generate-fixtures',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.generateFixtures
   );
   router.get(
     '/:tournamentId/recent-matches',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getRecentMatches
   );
   router.get(
     '/:tournamentId/categories',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getTournamentCategories
   );
   router.get(
     '/:tournamentId/group-fixtures',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getGroupFixtures
   );
   router.get(
     '/:tournamentId/group-standings',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getGroupStandings
   );
   router.get(
     '/:tournamentId/knockout-fixtures',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getKnockoutFixtures
   );
   router.get(
     '/:tournamentId/finals-results',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getFinalsResults
   );
   router.get(
     '/:tournamentId/all-matches',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getAllMatches
   );
   router.get(
     '/:tournamentId/clubs',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getTournamentClubs
   );
   router.get(
     '/:tournamentId/filters',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getFilters
   );
   router.get(
     '/:tournamentId/code-check/:code',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.codeCheck
   );
   router.get(
     '/:tournamentId/matches-by-pitch',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getMatchesByPitch
   );
   router.get(
     '/:tournamentId/carded-players',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getCardedPlayers
   );
   router.post(
     '/:tournamentId/squads',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.createSquad
   );
   router.get(
     '/:tournamentId/squads',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getSquads
   );
   router.get(
     '/:tournamentId/squads/:squadId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     ctrl.getSquad
   );
   router.put(
     '/:tournamentId/squads/:squadId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     ctrl.updateSquad
   );
   router.delete(
     '/:tournamentId/squads/:squadId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     ctrl.deleteSquad
   );
   router.post(
     '/:tournamentId/squads/:squadId/players',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     ctrl.createPlayer
   );
   router.get(
     '/:tournamentId/squads/:squadId/players',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     ctrl.getPlayers
   );
   router.get(
     '/:tournamentId/squads/:squadId/players/:playerId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     validateNumericId('playerId'),
     ctrl.getPlayer
   );
   router.put(
     '/:tournamentId/squads/:squadId/players/:playerId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     validateNumericId('playerId'),
     ctrl.updatePlayer
   );
   router.delete(
     '/:tournamentId/squads/:squadId/players/:playerId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('squadId'),
     validateNumericId('playerId'),
     ctrl.deletePlayer
   );
   router.delete(
     '/:tournamentId/fixtures',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.deleteFixtures
   );
   router.delete(
     '/:tournamentId/pitches',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.deletePitches
   );
   router.delete(
     '/:tournamentId/cards',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.deleteCards
   );
   router.post(
     '/:tournamentId/pitches',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.createPitches
   );
   router.post(
     '/:tournamentId/fixtures',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.createFixtures
   );
 
   router.get(
     '/:tournamentId/overview',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getTournamentOverview
   );
   router.get(
     '/:tournamentId/integrity-check',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.integrityCheck
   );
   router.get(
     '/:tournamentId/organizers',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     ctrl.getOrganizers
   );
   router.put(
     '/:tournamentId/organizers/:userId',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('userId'),
     ctrl.assignOrganizer
   );
   router.get(
     '/:tournamentId/club/:clubId/logo',
-    validateNumericId('tournamentId'),
+    validateTournamentId,
     validateNumericId('clubId'),
     ctrl.getClubLogo
   );
