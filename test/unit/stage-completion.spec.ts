@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import stageCompletionFactory from '../../src/api/services/fixtures/stage-completion';
 
-test('processStageCompletion clears and skips ~best placeholders while category groups remain unresolved', async () => {
+test('processStageCompletion restores planned ~best placeholders and skips resolving them while category groups remain unresolved', async () => {
   let rankingsQueryCalls = 0;
   const updateCalls: Array<{ sql: string; params: any[] }> = [];
 
@@ -92,7 +92,7 @@ test('processStageCompletion clears and skips ~best placeholders while category 
   assert.equal(updated, true);
   assert.equal(rankingsQueryCalls, 0);
   assert.equal(updateCalls.length, 3);
-  assert.match(updateCalls[0].sql, /SET team1Id = NULL/);
-  assert.match(updateCalls[1].sql, /SET team2Id = NULL/);
-  assert.match(updateCalls[2].sql, /SET umpireTeamId = NULL/);
+  assert.match(updateCalls[0].sql, /SET team1Id = team1Planned/);
+  assert.match(updateCalls[1].sql, /SET team2Id = team2Planned/);
+  assert.match(updateCalls[2].sql, /SET umpireTeamId = umpireTeamPlanned/);
 });

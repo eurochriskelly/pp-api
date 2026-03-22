@@ -408,29 +408,29 @@ export default function stageCompletionFactory({
       return affectedRows;
     };
 
-    const clearBestPlaceholders = async (): Promise<number> => {
-      let clearedRows = 0;
+    const restoreBestPlaceholders = async (): Promise<number> => {
+      let restoredRows = 0;
 
-      clearedRows += await update(
+      restoredRows += await update(
         `UPDATE fixtures
-         SET team1Id = NULL
+         SET team1Id = team1Planned
          WHERE tournamentId = ? AND category = ? AND team1Planned LIKE '~best:%/p:%'`,
         [tournamentId, category]
       );
-      clearedRows += await update(
+      restoredRows += await update(
         `UPDATE fixtures
-         SET team2Id = NULL
+         SET team2Id = team2Planned
          WHERE tournamentId = ? AND category = ? AND team2Planned LIKE '~best:%/p:%'`,
         [tournamentId, category]
       );
-      clearedRows += await update(
+      restoredRows += await update(
         `UPDATE fixtures
-         SET umpireTeamId = NULL
+         SET umpireTeamId = umpireTeamPlanned
          WHERE tournamentId = ? AND category = ? AND umpireTeamPlanned LIKE '~best:%/p:%'`,
         [tournamentId, category]
       );
 
-      return clearedRows;
+      return restoredRows;
     };
 
     const groupAssignments =
@@ -486,11 +486,11 @@ export default function stageCompletionFactory({
       }
 
       if (remainingCategoryMatches > 0) {
-        const clearedBestRows = await clearBestPlaceholders();
+        const restoredBestRows = await restoreBestPlaceholders();
         II(
-          `StageCompletion: cleared and skipped ~best updates for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`
+          `StageCompletion: restored planned ~best placeholders and skipped resolving them for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`
         );
-        totalUpdated += clearedBestRows;
+        totalUpdated += restoredBestRows;
       } else {
         const bestRankCache = new Map<number, StandingsRow[]>();
         for (let pos = 1; pos <= bestPositions; pos++) {

@@ -173,6 +173,15 @@ const deleteFixtures = async (
   tournamentId: number
 ) => {
   try {
+    // Remove cards linked to this tournament's fixtures even if cards.tournamentId
+    // is missing or inconsistent in legacy data.
+    await dbDelete(
+      `DELETE c
+       FROM cards c
+       JOIN fixtures f ON f.id = c.fixtureId
+       WHERE f.tournamentId = ?`,
+      [tournamentId]
+    );
     await dbDelete(`DELETE FROM cards WHERE tournamentId = ?`, [tournamentId]);
     const result = await dbDelete(
       `DELETE FROM fixtures WHERE tournamentId = ?`,
@@ -415,9 +424,8 @@ export default (db: any) => {
           tournamentId,
           '2025-01-01'
         );
-        await deleteCards(dbDelete, tournamentId);
-        await deletePitches(dbDelete, tournamentId);
         await deleteFixtures(dbDelete, tournamentId);
+        await deletePitches(dbDelete, tournamentId);
         await createPitches(insert, tournamentId, pitches);
         await insert(sql, []);
         return {};
