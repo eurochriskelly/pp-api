@@ -19,6 +19,26 @@ const staticPath = `/gcp/dist/${app}/`;
 
 const ARGS = { port, app, database, staticPath };
 
+const connectToDatabase = (connection: mysql.Connection) =>
+  new Promise<void>((resolve, reject) => {
+    connection.connect((err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
+const queryDatabase = (connection: mysql.Connection, sql: string) =>
+  new Promise<void>((resolve, reject) => {
+    connection.query(sql, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
+const ensureUtf8mb4Connection = async (connection: mysql.Connection) => {
+  await queryDatabase(connection, 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
+};
+
 // Startup banner - impossible to miss
 console.log('╔══════════════════════════════════════════════════════════╗');
 console.log(
@@ -56,23 +76,15 @@ const run = async () => {
       console.log('--------------------------------');
 
       db = mysql.createConnection(dbConf);
-      await new Promise((resolve, reject) => {
-        db!.connect((err) => {
-          if (err) reject(err);
-          else resolve(undefined);
-        });
-      });
+      await connectToDatabase(db);
+      await ensureUtf8mb4Connection(db);
       console.log('✓ Connected to MySQL (Main) - data will be persisted');
 
       // Try to connect to ClubEvents DB, but allow it to fail gracefully
       try {
         dbClub = mysql.createConnection(clubEventsDbConf);
-        await new Promise((resolve, reject) => {
-          dbClub!.connect((err) => {
-            if (err) reject(err);
-            else resolve(undefined);
-          });
-        });
+        await connectToDatabase(dbClub);
+        await ensureUtf8mb4Connection(dbClub);
         console.log('✓ Connected to MySQL (ClubEvents)');
       } catch (clubErr: any) {
         dbClub = null;
