@@ -13,12 +13,24 @@ const PPP_CONTENT_TYPES = new Set([
   'application/x-zip-compressed',
   'application/vnd.ppp',
 ]);
+const TSV_CONTENT_TYPES = new Set([
+  'text/plain',
+  'text/tab-separated-values',
+  'text/tsv',
+]);
 
 const isPppUploadRequest = (req: express.Request): boolean => {
   const rawContentType = req.headers['content-type'];
   if (!rawContentType || typeof rawContentType !== 'string') return false;
   const contentType = rawContentType.split(';')[0].trim().toLowerCase();
   return PPP_CONTENT_TYPES.has(contentType);
+};
+
+const isTsvUploadRequest = (req: express.Request): boolean => {
+  const rawContentType = req.headers['content-type'];
+  if (!rawContentType || typeof rawContentType !== 'string') return false;
+  const contentType = rawContentType.split(';')[0].trim().toLowerCase();
+  return TSV_CONTENT_TYPES.has(contentType);
 };
 
 export default (db: any, useMock: boolean) => {
@@ -243,6 +255,10 @@ export default (db: any, useMock: boolean) => {
   router.post(
     '/:tournamentId/fixtures',
     validateTournamentId,
+    express.raw({
+      type: isTsvUploadRequest,
+      limit: '10mb',
+    }),
     ctrl.createFixtures
   );
 

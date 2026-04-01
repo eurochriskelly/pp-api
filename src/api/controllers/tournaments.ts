@@ -3,6 +3,49 @@ import serviceFactory from '../services/tournaments';
 import mockServiceFactory from '../services/mocks/tournaments';
 import { createTournamentReportCache } from '../services/tournaments/report-cache';
 
+function flattenValidatedRows(rows: any[]): Record<string, string | number>[] {
+  return rows.map((row) =>
+    Object.fromEntries(
+      Object.entries(row).map(([key, cell]) => [key, (cell as any).value])
+    )
+  );
+}
+
+function normalizeFixtureImportInput(dbSvc: any, body: unknown) {
+  if (Array.isArray(body)) {
+    return body;
+  }
+
+  if (Buffer.isBuffer(body)) {
+    return flattenValidatedRows(dbSvc.validateTsv(body.toString('base64')).rows);
+  }
+
+  let tsvText: string | null = null;
+
+  if (typeof body === 'string') {
+    tsvText = body;
+  } else if (body && typeof body === 'object') {
+    const payload = body as { tsv?: unknown; key?: unknown; tsvEncoded?: unknown };
+
+    if (typeof payload.tsv === 'string') {
+      tsvText = payload.tsv;
+    } else if (typeof payload.key === 'string') {
+      return flattenValidatedRows(dbSvc.validateTsv(payload.key).rows);
+    } else if (typeof payload.tsvEncoded === 'string') {
+      return flattenValidatedRows(dbSvc.validateTsv(payload.tsvEncoded).rows);
+    }
+  }
+
+  if (typeof tsvText === 'string') {
+    const tsvEncoded = Buffer.from(tsvText, 'utf8').toString('base64');
+    return flattenValidatedRows(dbSvc.validateTsv(tsvEncoded).rows);
+  }
+
+  throw new Error(
+    'Unsupported fixtures import body. Expected TSV text, base64 TSV, or an array of fixture rows.'
+  );
+}
+
 function prettyPrintStages(stages: any) {
   let output = '';
   for (const category in stages) {
@@ -811,7 +854,8 @@ function tournamentsController(db: any, useMock: boolean) {
     createFixtures: async (req: Request, res: Response, next: NextFunction) => {
       try {
         const { tournamentId } = req.params as TournamentParams;
-        const fixtures = await dbSvc.createFixtures(tournamentId, req.body);
+        const fixtureRows = normalizeFixtureImportInput(dbSvc, req.body);
+        const fixtures = await dbSvc.createFixtures(tournamentId, fixtureRows);
         res.status(201).json({ data: fixtures });
       } catch (err) {
         next(err);
