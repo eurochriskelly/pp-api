@@ -1,3 +1,5 @@
+import decodeBase64Text from './decode-base64-text';
+
 /**
  * validate-tsv.ts – fixture-list validator (TypeScript, v4 · Jun 2025)
  *
@@ -147,7 +149,7 @@ export class TSVValidator {
       expectedTeams: null,
       ...options,
     };
-    this.raw = Buffer.from(b64, 'base64').toString('utf8');
+    this.raw = decodeBase64Text(b64);
     this.lines = this.raw.split(/\r?\n/).filter((l) => l.trim().length);
     this.rows = [];
     this.warnings = [];
