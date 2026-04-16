@@ -5,6 +5,7 @@ import {
   deriveGroupPlaceholderAssignments,
   derivePredictiveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
+  deriveWorstCategoryPlaceholderAssignments,
   sortCategoryStandings,
   evaluatePlaceholderDelta,
   deriveBestPlaceholderAssignments,
@@ -304,6 +305,24 @@ test('deriveWorstPlaceholderAssignments returns empty list when position invalid
     standings: [],
   });
   assert.deepEqual(assignments, []);
+});
+
+test('deriveWorstCategoryPlaceholderAssignments orders standings from bottom up', () => {
+  const standings = [
+    { team: 'A', TotalPoints: 9, PointsDifference: 20, PointsFrom: 40, grp: 1 },
+    { team: 'B', TotalPoints: 6, PointsDifference: 18, PointsFrom: 42, grp: 2 },
+    { team: 'C', TotalPoints: 3, PointsDifference: 5, PointsFrom: 20, grp: 3 },
+  ];
+
+  const assignments = deriveWorstCategoryPlaceholderAssignments({
+    standings,
+    totalPositions: 2,
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~worst:1/p:0', teamId: 'C' },
+    { placeholder: '~worst:2/p:0', teamId: 'B' },
+  ]);
 });
 
 test('planGroupZeroAssignments skips when matches remain', () => {

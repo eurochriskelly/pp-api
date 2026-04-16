@@ -66,8 +66,15 @@ function convertTeam(
     .toUpperCase()
     .replace(/\s+IN\s+/g, ' ');
 
-  let m = upper.match(/^(\d+)\s*(?:ST|ND|RD|TH)\s+GP\.(\d+)$/);
-  if (m) return `~group:${+m[2]}/p:${+m[1]}`;
+  let m = upper.match(/^(-?\d+)\s*(?:ST|ND|RD|TH)\s+GP\.(\d+)$/);
+  if (m) {
+    const pos = +m[1];
+    const groupNum = +m[2];
+    if (pos < 0) {
+      return `~worst:${Math.abs(pos)}/p:${groupNum}`;
+    }
+    return `~group:${groupNum}/p:${pos}`;
+  }
 
   m = upper.match(
     /^(?:\s*(\d+)\s*(?:ST|ND|RD|TH)\s+)?BEST\s+(\d+)\s*(?:ST|ND|RD|TH)$/

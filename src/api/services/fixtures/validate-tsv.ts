@@ -516,10 +516,11 @@ export class TSVValidator {
     }
 
     const nthGpMatch =
-      /^(\d+(?:ST|ND|RD|TH))\s+GP(?:S|\.\*|(?:\.(\d+)))$/i.exec(up);
+      /^(-?\d+(?:ST|ND|RD|TH))\s+GP(?:S|\.\*|(?:\.(\d+)))$/i.exec(up);
     if (nthGpMatch) {
       const posText = nthGpMatch[1];
       const pos = parseInt(posText, 10);
+      const isNegative = posText.startsWith('-');
       const groupNum =
         nthGpMatch[2] === undefined ? 0 : parseInt(nthGpMatch[2], 10);
       const normalizedPosText = posText.replace(/(ST|ND|RD|TH)$/i, (s) =>
@@ -551,10 +552,10 @@ export class TSVValidator {
           );
           this.warnings.push(w);
           cellSpecificWarnings.push(w);
-        } else if (pos > totalTeamsInCat) {
+        } else if (Math.abs(pos) > totalTeamsInCat) {
           const w = warn(
             'field',
-            `Position ${pos} in "${raw}" is invalid; category ${cat} only has ${totalTeamsInCat} teams in total across all groups.`,
+            `Position ${posText} in "${raw}" is invalid; category ${cat} only has ${totalTeamsInCat} teams in total across all groups.`,
             r,
             col
           );
@@ -565,7 +566,16 @@ export class TSVValidator {
         const categoryDeclaredGroups =
           this.preScannedCatGroups.get(cat) || new Set();
 
-        if (!categoryDeclaredGroups.has(groupNum)) {
+        if (isNegative) {
+          const w = warn(
+            'field',
+            `Negative positions like "${raw}" are only allowed for GP.0 (overall ranking).`,
+            r,
+            col
+          );
+          this.warnings.push(w);
+          cellSpecificWarnings.push(w);
+        } else if (!categoryDeclaredGroups.has(groupNum)) {
           const w = warn(
             'field',
             `Referenced group GP.${groupNum} in "${raw}" does not exist in category ${cat}.`,
