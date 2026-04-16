@@ -8,6 +8,7 @@ import {
   sortCategoryStandings,
   evaluatePlaceholderDelta,
   deriveBestPlaceholderAssignments,
+  deriveWorstPlaceholderAssignments,
   planGroupZeroAssignments,
 } from '../../src/api/services/fixtures/stage-completion-utils';
 
@@ -55,10 +56,38 @@ test('derivePredictiveGroupPlaceholderAssignments resolves an early-clinched lea
     fixtures: [
       { team1: 'A', team2: 'B', goals1: 1, points1: 5, goals2: 0, points2: 4 },
       { team1: 'A', team2: 'C', goals1: 1, points1: 2, goals2: 0, points2: 3 },
-      { team1: 'B', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
-      { team1: 'A', team2: 'D', goals1: null, points1: null, goals2: null, points2: null },
-      { team1: 'B', team2: 'D', goals1: null, points1: null, goals2: null, points2: null },
-      { team1: 'C', team2: 'D', goals1: null, points1: null, goals2: null, points2: null },
+      {
+        team1: 'B',
+        team2: 'C',
+        goals1: null,
+        points1: null,
+        goals2: null,
+        points2: null,
+      },
+      {
+        team1: 'A',
+        team2: 'D',
+        goals1: null,
+        points1: null,
+        goals2: null,
+        points2: null,
+      },
+      {
+        team1: 'B',
+        team2: 'D',
+        goals1: null,
+        points1: null,
+        goals2: null,
+        points2: null,
+      },
+      {
+        team1: 'C',
+        team2: 'D',
+        goals1: null,
+        points1: null,
+        goals2: null,
+        points2: null,
+      },
     ],
   });
 
@@ -80,8 +109,22 @@ test('derivePredictiveGroupPlaceholderAssignments leaves a position unresolved w
     ],
     fixtures: [
       { team1: 'A', team2: 'B', goals1: 1, points1: 4, goals2: 1, points2: 2 },
-      { team1: 'A', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
-      { team1: 'B', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
+      {
+        team1: 'A',
+        team2: 'C',
+        goals1: null,
+        points1: null,
+        goals2: null,
+        points2: null,
+      },
+      {
+        team1: 'B',
+        team2: 'C',
+        goals1: null,
+        points1: null,
+        goals2: null,
+        points2: null,
+      },
     ],
   });
 
@@ -122,7 +165,14 @@ test('derivePredictiveGroupPlaceholderAssignments uses completed head-to-head to
     fixtures: [
       { team1: 'A', team2: 'B', goals1: 1, points1: 2, goals2: 0, points2: 4 },
       { team1: 'A', team2: 'C', goals1: 1, points1: 3, goals2: 0, points2: 1 },
-      { team1: 'B', team2: 'C', goals1: null, points1: null, goals2: null, points2: null },
+      {
+        team1: 'B',
+        team2: 'C',
+        goals1: null,
+        points1: null,
+        goals2: null,
+        points2: null,
+      },
     ],
   });
 
@@ -205,6 +255,51 @@ test('deriveBestPlaceholderAssignments ranks teams for a given position', () => 
 
 test('deriveBestPlaceholderAssignments returns empty list when position invalid', () => {
   const assignments = deriveBestPlaceholderAssignments({
+    position: 0,
+    standings: [],
+  });
+  assert.deepEqual(assignments, []);
+});
+
+test('deriveWorstPlaceholderAssignments ranks teams in reverse for a given position', () => {
+  const standings = [
+    {
+      team: 'G1',
+      TotalPoints: 9,
+      PointsDifference: 20,
+      PointsFrom: 40,
+      grp: 1,
+    },
+    {
+      team: 'G2',
+      TotalPoints: 6,
+      PointsDifference: 18,
+      PointsFrom: 42,
+      grp: 2,
+    },
+    {
+      team: 'G3',
+      TotalPoints: 6,
+      PointsDifference: 12,
+      PointsFrom: 39,
+      grp: 3,
+    },
+  ];
+
+  const assignments = deriveWorstPlaceholderAssignments({
+    position: 2,
+    standings,
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~worst:1/p:2', teamId: 'G3' },
+    { placeholder: '~worst:2/p:2', teamId: 'G2' },
+    { placeholder: '~worst:3/p:2', teamId: 'G1' },
+  ]);
+});
+
+test('deriveWorstPlaceholderAssignments returns empty list when position invalid', () => {
+  const assignments = deriveWorstPlaceholderAssignments({
     position: 0,
     standings: [],
   });

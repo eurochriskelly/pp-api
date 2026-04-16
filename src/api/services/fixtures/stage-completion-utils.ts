@@ -73,6 +73,24 @@ export function deriveBestPlaceholderAssignments({
   }));
 }
 
+export function deriveWorstPlaceholderAssignments({
+  position,
+  standings = [],
+  tieBreakers,
+}: {
+  position: number;
+  standings: StandingRow[];
+  tieBreakers?: TieBreakerConfig;
+}): PlaceholderAssignment[] {
+  if (!position || position <= 0) return [];
+
+  const ordered = sortCategoryStandings(standings, tieBreakers).reverse();
+  return ordered.map((row, index) => ({
+    placeholder: `~worst:${index + 1}/p:${position}`,
+    teamId: row?.team ?? null,
+  }));
+}
+
 export function planGroupZeroAssignments({
   remainingMatches,
   standings = [],
@@ -417,7 +435,8 @@ function isGuaranteedAhead(
   const currentPointsA = tieBreakers.totalPoints(teamA);
   const currentPointsB = tieBreakers.totalPoints(teamB);
   const maxPointsB =
-    currentPointsB + (remainingMatchesByTeam.get(String(teamB?.team || '')) || 0) * winPoints;
+    currentPointsB +
+    (remainingMatchesByTeam.get(String(teamB?.team || '')) || 0) * winPoints;
 
   if (currentPointsA > maxPointsB) {
     return true;

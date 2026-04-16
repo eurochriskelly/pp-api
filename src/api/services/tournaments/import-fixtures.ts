@@ -77,6 +77,14 @@ function convertTeam(
     return `~best:${bestIdx}/p:${+m[2]}`;
   }
 
+  m = upper.match(
+    /^(?:\s*(\d+)\s*(?:ST|ND|RD|TH)\s+)?WORST\s+(\d+)\s*(?:ST|ND|RD|TH)$/
+  );
+  if (m) {
+    const worstIdx = m[1] ? +m[1] : 1;
+    return `~worst:${worstIdx}/p:${+m[2]}`;
+  }
+
   m = upper.match(/^(\d+)\s*(?:ST|ND|RD|TH)\s+GPS$/);
   if (m) return `~rank:${+m[1]}/p:0`;
 
