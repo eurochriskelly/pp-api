@@ -59,6 +59,20 @@ export function friendlyTeamLabel(
         );
       }
     }
+    // Parse ~worst:X/p:Y format (e.g., "1st-worst 3rd-place")
+    else if (team.startsWith('~worst:')) {
+      const match = team.match(/~worst:(\d+)\/p:(\d+)/);
+      if (match) {
+        const worstRank = parseInt(match[1], 10);
+        const place = parseInt(match[2], 10);
+        return (
+          getPositionText(worstRank) +
+          '-worst ' +
+          getPositionText(place) +
+          '-place'
+        );
+      }
+    }
     // Parse ~rank:X/p:Y format (e.g., "Rank 1 in GPs")
     else if (team.startsWith('~rank:')) {
       const match = team.match(/~rank:(\d+)\/p:(\d+)/);

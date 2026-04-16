@@ -3,6 +3,7 @@ import {
   derivePredictiveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
   deriveBestPlaceholderAssignments,
+  deriveWorstPlaceholderAssignments,
   evaluatePlaceholderDelta,
   planGroupZeroAssignments,
 } from './stage-completion-utils';
@@ -121,9 +122,18 @@ export default function stageCompletionFactory({
       return false;
     }
 
-    const { groupPositions, bestPositions, groupZeroPositions } =
-      await _getNumPositionsToUpdate(fixture);
-    if (groupPositions === 0 && bestPositions === 0 && groupZeroPositions === 0) {
+    const {
+      groupPositions,
+      bestPositions,
+      worstPositions,
+      groupZeroPositions,
+    } = await _getNumPositionsToUpdate(fixture);
+    if (
+      groupPositions === 0 &&
+      bestPositions === 0 &&
+      worstPositions === 0 &&
+      groupZeroPositions === 0
+    ) {
       II(
         `Determined 0 positions to update for stage [${stage}/${groupNumber}/${category}]. No dependent fixtures will be updated.`
       );
@@ -139,10 +149,13 @@ export default function stageCompletionFactory({
       groupFixtures,
       groupPositions,
       bestPositions,
+      worstPositions,
       groupZeroPositions,
       remainingCount
     );
-    II(`Finished updating dependent fixtures. Total rows affected: ${totalUpdated}.`);
+    II(
+      `Finished updating dependent fixtures. Total rows affected: ${totalUpdated}.`
+    );
     return totalUpdated > 0;
   }
 
@@ -262,6 +275,7 @@ export default function stageCompletionFactory({
   async function _getNumPositionsToUpdate(fixture: Fixture): Promise<{
     groupPositions: number;
     bestPositions: number;
+    worstPositions: number;
     groupZeroPositions: number;
   }> {
     const { tournamentId, stage, groupNumber, category } = fixture;
@@ -303,6 +317,22 @@ export default function stageCompletionFactory({
       [tournamentId, category]
     );
 
+    DD(
+      `Determining number of worsts for stage [${stage}/${groupNumber}] based on dependent fixtures`
+    );
+
+    const [worstResult] = await select(
+      `SELECT MAX(CAST(SUBSTRING_INDEX(team1Planned, '/p:', -1) AS UNSIGNED)) as maxPos1,
+              MAX(CAST(SUBSTRING_INDEX(team2Planned, '/p:', -1) AS UNSIGNED)) as maxPos2,
+              MAX(CAST(SUBSTRING_INDEX(umpireTeamPlanned, '/p:', -1) AS UNSIGNED)) as maxPosUmp
+       FROM fixtures
+       WHERE tournamentId = ? AND category = ?
+         AND (team1Planned LIKE '~worst:%/p:%'
+           OR team2Planned LIKE '~worst:%/p:%'
+           OR umpireTeamPlanned LIKE '~worst:%/p:%')`,
+      [tournamentId, category]
+    );
+
     const [groupZeroResult] = await select(
       `SELECT MAX(CAST(SUBSTRING_INDEX(team1Planned, '/p:', -1) AS UNSIGNED)) as maxPos1,
               MAX(CAST(SUBSTRING_INDEX(team2Planned, '/p:', -1) AS UNSIGNED)) as maxPos2,
@@ -325,6 +355,11 @@ export default function stageCompletionFactory({
       bestResult?.maxPos2 || 0,
       bestResult?.maxPosUmp || 0
     );
+    const worstPositions = Math.max(
+      worstResult?.maxPos1 || 0,
+      worstResult?.maxPos2 || 0,
+      worstResult?.maxPosUmp || 0
+    );
     const groupZeroPositions = Math.max(
       groupZeroResult?.maxPos1 || 0,
       groupZeroResult?.maxPos2 || 0,
@@ -332,9 +367,14 @@ export default function stageCompletionFactory({
     );
 
     DD(
-      `Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s). All-group placeholders require updating ${groupZeroPositions} position(s).`
+      `Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s). Worst-of rankings require updating ${worstPositions} position(s). All-group placeholders require updating ${groupZeroPositions} position(s).`
     );
-    return { groupPositions, bestPositions, groupZeroPositions };
+    return {
+      groupPositions,
+      bestPositions,
+      worstPositions,
+      groupZeroPositions,
+    };
   }
 
   async function _updateDependentFixtures(
@@ -343,6 +383,7 @@ export default function stageCompletionFactory({
     groupFixtures: any[],
     groupPositions: number,
     bestPositions: number,
+    worstPositions: number,
     groupZeroPositions: number,
     remainingCount: number
   ): Promise<number> {
@@ -427,6 +468,31 @@ export default function stageCompletionFactory({
         `UPDATE fixtures
          SET umpireTeamId = umpireTeamPlanned
          WHERE tournamentId = ? AND category = ? AND umpireTeamPlanned LIKE '~best:%/p:%'`,
+        [tournamentId, category]
+      );
+
+      return restoredRows;
+    };
+
+    const restoreWorstPlaceholders = async (): Promise<number> => {
+      let restoredRows = 0;
+
+      restoredRows += await update(
+        `UPDATE fixtures
+         SET team1Id = team1Planned
+         WHERE tournamentId = ? AND category = ? AND team1Planned LIKE '~worst:%/p:%'`,
+        [tournamentId, category]
+      );
+      restoredRows += await update(
+        `UPDATE fixtures
+         SET team2Id = team2Planned
+         WHERE tournamentId = ? AND category = ? AND team2Planned LIKE '~worst:%/p:%'`,
+        [tournamentId, category]
+      );
+      restoredRows += await update(
+        `UPDATE fixtures
+         SET umpireTeamId = umpireTeamPlanned
+         WHERE tournamentId = ? AND category = ? AND umpireTeamPlanned LIKE '~worst:%/p:%'`,
         [tournamentId, category]
       );
 
@@ -547,6 +613,83 @@ export default function stageCompletionFactory({
               `Best placeholder ${placeholder} resolved to team ${teamId}, updated ${updatesForBest} rows`
             );
             totalUpdated += updatesForBest;
+          }
+        }
+      }
+    }
+
+    if (worstPositions > 0) {
+      if (remainingCategoryMatches === null) {
+        remainingCategoryMatches = await _getRemainingCategoryGroupMatches({
+          tournamentId,
+          category,
+        });
+      }
+
+      if (remainingCategoryMatches > 0) {
+        const restoredWorstRows = await restoreWorstPlaceholders();
+        II(
+          `StageCompletion: restored planned ~worst placeholders and skipped resolving them for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`
+        );
+        totalUpdated += restoredWorstRows;
+      } else {
+        const worstRankCache = new Map<number, StandingsRow[]>();
+        for (let pos = 1; pos <= worstPositions; pos++) {
+          if (!worstRankCache.has(pos)) {
+            const rankedQuery = `
+              SELECT *
+              FROM (${sqlGroupRankings(pos)}) AS ranked
+              WHERE tournamentId = ? AND category = ?
+            `;
+            const rankedTeams = await select(rankedQuery, [
+              tournamentId,
+              category,
+            ]);
+            worstRankCache.set(pos, rankedTeams || []);
+          }
+
+          const rankedTeams = worstRankCache.get(pos);
+          if (!Array.isArray(rankedTeams) || rankedTeams.length === 0) {
+            DD(
+              `Skipping ~worst:/p:${pos} placeholders — no ranked teams available for tournament [${tournamentId}], category [${category}].`
+            );
+            continue;
+          }
+
+          const worstAssignments = deriveWorstPlaceholderAssignments({
+            position: pos,
+            standings: rankedTeams,
+          });
+
+          for (const { placeholder, teamId } of worstAssignments) {
+            if (!teamId) {
+              DD(
+                `Skipping worst placeholder ${placeholder} — not enough teams`
+              );
+              continue;
+            }
+
+            let updatesForWorst = 0;
+            updatesForWorst += await updateTeamInFixtures(
+              'team1',
+              teamId,
+              placeholder
+            );
+            updatesForWorst += await updateTeamInFixtures(
+              'team2',
+              teamId,
+              placeholder
+            );
+            updatesForWorst += await updateTeamInFixtures(
+              'umpireTeam',
+              teamId,
+              placeholder
+            );
+
+            DD(
+              `Worst placeholder ${placeholder} resolved to team ${teamId}, updated ${updatesForWorst} rows`
+            );
+            totalUpdated += updatesForWorst;
           }
         }
       }

@@ -616,15 +616,16 @@ export class TSVValidator {
       };
     }
 
-    if (tok.includes('BEST')) {
-      const i = tok.indexOf('BEST');
+    if (tok.includes('BEST') || tok.includes('WORST')) {
+      const keyword = tok.includes('WORST') ? 'WORST' : 'BEST';
+      const i = tok.indexOf(keyword);
       const before = tok[i - 1] || '1ST';
       const after = tok[i + 1];
       if (!after || !/^(\d+)(ST|ND|RD|TH)$/.test(after)) {
-        return this._fw(col, r, 'BEST needs following pos', up);
+        return this._fw(col, r, `${keyword} needs following pos`, up);
       }
       if (!/^(\d+)(ST|ND|RD|TH)$/.test(before)) {
-        return this._fw(col, r, 'BEST needs preceding pos', up);
+        return this._fw(col, r, `${keyword} needs preceding pos`, up);
       }
       const normalized = up.replace(
         /(\d+)(ST|ND|RD|TH)/g,
@@ -701,7 +702,7 @@ export class TSVValidator {
   }
 
   private _isRealTeam(v: string): boolean {
-    return !/^(WINNER|LOSER|BEST|GP\.|\d+(?:ST|ND|RD|TH))/.test(
+    return !/^(WINNER|LOSER|BEST|WORST|GP\.|\d+(?:ST|ND|RD|TH))/.test(
       v.toUpperCase()
     );
   }
