@@ -608,3 +608,26 @@ export function deriveCategoryPlaceholderAssignments({
   }
   return placeholders;
 }
+
+export function deriveWorstCategoryPlaceholderAssignments({
+  standings = [],
+  totalPositions,
+  tieBreakers,
+}: {
+  standings: StandingRow[];
+  totalPositions: number;
+  tieBreakers?: TieBreakerConfig;
+}): PlaceholderAssignment[] {
+  if (!totalPositions || totalPositions <= 0) return [];
+
+  const ordered = sortCategoryStandings(standings, tieBreakers).reverse();
+  const placeholders: PlaceholderAssignment[] = [];
+  for (let index = 0; index < totalPositions; index += 1) {
+    const teamId = ordered[index]?.team ?? null;
+    placeholders.push({
+      placeholder: `~worst:${index + 1}/p:0`,
+      teamId,
+    });
+  }
+  return placeholders;
+}

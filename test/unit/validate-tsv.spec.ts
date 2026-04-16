@@ -72,3 +72,47 @@ test('TSV validator rejects malformed WORST syntax', () => {
   );
   assert.equal(team1Warnings.length, 1);
 });
+
+test('TSV validator accepts negative Gp.0 syntax', () => {
+  const tsvNegGp0 = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION
+10:00\tA.02\tCup\tPitch_2\tAlpha\tGp.1\tBeta\tGamma\t20
+10:30\tA.03\tCup\tPitch_3\tDelta\tGp.1\tEpsilon\tZeta\t20
+11:00\tA.04\tCup\tPitch_4\tIota\tGp.1\tKappa\tLambda\t20
+11:30\tA.01\tCup\tPitch_1\t-5th Gp.0\tA.QF1\t-1st Gp.0\tRennes\t20`;
+  const result = new TSVValidator(
+    Buffer.from(tsvNegGp0, 'utf8').toString('base64')
+  ).validate();
+
+  const koRowIndex = result.rows.findIndex((r) => r.MATCH.value === 'A.1') + 1;
+  assert.ok(koRowIndex > 0);
+  const team1Warnings = result.warnings.filter(
+    (w) =>
+      w.column === 'TEAM1' &&
+      w.row === koRowIndex &&
+      w.message.includes('only has')
+  );
+  const team2Warnings = result.warnings.filter(
+    (w) =>
+      w.column === 'TEAM2' &&
+      w.row === koRowIndex &&
+      w.message.includes('only has')
+  );
+  assert.equal(team1Warnings.length, 0);
+  assert.equal(team2Warnings.length, 0);
+  const koRow = result.rows[koRowIndex - 1];
+  assert.equal(koRow.TEAM1.value, '-5th GP.0');
+  assert.equal(koRow.TEAM2.value, '-1st GP.0');
+});
+
+test('TSV validator rejects negative non-Gp.0 syntax', () => {
+  const tsvNegGp = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION
+11:30\tA.01\tCup\tPitch_1\t-2nd Gp.2\tA.QF1\tTeamB\tRennes\t20`;
+  const result = new TSVValidator(
+    Buffer.from(tsvNegGp, 'utf8').toString('base64')
+  ).validate();
+
+  const team1Warnings = result.warnings.filter(
+    (w) => w.column === 'TEAM1' && w.message.includes('only allowed for GP.0')
+  );
+  assert.equal(team1Warnings.length, 1);
+});

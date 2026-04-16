@@ -2,6 +2,7 @@ import {
   deriveGroupPlaceholderAssignments,
   derivePredictiveGroupPlaceholderAssignments,
   deriveCategoryPlaceholderAssignments,
+  deriveWorstCategoryPlaceholderAssignments,
   deriveBestPlaceholderAssignments,
   deriveWorstPlaceholderAssignments,
   evaluatePlaceholderDelta,
@@ -126,12 +127,14 @@ export default function stageCompletionFactory({
       groupPositions,
       bestPositions,
       worstPositions,
+      worstGroupZeroPositions,
       groupZeroPositions,
     } = await _getNumPositionsToUpdate(fixture);
     if (
       groupPositions === 0 &&
       bestPositions === 0 &&
       worstPositions === 0 &&
+      worstGroupZeroPositions === 0 &&
       groupZeroPositions === 0
     ) {
       II(
@@ -150,6 +153,7 @@ export default function stageCompletionFactory({
       groupPositions,
       bestPositions,
       worstPositions,
+      worstGroupZeroPositions,
       groupZeroPositions,
       remainingCount
     );
@@ -276,6 +280,7 @@ export default function stageCompletionFactory({
     groupPositions: number;
     bestPositions: number;
     worstPositions: number;
+    worstGroupZeroPositions: number;
     groupZeroPositions: number;
   }> {
     const { tournamentId, stage, groupNumber, category } = fixture;
@@ -327,9 +332,27 @@ export default function stageCompletionFactory({
               MAX(CAST(SUBSTRING_INDEX(umpireTeamPlanned, '/p:', -1) AS UNSIGNED)) as maxPosUmp
        FROM fixtures
        WHERE tournamentId = ? AND category = ?
-         AND (team1Planned LIKE '~worst:%/p:%'
-           OR team2Planned LIKE '~worst:%/p:%'
-           OR umpireTeamPlanned LIKE '~worst:%/p:%')`,
+         AND (
+           (team1Planned LIKE '~worst:%/p:%' AND team1Planned NOT LIKE '~worst:%/p:0')
+           OR (team2Planned LIKE '~worst:%/p:%' AND team2Planned NOT LIKE '~worst:%/p:0')
+           OR (umpireTeamPlanned LIKE '~worst:%/p:%' AND umpireTeamPlanned NOT LIKE '~worst:%/p:0')
+         )`,
+      [tournamentId, category]
+    );
+
+    DD(
+      `Determining number of worst overall positions for stage [${stage}/${groupNumber}] based on dependent fixtures`
+    );
+
+    const [worstGroupZeroResult] = await select(
+      `SELECT MAX(CAST(SUBSTRING_INDEX(team1Planned, '/p:', -1) AS UNSIGNED)) as maxPos1,
+              MAX(CAST(SUBSTRING_INDEX(team2Planned, '/p:', -1) AS UNSIGNED)) as maxPos2,
+              MAX(CAST(SUBSTRING_INDEX(umpireTeamPlanned, '/p:', -1) AS UNSIGNED)) as maxPosUmp
+       FROM fixtures
+       WHERE tournamentId = ? AND category = ?
+         AND (team1Planned LIKE '~worst:%/p:0'
+           OR team2Planned LIKE '~worst:%/p:0'
+           OR umpireTeamPlanned LIKE '~worst:%/p:0')`,
       [tournamentId, category]
     );
 
@@ -360,6 +383,11 @@ export default function stageCompletionFactory({
       worstResult?.maxPos2 || 0,
       worstResult?.maxPosUmp || 0
     );
+    const worstGroupZeroPositions = Math.max(
+      worstGroupZeroResult?.maxPos1 || 0,
+      worstGroupZeroResult?.maxPos2 || 0,
+      worstGroupZeroResult?.maxPosUmp || 0
+    );
     const groupZeroPositions = Math.max(
       groupZeroResult?.maxPos1 || 0,
       groupZeroResult?.maxPos2 || 0,
@@ -367,12 +395,13 @@ export default function stageCompletionFactory({
     );
 
     DD(
-      `Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s). Worst-of rankings require updating ${worstPositions} position(s). All-group placeholders require updating ${groupZeroPositions} position(s).`
+      `Group stage requires updating ${groupPositions} position(s). Best-of rankings require updating ${bestPositions} position(s). Worst-of rankings require updating ${worstPositions} position(s). Worst-overall placeholders require updating ${worstGroupZeroPositions} position(s). All-group placeholders require updating ${groupZeroPositions} position(s).`
     );
     return {
       groupPositions,
       bestPositions,
       worstPositions,
+      worstGroupZeroPositions,
       groupZeroPositions,
     };
   }
@@ -384,6 +413,7 @@ export default function stageCompletionFactory({
     groupPositions: number,
     bestPositions: number,
     worstPositions: number,
+    worstGroupZeroPositions: number,
     groupZeroPositions: number,
     remainingCount: number
   ): Promise<number> {
@@ -691,6 +721,84 @@ export default function stageCompletionFactory({
             );
             totalUpdated += updatesForWorst;
           }
+        }
+      }
+    }
+
+    if (worstGroupZeroPositions > 0) {
+      if (remainingCategoryMatches === null) {
+        remainingCategoryMatches = await _getRemainingCategoryGroupMatches({
+          tournamentId,
+          category,
+        });
+      }
+
+      if (remainingCategoryMatches > 0) {
+        let restoredRows = 0;
+        restoredRows += await update(
+          `UPDATE fixtures
+           SET team1Id = team1Planned
+           WHERE tournamentId = ? AND category = ? AND team1Planned LIKE '~worst:%/p:0'`,
+          [tournamentId, category]
+        );
+        restoredRows += await update(
+          `UPDATE fixtures
+           SET team2Id = team2Planned
+           WHERE tournamentId = ? AND category = ? AND team2Planned LIKE '~worst:%/p:0'`,
+          [tournamentId, category]
+        );
+        restoredRows += await update(
+          `UPDATE fixtures
+           SET umpireTeamId = umpireTeamPlanned
+           WHERE tournamentId = ? AND category = ? AND umpireTeamPlanned LIKE '~worst:%/p:0'`,
+          [tournamentId, category]
+        );
+        II(
+          `StageCompletion: restored planned ~worst:/p:0 placeholders and skipped resolving them for tournament [${tournamentId}], category [${category}] because ${remainingCategoryMatches} group match(es) remain.`
+        );
+        totalUpdated += restoredRows;
+      } else {
+        const categoryStandings = await _getCategoryStandings({
+          tournamentId,
+          category,
+        });
+
+        const worstAssignments = deriveWorstCategoryPlaceholderAssignments({
+          standings: categoryStandings,
+          totalPositions: worstGroupZeroPositions,
+        });
+
+        for (const { placeholder, teamId } of worstAssignments) {
+          if (!teamId) {
+            II(
+              `StageCompletion: insufficient category standings to resolve placeholder '${placeholder}' for tournament [${tournamentId}], category [${category}].`
+            );
+            continue;
+          }
+
+          let updatesForWorstAllGroups = 0;
+          updatesForWorstAllGroups += await updateTeamInFixtures(
+            'team1',
+            teamId,
+            placeholder
+          );
+          updatesForWorstAllGroups += await updateTeamInFixtures(
+            'team2',
+            teamId,
+            placeholder
+          );
+          updatesForWorstAllGroups += await updateTeamInFixtures(
+            'umpireTeam',
+            teamId,
+            placeholder
+          );
+
+          if (updatesForWorstAllGroups === 0) {
+            DD(
+              `StageCompletion: placeholder '${placeholder}' already resolved to team '${teamId}' across all fixtures.`
+            );
+          }
+          totalUpdated += updatesForWorstAllGroups;
         }
       }
     }

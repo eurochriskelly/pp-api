@@ -59,12 +59,15 @@ export function friendlyTeamLabel(
         );
       }
     }
-    // Parse ~worst:X/p:Y format (e.g., "1st-worst 3rd-place")
+    // Parse ~worst:X/p:Y format (e.g., "1st-worst 3rd-place" or "1st-worst overall")
     else if (team.startsWith('~worst:')) {
       const match = team.match(/~worst:(\d+)\/p:(\d+)/);
       if (match) {
         const worstRank = parseInt(match[1], 10);
         const place = parseInt(match[2], 10);
+        if (place === 0) {
+          return getPositionText(worstRank) + '-worst overall';
+        }
         return (
           getPositionText(worstRank) +
           '-worst ' +
