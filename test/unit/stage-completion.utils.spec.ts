@@ -217,6 +217,107 @@ test('deriveCategoryPlaceholderAssignments orders standings before mapping place
   ]);
 });
 
+test('deriveCategoryPlaceholderAssignments keeps the top N per group ahead of extra teams when group sizes differ', () => {
+  const standings = [
+    {
+      team: 'A1',
+      TotalPoints: 13,
+      PointsDifference: 20,
+      PointsFrom: 40,
+      grp: 1,
+    },
+    {
+      team: 'A2',
+      TotalPoints: 4,
+      PointsDifference: 0,
+      PointsFrom: 18,
+      grp: 1,
+    },
+    {
+      team: 'A3',
+      TotalPoints: 1,
+      PointsDifference: -6,
+      PointsFrom: 9,
+      grp: 1,
+    },
+    {
+      team: 'B1',
+      TotalPoints: 12,
+      PointsDifference: 15,
+      PointsFrom: 36,
+      grp: 2,
+    },
+    {
+      team: 'B2',
+      TotalPoints: 10,
+      PointsDifference: 10,
+      PointsFrom: 28,
+      grp: 2,
+    },
+    {
+      team: 'B3',
+      TotalPoints: 8,
+      PointsDifference: 6,
+      PointsFrom: 24,
+      grp: 2,
+    },
+    {
+      team: 'B4',
+      TotalPoints: 7,
+      PointsDifference: 4,
+      PointsFrom: 21,
+      grp: 2,
+    },
+    {
+      team: 'C1',
+      TotalPoints: 11,
+      PointsDifference: 13,
+      PointsFrom: 34,
+      grp: 3,
+    },
+    {
+      team: 'C2',
+      TotalPoints: 9,
+      PointsDifference: 8,
+      PointsFrom: 25,
+      grp: 3,
+    },
+    {
+      team: 'C3',
+      TotalPoints: 6,
+      PointsDifference: 2,
+      PointsFrom: 20,
+      grp: 3,
+    },
+    {
+      team: 'C4',
+      TotalPoints: 5,
+      PointsDifference: 1,
+      PointsFrom: 17,
+      grp: 3,
+    },
+  ];
+
+  const assignments = deriveCategoryPlaceholderAssignments({
+    standings,
+    totalPositions: 11,
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~group:0/p:1', teamId: 'A1' },
+    { placeholder: '~group:0/p:2', teamId: 'B1' },
+    { placeholder: '~group:0/p:3', teamId: 'C1' },
+    { placeholder: '~group:0/p:4', teamId: 'B2' },
+    { placeholder: '~group:0/p:5', teamId: 'C2' },
+    { placeholder: '~group:0/p:6', teamId: 'B3' },
+    { placeholder: '~group:0/p:7', teamId: 'C3' },
+    { placeholder: '~group:0/p:8', teamId: 'A2' },
+    { placeholder: '~group:0/p:9', teamId: 'A3' },
+    { placeholder: '~group:0/p:10', teamId: 'B4' },
+    { placeholder: '~group:0/p:11', teamId: 'C4' },
+  ]);
+});
+
 test('deriveBestPlaceholderAssignments ranks teams for a given position', () => {
   const standings = [
     {
@@ -322,6 +423,99 @@ test('deriveWorstCategoryPlaceholderAssignments orders standings from bottom up'
   assert.deepEqual(assignments, [
     { placeholder: '~worst:1/p:0', teamId: 'C' },
     { placeholder: '~worst:2/p:0', teamId: 'B' },
+  ]);
+});
+
+test('deriveWorstCategoryPlaceholderAssignments mirrors the uneven group-size overall order', () => {
+  const standings = [
+    {
+      team: 'A1',
+      TotalPoints: 13,
+      PointsDifference: 20,
+      PointsFrom: 40,
+      grp: 1,
+    },
+    {
+      team: 'A2',
+      TotalPoints: 4,
+      PointsDifference: 0,
+      PointsFrom: 18,
+      grp: 1,
+    },
+    {
+      team: 'A3',
+      TotalPoints: 1,
+      PointsDifference: -6,
+      PointsFrom: 9,
+      grp: 1,
+    },
+    {
+      team: 'B1',
+      TotalPoints: 12,
+      PointsDifference: 15,
+      PointsFrom: 36,
+      grp: 2,
+    },
+    {
+      team: 'B2',
+      TotalPoints: 10,
+      PointsDifference: 10,
+      PointsFrom: 28,
+      grp: 2,
+    },
+    {
+      team: 'B3',
+      TotalPoints: 8,
+      PointsDifference: 6,
+      PointsFrom: 24,
+      grp: 2,
+    },
+    {
+      team: 'B4',
+      TotalPoints: 7,
+      PointsDifference: 4,
+      PointsFrom: 21,
+      grp: 2,
+    },
+    {
+      team: 'C1',
+      TotalPoints: 11,
+      PointsDifference: 13,
+      PointsFrom: 34,
+      grp: 3,
+    },
+    {
+      team: 'C2',
+      TotalPoints: 9,
+      PointsDifference: 8,
+      PointsFrom: 25,
+      grp: 3,
+    },
+    {
+      team: 'C3',
+      TotalPoints: 6,
+      PointsDifference: 2,
+      PointsFrom: 20,
+      grp: 3,
+    },
+    {
+      team: 'C4',
+      TotalPoints: 5,
+      PointsDifference: 1,
+      PointsFrom: 17,
+      grp: 3,
+    },
+  ];
+
+  const assignments = deriveWorstCategoryPlaceholderAssignments({
+    standings,
+    totalPositions: 3,
+  });
+
+  assert.deepEqual(assignments, [
+    { placeholder: '~worst:1/p:0', teamId: 'C4' },
+    { placeholder: '~worst:2/p:0', teamId: 'B4' },
+    { placeholder: '~worst:3/p:0', teamId: 'A3' },
   ]);
 });
 
