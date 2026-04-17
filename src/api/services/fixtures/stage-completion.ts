@@ -253,6 +253,21 @@ export default function stageCompletionFactory({
     return standings;
   }
 
+  async function _getCategoryGroupFixtures({
+    tournamentId,
+    category,
+  }: {
+    tournamentId: number;
+    category: string;
+  }): Promise<any[]> {
+    return await select(
+      `SELECT groupNumber, team1Id AS team1, team2Id AS team2, goals1, points1, goals2, points2, outcome
+         FROM fixtures
+         WHERE tournamentId = ? AND category = ? AND stage = 'group'`,
+      [tournamentId, category]
+    );
+  }
+
   async function _getRemainingCategoryGroupMatches({
     tournamentId,
     category,
@@ -762,10 +777,15 @@ export default function stageCompletionFactory({
           tournamentId,
           category,
         });
+        const categoryFixtures = await _getCategoryGroupFixtures({
+          tournamentId,
+          category,
+        });
 
         const worstAssignments = deriveWorstCategoryPlaceholderAssignments({
           standings: categoryStandings,
           totalPositions: worstGroupZeroPositions,
+          fixtures: categoryFixtures,
         });
 
         for (const { placeholder, teamId } of worstAssignments) {
@@ -819,12 +839,17 @@ export default function stageCompletionFactory({
           tournamentId,
           category,
         });
+        const categoryFixtures = await _getCategoryGroupFixtures({
+          tournamentId,
+          category,
+        });
 
         const { shouldSkip, remainingMatches, assignments } =
           planGroupZeroAssignments({
             remainingMatches: remainingCategoryMatches,
             standings: categoryStandings,
             totalPositions: groupZeroPositions,
+            fixtures: categoryFixtures,
           });
 
         if (shouldSkip && remainingMatches > 0) {

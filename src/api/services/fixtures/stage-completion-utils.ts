@@ -25,6 +25,11 @@ export interface GroupFixtureRow {
   outcome?: string | null;
 }
 
+export interface CategoryFixtureRow extends GroupFixtureRow {
+  grp?: number | string;
+  groupNumber?: number | string;
+}
+
 export interface PlaceholderAssignment {
   placeholder: string;
   teamId: string | null;
@@ -96,11 +101,13 @@ export function planGroupZeroAssignments({
   standings = [],
   totalPositions,
   tieBreakers,
+  fixtures = [],
 }: {
   remainingMatches?: number;
   standings: StandingRow[];
   totalPositions: number;
   tieBreakers?: TieBreakerConfig;
+  fixtures?: CategoryFixtureRow[];
 }): GroupZeroPlan {
   if (!totalPositions || totalPositions <= 0) {
     return {
@@ -124,6 +131,7 @@ export function planGroupZeroAssignments({
     standings,
     totalPositions,
     tieBreakers,
+    fixtures,
   });
 
   return {
@@ -621,7 +629,8 @@ function sortStandingsWithinGroup(
 
 function orderCategoryStandingsForOverallGroupOrder(
   standings: StandingRow[] = [],
-  tieBreakers: TieBreakerConfig = DEFAULT_TIE_BREAKERS
+  tieBreakers: TieBreakerConfig = DEFAULT_TIE_BREAKERS,
+  fixtures: CategoryFixtureRow[] = []
 ): StandingRow[] {
   const rows = standings.filter((row) => row && row.team);
   if (rows.length === 0) return [];
@@ -655,9 +664,107 @@ function orderCategoryStandingsForOverallGroupOrder(
   const extraRows = orderedGroups.flatMap((groupRows) =>
     groupRows.slice(minGroupSize)
   );
+  const coreTeams = new Set(coreRows.map((row) => String(row.team || '')));
+  const coreRowsByTeam = new Map(
+    coreRows.map((row) => [String(row.team || ''), row] as const)
+  );
+  if (fixtures.length === 0) {
+    return [
+      ...sortCategoryStandings(coreRows, tieBreakers),
+      ...sortCategoryStandings(extraRows, tieBreakers),
+    ];
+  }
+  const normalizedCoreRows = coreRows.map((row) => ({
+    ...row,
+    MatchesPlayed: 0,
+    Wins: 0,
+    Draws: 0,
+    Losses: 0,
+    PointsFrom: 0,
+    PointsDifference: 0,
+    TotalPoints: 0,
+  }));
+  const normalizedCoreRowsByTeam = new Map(
+    normalizedCoreRows.map((row) => [String(row.team || ''), row] as const)
+  );
+  let normalizedMatchCount = 0;
+
+  fixtures.forEach((fixture) => {
+    const team1 = String(fixture?.team1 || '');
+    const team2 = String(fixture?.team2 || '');
+    if (!team1 || !team2) return;
+    if (!coreTeams.has(team1) || !coreTeams.has(team2)) return;
+
+    const row1 = coreRowsByTeam.get(team1);
+    const row2 = coreRowsByTeam.get(team2);
+    if (!row1 || !row2) return;
+
+    if (tieBreakers.groupNumber(row1) !== tieBreakers.groupNumber(row2)) {
+      return;
+    }
+
+    if (
+      fixture?.goals1 === null ||
+      fixture?.goals1 === undefined ||
+      fixture?.points1 === null ||
+      fixture?.points1 === undefined ||
+      fixture?.goals2 === null ||
+      fixture?.goals2 === undefined ||
+      fixture?.points2 === null ||
+      fixture?.points2 === undefined
+    ) {
+      return;
+    }
+
+    if (
+      ['conceded', 'forfeit', 'not played'].includes(
+        String(fixture?.outcome || '').toLowerCase()
+      )
+    ) {
+      return;
+    }
+
+    const score1 = Number(fixture.goals1) * 3 + Number(fixture.points1);
+    const score2 = Number(fixture.goals2) * 3 + Number(fixture.points2);
+    const normalized1 = normalizedCoreRowsByTeam.get(team1);
+    const normalized2 = normalizedCoreRowsByTeam.get(team2);
+    if (!normalized1 || !normalized2) return;
+    normalizedMatchCount += 1;
+
+    normalized1.MatchesPlayed = (Number(normalized1.MatchesPlayed) || 0) + 1;
+    normalized2.MatchesPlayed = (Number(normalized2.MatchesPlayed) || 0) + 1;
+    normalized1.PointsFrom = (Number(normalized1.PointsFrom) || 0) + score1;
+    normalized2.PointsFrom = (Number(normalized2.PointsFrom) || 0) + score2;
+    normalized1.PointsDifference =
+      (Number(normalized1.PointsDifference) || 0) + (score1 - score2);
+    normalized2.PointsDifference =
+      (Number(normalized2.PointsDifference) || 0) + (score2 - score1);
+
+    if (score1 > score2) {
+      normalized1.Wins = (Number(normalized1.Wins) || 0) + 1;
+      normalized2.Losses = (Number(normalized2.Losses) || 0) + 1;
+      normalized1.TotalPoints = (Number(normalized1.TotalPoints) || 0) + 3;
+    } else if (score2 > score1) {
+      normalized2.Wins = (Number(normalized2.Wins) || 0) + 1;
+      normalized1.Losses = (Number(normalized1.Losses) || 0) + 1;
+      normalized2.TotalPoints = (Number(normalized2.TotalPoints) || 0) + 3;
+    } else {
+      normalized1.Draws = (Number(normalized1.Draws) || 0) + 1;
+      normalized2.Draws = (Number(normalized2.Draws) || 0) + 1;
+      normalized1.TotalPoints = (Number(normalized1.TotalPoints) || 0) + 1;
+      normalized2.TotalPoints = (Number(normalized2.TotalPoints) || 0) + 1;
+    }
+  });
+
+  if (normalizedMatchCount === 0) {
+    return [
+      ...sortCategoryStandings(coreRows, tieBreakers),
+      ...sortCategoryStandings(extraRows, tieBreakers),
+    ];
+  }
 
   return [
-    ...sortCategoryStandings(coreRows, tieBreakers),
+    ...sortCategoryStandings(normalizedCoreRows, tieBreakers),
     ...sortCategoryStandings(extraRows, tieBreakers),
   ];
 }
@@ -666,16 +773,19 @@ export function deriveCategoryPlaceholderAssignments({
   standings = [],
   totalPositions,
   tieBreakers,
+  fixtures = [],
 }: {
   standings: StandingRow[];
   totalPositions: number;
   tieBreakers?: TieBreakerConfig;
+  fixtures?: CategoryFixtureRow[];
 }): PlaceholderAssignment[] {
   if (!totalPositions || totalPositions <= 0) return [];
 
   const ordered = orderCategoryStandingsForOverallGroupOrder(
     standings,
-    tieBreakers
+    tieBreakers,
+    fixtures
   );
   const placeholders: PlaceholderAssignment[] = [];
   for (let index = 0; index < totalPositions; index += 1) {
@@ -692,16 +802,19 @@ export function deriveWorstCategoryPlaceholderAssignments({
   standings = [],
   totalPositions,
   tieBreakers,
+  fixtures = [],
 }: {
   standings: StandingRow[];
   totalPositions: number;
   tieBreakers?: TieBreakerConfig;
+  fixtures?: CategoryFixtureRow[];
 }): PlaceholderAssignment[] {
   if (!totalPositions || totalPositions <= 0) return [];
 
   const ordered = orderCategoryStandingsForOverallGroupOrder(
     standings,
-    tieBreakers
+    tieBreakers,
+    fixtures
   ).reverse();
   const placeholders: PlaceholderAssignment[] = [];
   for (let index = 0; index < totalPositions; index += 1) {
