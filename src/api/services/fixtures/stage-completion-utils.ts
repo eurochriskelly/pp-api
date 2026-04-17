@@ -586,6 +586,82 @@ export function sortCategoryStandings(
     });
 }
 
+function sortStandingsWithinGroup(
+  standings: StandingRow[] = [],
+  tieBreakers: TieBreakerConfig = DEFAULT_TIE_BREAKERS
+): StandingRow[] {
+  return standings
+    .filter((row) => row && row.team)
+    .slice()
+    .sort((a, b) => {
+      const positionA = Number(a?.position);
+      const positionB = Number(b?.position);
+      const hasPositionA = Number.isFinite(positionA) && positionA > 0;
+      const hasPositionB = Number.isFinite(positionB) && positionB > 0;
+
+      if (hasPositionA && hasPositionB && positionA !== positionB) {
+        return positionA - positionB;
+      }
+
+      const totalPointsDiff =
+        tieBreakers.totalPoints(b) - tieBreakers.totalPoints(a);
+      if (totalPointsDiff !== 0) return totalPointsDiff;
+
+      const pointsDifferenceDiff =
+        tieBreakers.pointsDifference(b) - tieBreakers.pointsDifference(a);
+      if (pointsDifferenceDiff !== 0) return pointsDifferenceDiff;
+
+      const pointsFromDiff =
+        tieBreakers.pointsFrom(b) - tieBreakers.pointsFrom(a);
+      if (pointsFromDiff !== 0) return pointsFromDiff;
+
+      return String(a?.team || '').localeCompare(String(b?.team || ''));
+    });
+}
+
+function orderCategoryStandingsForOverallGroupOrder(
+  standings: StandingRow[] = [],
+  tieBreakers: TieBreakerConfig = DEFAULT_TIE_BREAKERS
+): StandingRow[] {
+  const rows = standings.filter((row) => row && row.team);
+  if (rows.length === 0) return [];
+
+  const byGroup = new Map<number, StandingRow[]>();
+  rows.forEach((row) => {
+    const groupNumber = tieBreakers.groupNumber(row);
+    const bucket = byGroup.get(groupNumber) || [];
+    bucket.push(row);
+    byGroup.set(groupNumber, bucket);
+  });
+
+  if (byGroup.size <= 1) {
+    return sortCategoryStandings(rows, tieBreakers);
+  }
+
+  const orderedGroups = Array.from(byGroup.values()).map((groupRows) =>
+    sortStandingsWithinGroup(groupRows, tieBreakers)
+  );
+  const groupSizes = orderedGroups.map((groupRows) => groupRows.length);
+  const minGroupSize = Math.min(...groupSizes);
+  const maxGroupSize = Math.max(...groupSizes);
+
+  if (minGroupSize === maxGroupSize) {
+    return sortCategoryStandings(rows, tieBreakers);
+  }
+
+  const coreRows = orderedGroups.flatMap((groupRows) =>
+    groupRows.slice(0, minGroupSize)
+  );
+  const extraRows = orderedGroups.flatMap((groupRows) =>
+    groupRows.slice(minGroupSize)
+  );
+
+  return [
+    ...sortCategoryStandings(coreRows, tieBreakers),
+    ...sortCategoryStandings(extraRows, tieBreakers),
+  ];
+}
+
 export function deriveCategoryPlaceholderAssignments({
   standings = [],
   totalPositions,
@@ -597,7 +673,10 @@ export function deriveCategoryPlaceholderAssignments({
 }): PlaceholderAssignment[] {
   if (!totalPositions || totalPositions <= 0) return [];
 
-  const ordered = sortCategoryStandings(standings, tieBreakers);
+  const ordered = orderCategoryStandingsForOverallGroupOrder(
+    standings,
+    tieBreakers
+  );
   const placeholders: PlaceholderAssignment[] = [];
   for (let index = 0; index < totalPositions; index += 1) {
     const teamId = ordered[index]?.team ?? null;
@@ -620,7 +699,10 @@ export function deriveWorstCategoryPlaceholderAssignments({
 }): PlaceholderAssignment[] {
   if (!totalPositions || totalPositions <= 0) return [];
 
-  const ordered = sortCategoryStandings(standings, tieBreakers).reverse();
+  const ordered = orderCategoryStandingsForOverallGroupOrder(
+    standings,
+    tieBreakers
+  ).reverse();
   const placeholders: PlaceholderAssignment[] = [];
   for (let index = 0; index < totalPositions; index += 1) {
     const teamId = ordered[index]?.team ?? null;
