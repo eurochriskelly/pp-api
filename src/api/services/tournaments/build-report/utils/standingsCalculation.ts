@@ -60,6 +60,147 @@ export interface StandingsResult {
   allGroups: TeamStats[];
 }
 
+function createEmptyTeamStats(team: string): TeamStats {
+  return {
+    team,
+    matchesPlayed: 0,
+    won: 0,
+    draw: 0,
+    loss: 0,
+    scoreFor: 0,
+    scoreAgainst: 0,
+    scoreDifference: 0,
+    points: 0,
+  };
+}
+
+function compareOverallTeams(a: TeamStats, b: TeamStats): number {
+  if (a.points !== b.points) return b.points - a.points;
+  if (b.scoreDifference !== a.scoreDifference) {
+    return b.scoreDifference - a.scoreDifference;
+  }
+  if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
+  return a.team.localeCompare(b.team);
+}
+
+function applyFixtureToStats(
+  fixture: Fixture,
+  team1Stats: TeamStats,
+  team2Stats: TeamStats,
+  pointsConfig: PointsConfig
+): void {
+  const { win, draw, loss } = pointsConfig;
+
+  team1Stats.matchesPlayed++;
+  team2Stats.matchesPlayed++;
+  team1Stats.scoreFor += fixture.team1.total;
+  team1Stats.scoreAgainst += fixture.team2.total;
+  team2Stats.scoreFor += fixture.team2.total;
+  team2Stats.scoreAgainst += fixture.team1.total;
+
+  if (fixture.team1.status === 'won') {
+    team1Stats.won++;
+    team1Stats.points += win;
+    team2Stats.loss++;
+    team2Stats.points += loss;
+  } else if (fixture.team1.status === 'lost') {
+    team1Stats.loss++;
+    team1Stats.points += loss;
+    team2Stats.won++;
+    team2Stats.points += win;
+  } else if (fixture.team1.status === 'draw') {
+    team1Stats.draw++;
+    team1Stats.points += draw;
+    team2Stats.draw++;
+    team2Stats.points += draw;
+  }
+}
+
+function buildOverallStandings(
+  byGroup: StandingsResult['byGroup'],
+  groupFixtures: Fixture[],
+  teamsByGroup: GroupInfo[],
+  pointsConfig: PointsConfig
+): TeamStats[] {
+  const groupNames = teamsByGroup
+    .map((group) => `GP.${group.group}`)
+    .filter((groupName) => (byGroup[groupName] || []).length > 0);
+  const groupSizes = groupNames.map((groupName) => byGroup[groupName].length);
+
+  if (groupSizes.length === 0) return [];
+
+  const minGroupSize = Math.min(...groupSizes);
+  const maxGroupSize = Math.max(...groupSizes);
+
+  if (minGroupSize === maxGroupSize) {
+    return groupNames
+      .flatMap((groupName) => byGroup[groupName])
+      .slice()
+      .sort(compareOverallTeams);
+  }
+
+  const normalizedTopTeams: TeamStats[] = [];
+  const extraTeams: TeamStats[] = [];
+  const topTeamsByGroup = new Map<string, Set<string>>();
+  const normalizedByTeam = new Map<string, TeamStats>();
+
+  groupNames.forEach((groupName) => {
+    const groupStandings = byGroup[groupName] || [];
+    const topGroupStandings = groupStandings.slice(0, minGroupSize);
+    const extraGroupStandings = groupStandings.slice(minGroupSize);
+    const topTeams = new Set(topGroupStandings.map((team) => team.team));
+
+    topTeamsByGroup.set(groupName, topTeams);
+
+    topGroupStandings.forEach((team) => {
+      const normalized = createEmptyTeamStats(team.team);
+      normalized.position = team.position;
+      normalized.jointPosition = team.jointPosition;
+      normalizedTopTeams.push(normalized);
+      normalizedByTeam.set(team.team, normalized);
+    });
+
+    extraTeams.push(...extraGroupStandings);
+  });
+
+  groupFixtures.forEach((fixture) => {
+    if (
+      fixture.outcome === 'not played' ||
+      fixture.outcome === 'skipped' ||
+      !fixture.team1.name ||
+      !fixture.team2.name
+    ) {
+      return;
+    }
+
+    const groupName = `GP.${fixture.pool}`;
+    const topTeams = topTeamsByGroup.get(groupName);
+    if (!topTeams) return;
+    if (!topTeams.has(fixture.team1.name) || !topTeams.has(fixture.team2.name)) {
+      return;
+    }
+
+    const team1Stats = normalizedByTeam.get(fixture.team1.name);
+    const team2Stats = normalizedByTeam.get(fixture.team2.name);
+    if (!team1Stats || !team2Stats) return;
+
+    applyFixtureToStats(fixture, team1Stats, team2Stats, pointsConfig);
+  });
+
+  normalizedTopTeams.forEach((team) => {
+    team.scoreDifference = team.scoreFor - team.scoreAgainst;
+  });
+
+  extraTeams.forEach((team) => {
+    team.scoreDifference = team.scoreFor - team.scoreAgainst;
+  });
+
+  return [
+    ...normalizedTopTeams.sort(compareOverallTeams),
+    ...extraTeams.slice().sort(compareOverallTeams),
+  ];
+}
+
 /**
  * Calculates group standings from fixture data.
  */
@@ -68,7 +209,6 @@ export function calculateStandings(
   teamsByGroup: GroupInfo[],
   pointsConfig: PointsConfig
 ): StandingsResult {
-  const { win, draw, loss } = pointsConfig;
   const groupFixtures = fixtures.stage.group;
 
   const standingsByGroup: {
@@ -156,45 +296,10 @@ export function calculateStandings(
       scoreA: fixture.team1.total,
       scoreB: fixture.team2.total,
     });
-
-    if (fixture.team1.status === 'won') {
-      team1Stats.matchesPlayed++;
-      team2Stats.matchesPlayed++;
-      team1Stats.scoreFor += fixture.team1.total;
-      team1Stats.scoreAgainst += fixture.team2.total;
-      team2Stats.scoreFor += fixture.team2.total;
-      team2Stats.scoreAgainst += fixture.team1.total;
-      team1Stats.won++;
-      team1Stats.points += win;
-      team2Stats.loss++;
-      team2Stats.points += loss;
-    } else if (fixture.team1.status === 'lost') {
-      team1Stats.matchesPlayed++;
-      team2Stats.matchesPlayed++;
-      team1Stats.scoreFor += fixture.team1.total;
-      team1Stats.scoreAgainst += fixture.team2.total;
-      team2Stats.scoreFor += fixture.team2.total;
-      team2Stats.scoreAgainst += fixture.team1.total;
-      team1Stats.loss++;
-      team1Stats.points += loss;
-      team2Stats.won++;
-      team2Stats.points += win;
-    } else if (fixture.team1.status === 'draw') {
-      team1Stats.matchesPlayed++;
-      team2Stats.matchesPlayed++;
-      team1Stats.scoreFor += fixture.team1.total;
-      team1Stats.scoreAgainst += fixture.team2.total;
-      team2Stats.scoreFor += fixture.team2.total;
-      team2Stats.scoreAgainst += fixture.team1.total;
-      team1Stats.draw++;
-      team1Stats.points += draw;
-      team2Stats.draw++;
-      team2Stats.points += draw;
-    }
+    applyFixtureToStats(fixture, team1Stats, team2Stats, pointsConfig);
   });
 
   const finalStandings: StandingsResult = { byGroup: {}, allGroups: [] };
-  let allGroupsStandings: TeamStats[] = [];
 
   for (const groupName in standingsByGroup) {
     const groupStandings = Object.values(standingsByGroup[groupName]);
@@ -248,29 +353,14 @@ export function calculateStandings(
     }));
 
     finalStandings.byGroup[groupName] = sortedGroupStandings;
-    allGroupsStandings.push(...sortedGroupStandings);
   }
 
-  allGroupsStandings.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (a.h2hStats && b.h2hStats) {
-      if (b.h2hStats.points !== a.h2hStats.points) {
-        return b.h2hStats.points - a.h2hStats.points;
-      }
-      if (b.h2hStats.diff !== a.h2hStats.diff) {
-        return b.h2hStats.diff - a.h2hStats.diff;
-      }
-      if (b.h2hStats.for !== a.h2hStats.for) {
-        return b.h2hStats.for - a.h2hStats.for;
-      }
-    }
-    if (b.scoreDifference !== a.scoreDifference)
-      return b.scoreDifference - a.scoreDifference;
-    if (b.scoreFor !== a.scoreFor) return b.scoreFor - a.scoreFor;
-    return a.team.localeCompare(b.team);
-  });
-
-  finalStandings.allGroups = allGroupsStandings;
+  finalStandings.allGroups = buildOverallStandings(
+    finalStandings.byGroup,
+    groupFixtures,
+    teamsByGroup,
+    pointsConfig
+  );
 
   return finalStandings;
 }
