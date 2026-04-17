@@ -16,6 +16,8 @@ export interface TeamStats {
   scoreAgainst: number;
   scoreDifference: number;
   points: number;
+  originalGroupPoints?: number;
+  originalGroupSize?: number;
   position?: number;
   jointPosition?: boolean;
   h2hStats?: {
@@ -76,6 +78,12 @@ function createEmptyTeamStats(team: string): TeamStats {
 
 function compareOverallTeams(a: TeamStats, b: TeamStats): number {
   if (a.points !== b.points) return b.points - a.points;
+  if (
+    a.originalGroupSize === b.originalGroupSize &&
+    (a.originalGroupPoints || 0) !== (b.originalGroupPoints || 0)
+  ) {
+    return (b.originalGroupPoints || 0) - (a.originalGroupPoints || 0);
+  }
   if (b.scoreDifference !== a.scoreDifference) {
     return b.scoreDifference - a.scoreDifference;
   }
@@ -146,6 +154,7 @@ function buildOverallStandings(
 
   groupNames.forEach((groupName) => {
     const groupStandings = byGroup[groupName] || [];
+    const originalGroupSize = groupStandings.length;
     const topGroupStandings = groupStandings.slice(0, minGroupSize);
     const extraGroupStandings = groupStandings.slice(minGroupSize);
     const topTeams = new Set(topGroupStandings.map((team) => team.team));
@@ -154,13 +163,19 @@ function buildOverallStandings(
 
     topGroupStandings.forEach((team) => {
       const normalized = createEmptyTeamStats(team.team);
+      normalized.originalGroupPoints = team.points;
+      normalized.originalGroupSize = originalGroupSize;
       normalized.position = team.position;
       normalized.jointPosition = team.jointPosition;
       normalizedTopTeams.push(normalized);
       normalizedByTeam.set(team.team, normalized);
     });
 
-    extraTeams.push(...extraGroupStandings);
+    extraGroupStandings.forEach((team) => {
+      team.originalGroupPoints = team.points;
+      team.originalGroupSize = originalGroupSize;
+      extraTeams.push(team);
+    });
   });
 
   groupFixtures.forEach((fixture) => {
@@ -354,6 +369,14 @@ export function calculateStandings(
 
     finalStandings.byGroup[groupName] = sortedGroupStandings;
   }
+
+  Object.values(finalStandings.byGroup).forEach((groupStandings) => {
+    const originalGroupSize = groupStandings.length;
+    groupStandings.forEach((team) => {
+      team.originalGroupPoints = team.points;
+      team.originalGroupSize = originalGroupSize;
+    });
+  });
 
   finalStandings.allGroups = buildOverallStandings(
     finalStandings.byGroup,
