@@ -860,6 +860,31 @@ export class TSVValidator {
       });
     });
 
+    const winnerLoserRefs = new Map<string, { row: number; col: string }>();
+    this.rows.forEach((r, row) => {
+      const cat = r.CATEGORY.value as string;
+      ['TEAM1', 'TEAM2'].forEach((col) => {
+        const val = (r[col].value as string)?.toUpperCase() || '';
+        const m = /^(WINNER|LOSER)\s+([A-Z]+\.\d+)$/.exec(val);
+        if (m) {
+          const refKey = `${cat}#${m[1]} ${m[2]}`;
+          const existing = winnerLoserRefs.get(refKey);
+          if (existing) {
+            this.warnings.push(
+              warn(
+                'integrity',
+                `Row ${row}: ${col} '${m[1]} ${m[2]}' already used in row ${existing.row} (${existing.col})`,
+                row,
+                col
+              )
+            );
+          } else {
+            winnerLoserRefs.set(refKey, { row, col });
+          }
+        }
+      });
+    });
+
     if (this.opts.checkBracketCompleteness) {
       for (const [cat, brs] of this.catBrackets.entries()) {
         for (const br of brs) {

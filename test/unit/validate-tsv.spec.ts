@@ -116,3 +116,65 @@ test('TSV validator rejects negative non-Gp.0 syntax', () => {
   );
   assert.equal(team1Warnings.length, 1);
 });
+
+test('TSV validator rejects duplicate WINNER/LOSER in TEAM1/TEAM2', () => {
+  const tsvDup = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION
+10:00\tA.01\tCup\tPitch_1\tAlpha\tA.SF1\tBeta\tGamma\t20
+10:30\tA.02\tCup\tPitch_2\tWinner A.01\tA.FIN\tDelta\tEpsilon\t20
+11:00\tA.03\tCup\tPitch_3\tWinner A.01\tA.3/4\tZeta\tEta\t20`;
+  const result = new TSVValidator(
+    Buffer.from(tsvDup, 'utf8').toString('base64')
+  ).validate();
+
+  const dupWarnings = result.warnings.filter((w) =>
+    w.message.includes('already used in row')
+  );
+  assert.equal(dupWarnings.length, 1);
+  assert.equal(dupWarnings[0].column, 'TEAM1');
+  assert.ok(dupWarnings[0].message.includes('WINNER A.01'));
+});
+
+test('TSV validator allows same WINNER/LOSER in UMPIRES and TEAM1', () => {
+  const tsvUmp = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION
+10:00\tA.01\tCup\tPitch_1\tAlpha\tA.SF1\tBeta\tGamma\t20
+10:30\tA.02\tCup\tPitch_2\tWinner A.01\tA.FIN\tDelta\tWinner A.01\t20
+11:00\tA.03\tCup\tPitch_3\tEpsilon\tA.3/4\tZeta\tWinner A.01\t20`;
+  const result = new TSVValidator(
+    Buffer.from(tsvUmp, 'utf8').toString('base64')
+  ).validate();
+
+  const dupWarnings = result.warnings.filter((w) =>
+    w.message.includes('already used in row')
+  );
+  assert.equal(dupWarnings.length, 0);
+});
+
+test('TSV validator allows WINNER and LOSER from same match', () => {
+  const tsvBoth = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION
+10:00\tA.01\tCup\tPitch_1\tAlpha\tA.SF1\tBeta\tGamma\t20
+10:30\tA.02\tCup\tPitch_2\tWinner A.01\tA.FIN\tLoser A.01\tDelta\t20`;
+  const result = new TSVValidator(
+    Buffer.from(tsvBoth, 'utf8').toString('base64')
+  ).validate();
+
+  const dupWarnings = result.warnings.filter((w) =>
+    w.message.includes('already used in row')
+  );
+  assert.equal(dupWarnings.length, 0);
+});
+
+test('TSV validator scopes WINNER/LOSER uniqueness per category', () => {
+  const tsvCats = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION
+10:00\tA.01\tCup\tPitch_1\tAlpha\tA.SF1\tBeta\tGamma\t20
+10:00\tB.01\tPlate\tPitch_2\tTheta\tB.SF1\tIota\tKappa\t20
+10:30\tA.02\tCup\tPitch_1\tWinner A.01\tA.FIN\tDelta\tEpsilon\t20
+10:30\tB.02\tPlate\tPitch_2\tWinner B.01\tB.FIN\tLambda\tMu\t20`;
+  const result = new TSVValidator(
+    Buffer.from(tsvCats, 'utf8').toString('base64')
+  ).validate();
+
+  const dupWarnings = result.warnings.filter((w) =>
+    w.message.includes('already used in row')
+  );
+  assert.equal(dupWarnings.length, 0);
+});
