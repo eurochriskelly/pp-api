@@ -9,6 +9,7 @@ import { calculateStandings } from './utils/standingsCalculation';
 import { calculateTeamSummary } from './utils/teamSummaryCalculation';
 import { calculateFinalRankings } from './utils/finalRankingsCalculation';
 import { InitialGenerator } from '../../fixtures/enhance-fixture/initial-generator';
+import { calculateAggregateMatchScore } from '../../../../lib/match-score';
 
 export interface SelectFunction {
   (sql: string, params?: any[]): Promise<any[]>;
@@ -345,8 +346,27 @@ export class ReportBuilder {
         lastUpdated = f.updated;
       }
 
-      f.total1 = f.outcome !== 'not played' ? f.goals1 * 3 + f.points1 : null;
-      f.total2 = f.outcome !== 'not played' ? f.goals2 * 3 + f.points2 : null;
+      const hasResult = !['not played', 'skipped'].includes(
+        String(f.outcome || '').toLowerCase()
+      );
+      f.total1 = hasResult
+        ? calculateAggregateMatchScore({
+            goals: f.goals1,
+            points: f.points1,
+            goalsExtra: f.goals1Extra,
+            pointsExtra: f.points1Extra,
+            goalsPenalties: f.goals1Penalties,
+          })
+        : null;
+      f.total2 = hasResult
+        ? calculateAggregateMatchScore({
+            goals: f.goals2,
+            points: f.points2,
+            goalsExtra: f.goals2Extra,
+            pointsExtra: f.points2Extra,
+            goalsPenalties: f.goals2Penalties,
+          })
+        : null;
 
       const actualDuration =
         f.started && f.ended

@@ -9,6 +9,7 @@ import {
   sqlGroupStandingsWithH2H,
   sqlGroupRankings,
 } from '../../lib/queries';
+import { calculateAggregateMatchScore } from '../../lib/match-score';
 
 export interface TeamScore {
   goals: number;
@@ -357,10 +358,8 @@ export default function fixturesService(db: any) {
         const category = String(fixture.category || '');
         const team1Id = fixture.team1Id ? String(fixture.team1Id) : null;
         const team2Id = fixture.team2Id ? String(fixture.team2Id) : null;
-        const scoreValue = (team: TeamScore) =>
-          (Number(team?.goals) || 0) * 3 + (Number(team?.points) || 0);
-        const team1Aggregate = scoreValue(team1);
-        const team2Aggregate = scoreValue(team2);
+        const team1Aggregate = calculateAggregateMatchScore(team1);
+        const team2Aggregate = calculateAggregateMatchScore(team2);
 
         let winner: string | null = null;
         let loser: string | null = null;
