@@ -19,24 +19,10 @@ const staticPath = `/gcp/dist/${app}/`;
 
 const ARGS = { port, app, database, staticPath };
 
-const connectToDatabase = (connection: mysql.Connection) =>
-  new Promise<void>((resolve, reject) => {
-    connection.connect((err) => {
-      if (err) reject(err);
-      else resolve();
-    });
+const ensureUtf8mb4Pool = (pool: mysql.Pool) => {
+  pool.on('connection', (connection) => {
+    connection.query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
   });
-
-const queryDatabase = (connection: mysql.Connection, sql: string) =>
-  new Promise<void>((resolve, reject) => {
-    connection.query(sql, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
-
-const ensureUtf8mb4Connection = async (connection: mysql.Connection) => {
-  await queryDatabase(connection, 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
 };
 
 // Startup banner - impossible to miss
@@ -56,8 +42,8 @@ console.log('╚═════════════════════�
 
 // Import config from local directory
 const run = async () => {
-  let db: mysql.Connection | null = null;
-  let dbClub: mysql.Connection | null = null;
+  let db: mysql.Pool | null = null;
+  let dbClub: mysql.Pool | null = null;
   const effectiveArgs: { [key: string]: any } = { ...ARGS };
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -75,16 +61,26 @@ const run = async () => {
       console.log(`Database: ${dbConf.database}`);
       console.log('--------------------------------');
 
-      db = mysql.createConnection(dbConf);
-      await connectToDatabase(db);
-      await ensureUtf8mb4Connection(db);
+      db = mysql.createPool(dbConf);
+      ensureUtf8mb4Pool(db);
+      await new Promise<void>((resolve, reject) => {
+        db!.query('SELECT 1', (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       console.log('✓ Connected to MySQL (Main) - data will be persisted');
 
       // Try to connect to ClubEvents DB, but allow it to fail gracefully
       try {
-        dbClub = mysql.createConnection(clubEventsDbConf);
-        await connectToDatabase(dbClub);
-        await ensureUtf8mb4Connection(dbClub);
+        dbClub = mysql.createPool(clubEventsDbConf);
+        ensureUtf8mb4Pool(dbClub);
+        await new Promise<void>((resolve, reject) => {
+          dbClub!.query('SELECT 1', (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
         console.log('✓ Connected to MySQL (ClubEvents)');
       } catch (clubErr: any) {
         dbClub = null;

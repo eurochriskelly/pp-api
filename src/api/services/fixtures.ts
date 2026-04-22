@@ -520,12 +520,12 @@ export default function fixturesService(db: any) {
           );
         }
 
-        await transaction(async () => {
-          await update(
+        await transaction(async (tx) => {
+          await tx.update(
             `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
             [fixture2.scheduled, fixtureId, tournamentId]
           );
-          await update(
+          await tx.update(
             `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
             [fixture1.scheduled, relativeFixtureId, tournamentId]
           );

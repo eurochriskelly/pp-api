@@ -119,13 +119,13 @@ export default (db: any) => {
       );
       const ids: number[] = [];
 
-      await transaction(async () => {
+      await transaction(async (tx) => {
         for (const team of teams) {
           if (!team?.name) {
             throw new Error('Each team requires a name');
           }
 
-          const createdId = await insert(
+          const createdId = await tx.insert(
             `INSERT INTO teams (
               name,
               tournamentTempUuid,

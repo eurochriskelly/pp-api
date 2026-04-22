@@ -20,10 +20,12 @@ interface DbHelper {
   insert: (query: string, params?: unknown[]) => Promise<number>;
   update: (query: string, params?: unknown[]) => Promise<number>;
   delete: (query: string, params?: unknown[]) => Promise<number>;
-  transaction: <T>(operations: () => Promise<T>) => Promise<T>;
+  transaction: <T>(operations: (db: DbHelper) => Promise<T>) => Promise<T>;
 }
 
-function dbHelper(db: DbConnection): DbHelper {
+function dbHelper(db: DbConnection | any): DbHelper {
+  const isPool = db && typeof db.getConnection === 'function';
+
   const execute = (
     type: string,
     query: string,
@@ -50,7 +52,7 @@ function dbHelper(db: DbConnection): DbHelper {
     });
   };
 
-  return {
+  const helper: DbHelper = {
     // Basic CRUD operations
     select: (query: string, params?: unknown[]) =>
       execute('select', query, params),
@@ -68,18 +70,58 @@ function dbHelper(db: DbConnection): DbHelper {
       ),
 
     // Helper for transactions
-    transaction: async <T>(operations: () => Promise<T>): Promise<T> => {
-      try {
-        await execute('tx', 'START TRANSACTION');
-        const result = await operations();
-        await execute('tx', 'COMMIT');
-        return result;
-      } catch (err) {
-        await execute('tx', 'ROLLBACK');
-        throw err;
+    transaction: async <T>(
+      operations: (db: DbHelper) => Promise<T>
+    ): Promise<T> => {
+      if (isPool) {
+        const connection = await new Promise<any>((resolve, reject) => {
+          db.getConnection((err: Error | null, conn: any) => {
+            if (err) reject(err);
+            else resolve(conn);
+          });
+        });
+
+        const connHelper = dbHelper(connection);
+        const txExecute = (
+          type: string,
+          query: string,
+          params: unknown[] = []
+        ): Promise<QueryResult[]> =>
+          new Promise((resolve, reject) => {
+            connection.query(query, params, (err, results) => {
+              if (err) {
+                EE(`Query failed: ${err.message}`);
+                return reject(err);
+              }
+              resolve(Array.isArray(results) ? results : [results]);
+            });
+          });
+        try {
+          await txExecute('tx', 'START TRANSACTION');
+          const result = await operations(connHelper);
+          await txExecute('tx', 'COMMIT');
+          return result;
+        } catch (err) {
+          await txExecute('tx', 'ROLLBACK');
+          throw err;
+        } finally {
+          connection.release();
+        }
+      } else {
+        try {
+          await execute('tx', 'START TRANSACTION');
+          const result = await operations(helper);
+          await execute('tx', 'COMMIT');
+          return result;
+        } catch (err) {
+          await execute('tx', 'ROLLBACK');
+          throw err;
+        }
       }
     },
   };
+
+  return helper;
 }
 
 export = dbHelper;
