@@ -373,15 +373,15 @@ function listingsService(dbs: { club?: any; main?: any } | any) {
           ? JSON.stringify(hero_config)
           : hero_config;
 
-      await transaction(async () => {
-        await insert(
+      await transaction(async (tx) => {
+        await tx.insert(
           `INSERT INTO Listings (id, title, slug, description, created_by, hero_config) VALUES (?, ?, ?, ?, ?, ?)`,
           [id, title, slug, description, createdBy, heroConfigVal]
         );
 
         if (eventIds && eventIds.length) {
           for (const eid of eventIds) {
-            await insert(
+            await tx.insert(
               'INSERT INTO ListingEvents (listing_id, event_id) VALUES (?, ?)',
               [id, eid]
             );
@@ -404,7 +404,7 @@ function listingsService(dbs: { club?: any; main?: any } | any) {
     ): Promise<ApiListing | null> => {
       const { title, slug, description, eventIds, hero_config } = data;
 
-      await transaction(async () => {
+      await transaction(async (tx) => {
         const fields: string[] = [];
         const params: (string | number | undefined)[] = [];
         if (title !== undefined) {
@@ -430,16 +430,18 @@ function listingsService(dbs: { club?: any; main?: any } | any) {
 
         if (fields.length) {
           params.push(id);
-          await update(
+          await tx.update(
             `UPDATE Listings SET ${fields.join(', ')} WHERE id = ?`,
             params
           );
         }
 
         if (eventIds) {
-          await remove('DELETE FROM ListingEvents WHERE listing_id = ?', [id]);
+          await tx.delete('DELETE FROM ListingEvents WHERE listing_id = ?', [
+            id,
+          ]);
           for (const eid of eventIds) {
-            await insert(
+            await tx.insert(
               'INSERT INTO ListingEvents (listing_id, event_id) VALUES (?, ?)',
               [id, eid]
             );

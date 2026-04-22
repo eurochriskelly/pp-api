@@ -136,12 +136,16 @@ function eventsService(dbs: { club?: any; main?: any } | any) {
     return mapEventToApi(event);
   };
 
-  const processSports = async (eventId: string, sportsList: string[]) => {
+  const processSports = async (
+    helper: any,
+    eventId: string,
+    sportsList: string[]
+  ) => {
     if (!sportsList || !sportsList.length) return;
 
     for (const sportName of sportsList) {
       let sportId: string | number;
-      const existingSport = (await select(
+      const existingSport = (await helper.select(
         'SELECT id FROM Sports WHERE name = ?',
         [sportName]
       )) as { id: string | number }[];
@@ -149,12 +153,12 @@ function eventsService(dbs: { club?: any; main?: any } | any) {
       if (existingSport.length > 0) {
         sportId = existingSport[0].id;
       } else {
-        sportId = await insert('INSERT INTO Sports (name) VALUES (?)', [
+        sportId = await helper.insert('INSERT INTO Sports (name) VALUES (?)', [
           sportName,
         ]);
       }
 
-      await insert(
+      await helper.insert(
         'INSERT INTO EventSports (event_id, sport_id) VALUES (?, ?)',
         [eventId, sportId]
       );
@@ -271,8 +275,8 @@ function eventsService(dbs: { club?: any; main?: any } | any) {
 
       const id = `evt_${uuidv4().split('-')[0]}`;
 
-      await transaction(async () => {
-        await insert(
+      await transaction(async (tx) => {
+        await tx.insert(
           `INSERT INTO Events (id, title, description, start_date, end_date, location, region, image_url, organizer_id)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
@@ -288,7 +292,7 @@ function eventsService(dbs: { club?: any; main?: any } | any) {
           ]
         );
 
-        await processSports(id, sports || []);
+        await processSports(tx, id, sports || []);
       });
 
       return (await getEvent(id))!;
@@ -322,7 +326,7 @@ function eventsService(dbs: { club?: any; main?: any } | any) {
         sports,
       } = data;
 
-      await transaction(async () => {
+      await transaction(async (tx) => {
         const fields: string[] = [];
         const params: (string | number | undefined)[] = [];
         if (title !== undefined) {
@@ -355,7 +359,7 @@ function eventsService(dbs: { club?: any; main?: any } | any) {
         }
 
         let finalOrganizerId = organizerId;
-        if (finalOrganizerId === undefined && organizerEmail !== undefined) {
+        if (!finalOrganizerId && organizerEmail) {
           finalOrganizerId = await resolveUserId(organizerEmail);
         } else if (finalOrganizerId !== undefined) {
           finalOrganizerId = await resolveUserId(finalOrganizerId);
@@ -369,15 +373,15 @@ function eventsService(dbs: { club?: any; main?: any } | any) {
 
         if (fields.length) {
           params.push(id);
-          await update(
+          await tx.update(
             `UPDATE Events SET ${fields.join(', ')} WHERE id = ?`,
             params
           );
         }
 
         if (sports) {
-          await remove('DELETE FROM EventSports WHERE event_id = ?', [id]);
-          await processSports(id, sports);
+          await tx.delete('DELETE FROM EventSports WHERE event_id = ?', [id]);
+          await processSports(tx, id, sports);
         }
       });
     },
