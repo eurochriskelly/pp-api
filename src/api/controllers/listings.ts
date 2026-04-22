@@ -41,7 +41,7 @@ function listingsController(dbs: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { listingId: id } = req.params;
         const { expand } = req.query;
         const expandEvents = expand === 'events';
         const listing = await dbSvc.getListing(id, expandEvents);
@@ -61,7 +61,7 @@ function listingsController(dbs: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { listingId: id } = req.params;
         // Map query params to filters
         const filters: ListingFilters = {
           search: req.query.search as string,
@@ -90,7 +90,7 @@ function listingsController(dbs: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { listingId: id } = req.params;
         // Type assertion to handle both real and mock services
         const timeline = await (dbSvc as any).getListingTimeline(id);
         if (timeline === null) {
@@ -109,7 +109,7 @@ function listingsController(dbs: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { listingId: id } = req.params;
         const listing = await dbSvc.getListing(id, true);
         if (!listing) {
           res.status(404).json({ error: 'Listing not found' });
@@ -214,7 +214,7 @@ function listingsController(dbs: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { listingId: id } = req.params;
         const { title, slug, description, event_ids, eventIds, hero_config } =
           req.body;
         const data = {
@@ -237,7 +237,7 @@ function listingsController(dbs: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { listingId: id } = req.params;
         await dbSvc.deleteListing(id);
         res.status(204).send();
       } catch (err) {
