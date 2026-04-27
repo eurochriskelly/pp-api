@@ -1,10 +1,12 @@
 import express from 'express';
 import fixtureController from '../../../controllers/fixtures';
 import { validateNumericId } from '../../../middleware/validation';
+const authMiddlewareFactory = require('../../../middleware/auth');
 
 export default (db: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
   const ctrl = fixtureController(db, useMock);
+  const auth = authMiddlewareFactory(db, useMock);
 
   router.get('/', ctrl.getFixtures);
   router.get('/nextup', ctrl.nextFixtures);
@@ -21,6 +23,7 @@ export default (db: any, useMock: boolean) => {
   );
   router.get('/:fixtureId', validateNumericId('fixtureId'), ctrl.getFixture);
   router.post('/filtered', ctrl.getFilteredFixtures);
+  router.post('/copy', auth, ctrl.copyFixtures);
 
   // modify
   router.put('/update-calculated-fixtures', ctrl.updateCalculatedFixtures);

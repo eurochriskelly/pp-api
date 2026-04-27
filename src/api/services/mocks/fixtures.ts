@@ -337,6 +337,73 @@ export default function mockFixturesService() {
       );
       return { cardDeleted };
     },
+
+    copyFixtures: async (
+      sourceTournamentId: number,
+      targetTournamentId: number
+    ) => {
+      II(
+        `Mock: copyFixtures from [${sourceTournamentId}] to [${targetTournamentId}]`
+      );
+
+      // Pretend both tournaments exist in mock context
+      const sourceFixtures = mockFixtures.filter(
+        (f) => f.tournamentId === sourceTournamentId
+      );
+      if (sourceFixtures.length === 0) {
+        DD('Mock: No source fixtures found');
+      }
+
+      // Wipe target fixtures and cards
+      mockFixtures = mockFixtures.filter(
+        (f) => f.tournamentId !== targetTournamentId
+      );
+      mockCards = mockCards.filter(
+        (c) => c.tournamentId !== targetTournamentId
+      );
+
+      const idMapping = new Map<number, number>();
+      let nextFixtureId =
+        mockFixtures.reduce((max, f) => Math.max(max, f.id), 0) + 1;
+
+      for (const fixture of sourceFixtures) {
+        const newId = nextFixtureId++;
+        idMapping.set(fixture.id, newId);
+        mockFixtures.push({
+          ...fixture,
+          id: newId,
+          tournamentId: targetTournamentId,
+        });
+      }
+
+      const sourceCards = mockCards.filter(
+        (c) => c.tournamentId === sourceTournamentId
+      );
+      for (const card of sourceCards) {
+        const newFixtureId = idMapping.get(card.fixtureId);
+        if (newFixtureId) {
+          mockCards.push({
+            ...card,
+            id: nextCardId++,
+            tournamentId: targetTournamentId,
+            fixtureId: newFixtureId,
+          });
+        }
+      }
+
+      const copiedFixtures = mockFixtures.filter(
+        (f) => f.tournamentId === targetTournamentId
+      );
+      const copiedCards = mockCards.filter(
+        (c) => c.tournamentId === targetTournamentId
+      );
+
+      return {
+        copied: copiedFixtures.length,
+        fixtures: copiedFixtures,
+        cards: copiedCards,
+      };
+    },
   };
 }
 

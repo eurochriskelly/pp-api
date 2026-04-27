@@ -43,6 +43,32 @@ const cardPlayerSchema = z
   })
   .passthrough(); // Allow other fields like confirmed
 
+// Define Zod schema for reschedule
+const rescheduleSchema = z
+  .object({
+    placement: z.enum(['before', 'after'], {
+      required_error: 'placement is required',
+      invalid_type_error: 'placement must be before or after',
+    }),
+    targetPitch: z.string().optional(),
+    targetFixtureId: z.number().int().positive().optional(),
+    targetFixture: z.number().int().positive().optional(),
+    relativeFixtureId: z.number().int().positive().optional(),
+  })
+  .refine(
+    (data) => {
+      return !!(
+        data.targetFixtureId ||
+        data.targetFixture ||
+        data.relativeFixtureId
+      );
+    },
+    {
+      message:
+        'targetFixtureId (or targetFixture / relativeFixtureId) is required',
+    }
+  );
+
 function fixturesController(db: any, useMock: boolean) {
   const serviceFactory = require('../services/fixtures').default;
   const dbSvc = serviceFactory(db);
@@ -170,21 +196,46 @@ function fixturesController(db: any, useMock: boolean) {
 
     reschedule: async (req: Request, res: Response): Promise<void> => {
       const { tournamentId, fixtureId } = req.params;
-      const { relativeFixtureId, placement, targetPitch, action } = req.body;
+
+      const validationResult = rescheduleSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        res.status(400).json({
+          error: 'INVALID_REQUEST',
+          message: 'Invalid request body for reschedule',
+          details: validationResult.error.flatten().fieldErrors,
+        });
+        return;
+      }
+
+      const { placement, targetPitch } = validationResult.data;
+      const relativeFixtureId =
+        validationResult.data.targetFixtureId ||
+        validationResult.data.targetFixture ||
+        validationResult.data.relativeFixtureId;
+      const action = 'move';
+
       const data = {
         operation: 'reschedule',
         targetPitch,
-        tournamentId,
-        fixtureId: fixtureId,
-        relativeFixtureId: relativeFixtureId,
+        tournamentId: parseInt(tournamentId, 10),
+        fixtureId: parseInt(fixtureId, 10),
+        relativeFixtureId,
         placement,
         action,
       };
+
       try {
         const result = await dbSvc.reschedule(data);
         res.json({ data: result });
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error in reschedule:', err);
+        if (err?.statusCode) {
+          res.status(err.statusCode).json({
+            error: err.code || 'RESCHEDULE_FAILED',
+            message: err.message,
+          });
+          return;
+        }
         res.status(500).json({ error: 'Internal server error in reschedule' });
       }
     },
@@ -315,6 +366,37 @@ function fixturesController(db: any, useMock: boolean) {
         res
           .status(500)
           .json({ error: 'Internal server error while deleting card.' });
+      }
+    },
+
+    copyFixtures: async (req: Request, res: Response): Promise<void> => {
+      const { tournamentId } = req.params;
+      const { sourceTournamentId } = req.body;
+
+      if (!sourceTournamentId || isNaN(parseInt(sourceTournamentId, 10))) {
+        res.status(400).json({ error: 'sourceTournamentId is required' });
+        return;
+      }
+
+      try {
+        const result = await dbSvc.copyFixtures(
+          parseInt(sourceTournamentId, 10),
+          parseInt(tournamentId, 10)
+        );
+        res.status(200).json({
+          message: `Copied ${result.copied} fixtures`,
+          data: result,
+        });
+      } catch (err: any) {
+        console.error('Error in copyFixtures:', err);
+        if (err?.statusCode) {
+          res.status(err.statusCode).json({
+            error: err.code || 'COPY_FAILED',
+            message: err.message,
+          });
+          return;
+        }
+        res.status(500).json({ error: 'Internal server error' });
       }
     },
   };
