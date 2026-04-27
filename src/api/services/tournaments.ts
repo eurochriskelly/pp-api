@@ -503,8 +503,6 @@ export default (db: any) => {
         lat,
         lon,
         codeOrganizer,
-        championshipId,
-        roundNumber,
         winPoints = 2,
         drawPoints = 1,
         lossPoints = 0,
@@ -516,8 +514,6 @@ export default (db: any) => {
         lat: number;
         lon: number;
         codeOrganizer: string;
-        championshipId?: number;
-        roundNumber?: number;
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
@@ -527,9 +523,9 @@ export default (db: any) => {
       await insert(
         `INSERT INTO tournaments (
            region, Title, Date, Location, Lat, Lon, eventUuid, code, status,
-           championshipId, roundNumber, pointsForWin, pointsForDraw, pointsForLoss
+           pointsForWin, pointsForDraw, pointsForLoss
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           region,
           title,
@@ -540,8 +536,6 @@ export default (db: any) => {
           eventUuid,
           codeOrganizer,
           'in-design',
-          championshipId || null,
-          roundNumber || null,
           winPoints,
           drawPoints,
           lossPoints,
@@ -640,8 +634,6 @@ export default (db: any) => {
         lat,
         lon,
         codeOrganizer,
-        championshipId,
-        roundNumber,
         winPoints = 3,
         drawPoints = 1,
         lossPoints = 0,
@@ -653,8 +645,6 @@ export default (db: any) => {
         lat: number;
         lon: number;
         codeOrganizer: string;
-        championshipId?: number;
-        roundNumber?: number;
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
@@ -663,7 +653,7 @@ export default (db: any) => {
       await update(
         `UPDATE tournaments 
          SET Region = ?, Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ?, 
-         code = ?, championshipId = ?, roundNumber = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
+         code = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
          WHERE id = ?`,
         [
           region,
@@ -673,8 +663,6 @@ export default (db: any) => {
           lat,
           lon,
           codeOrganizer,
-          championshipId || null,
-          roundNumber || null,
           winPoints,
           drawPoints,
           lossPoints,
@@ -692,18 +680,27 @@ export default (db: any) => {
     },
 
     updateTournamentStatus: async (id: number, status: string) => {
+      const [existing] = (await select(
+        `SELECT status FROM tournaments WHERE id = ?`,
+        [id]
+      )) as { status: string }[];
+      if (!existing) {
+        throw new Error('Tournament not found');
+      }
+      const previousStatus = existing.status;
       await update(`UPDATE tournaments SET status = ? WHERE id = ?`, [
         status,
         id,
       ]);
-      const [updatedTournament] = await select(
-        `SELECT * FROM tournaments WHERE id = ?`,
-        [id]
+      return { previousStatus, status };
+    },
+
+    isOrganizer: async (tournamentId: number, userId: string | number) => {
+      const rows = await select(
+        `SELECT 1 FROM sec_roles WHERE tournamentId = ? AND UserId = ? AND RoleName = 'organizer' LIMIT 1`,
+        [tournamentId, userId]
       );
-      if (!updatedTournament) {
-        throw new Error('Failed to retrieve the updated tournament.');
-      }
-      return updatedTournament;
+      return rows.length > 0;
     },
 
     getTournaments: async (status: string, userId: number, role: string) => {
@@ -746,10 +743,8 @@ export default (db: any) => {
         );
         return {
           ...t,
-          Date: t.Date ? new Date(t.Date).toISOString().split('T')[0] : null,
-          endDate: t.endDate
-            ? new Date(t.endDate).toISOString().split('T')[0]
-            : null,
+          Date: t.Date || null,
+          endDate: t.endDate || null,
           lifecycleStatus: lifecycleStatus,
         };
       });
@@ -1200,7 +1195,7 @@ export default (db: any) => {
 
     getTournament: async (id: number, uuid: string) => {
       let tournamentRows;
-      const baseQueryFields = `id, Date, endDate, Title, Location, region, season, eventUuid, status, code, Lat, Lon`;
+      const baseQueryFields = `id, Date, endDate, Title, Location, region, season, eventUuid, status, code, Lat, Lon, codeCoordinator, codeReferee, codeTeam`;
       if (uuid) {
         DD(`Getting tournament by uuid [${uuid}]`);
         tournamentRows = await select(
