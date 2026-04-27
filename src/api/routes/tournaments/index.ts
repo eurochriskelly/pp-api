@@ -60,11 +60,7 @@ export default (db: any, useMock: boolean) => {
   router.get('/', ctrl.getTournaments);
   router.get('/summary', ctrl.getTournamentsSummary);
   router.get('/by-status/:status', ctrl.getTournamentsByStatus);
-  router.get(
-    '/:tournamentId',
-    validateTournamentId,
-    ctrl.getTournament
-  );
+  router.get('/:tournamentId', validateTournamentId, ctrl.getTournament);
   router.get(
     '/:tournamentId/report',
     validateTournamentId,
@@ -80,21 +76,14 @@ export default (db: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.buildTournamentReport
   );
+  router.put('/:tournamentId', validateTournamentId, ctrl.updateTournament);
   router.put(
-    '/:tournamentId',
-    validateTournamentId,
-    ctrl.updateTournament
-  );
-  router.put(
-    '/:tournamentId/status/:status',
+    '/:tournamentId/status',
+    auth,
     validateTournamentId,
     ctrl.updateTournamentStatus
   );
-  router.delete(
-    '/:tournamentId',
-    validateTournamentId,
-    ctrl.deleteTournament
-  );
+  router.delete('/:tournamentId', validateTournamentId, ctrl.deleteTournament);
   router.get('/by-uuid/:uuid', validateUUID('uuid'), ctrl.getTournament);
   router.post(
     '/:tournamentId/reset',
@@ -151,11 +140,7 @@ export default (db: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.getTournamentClubs
   );
-  router.get(
-    '/:tournamentId/filters',
-    validateTournamentId,
-    ctrl.getFilters
-  );
+  router.get('/:tournamentId/filters', validateTournamentId, ctrl.getFilters);
   router.get(
     '/:tournamentId/code-check/:code',
     validateTournamentId,
@@ -171,16 +156,8 @@ export default (db: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.getCardedPlayers
   );
-  router.post(
-    '/:tournamentId/squads',
-    validateTournamentId,
-    ctrl.createSquad
-  );
-  router.get(
-    '/:tournamentId/squads',
-    validateTournamentId,
-    ctrl.getSquads
-  );
+  router.post('/:tournamentId/squads', validateTournamentId, ctrl.createSquad);
+  router.get('/:tournamentId/squads', validateTournamentId, ctrl.getSquads);
   router.get(
     '/:tournamentId/squads/:squadId',
     validateTournamentId,
@@ -242,11 +219,7 @@ export default (db: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.deletePitches
   );
-  router.delete(
-    '/:tournamentId/cards',
-    validateTournamentId,
-    ctrl.deleteCards
-  );
+  router.delete('/:tournamentId/cards', validateTournamentId, ctrl.deleteCards);
   router.post(
     '/:tournamentId/pitches',
     validateTournamentId,

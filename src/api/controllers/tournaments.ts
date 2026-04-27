@@ -17,7 +17,9 @@ function normalizeFixtureImportInput(dbSvc: any, body: unknown) {
   }
 
   if (Buffer.isBuffer(body)) {
-    return flattenValidatedRows(dbSvc.validateTsv(body.toString('base64')).rows);
+    return flattenValidatedRows(
+      dbSvc.validateTsv(body.toString('base64')).rows
+    );
   }
 
   let tsvText: string | null = null;
@@ -25,7 +27,11 @@ function normalizeFixtureImportInput(dbSvc: any, body: unknown) {
   if (typeof body === 'string') {
     tsvText = body;
   } else if (body && typeof body === 'object') {
-    const payload = body as { tsv?: unknown; key?: unknown; tsvEncoded?: unknown };
+    const payload = body as {
+      tsv?: unknown;
+      key?: unknown;
+      tsvEncoded?: unknown;
+    };
 
     if (typeof payload.tsv === 'string') {
       tsvText = payload.tsv;
@@ -184,8 +190,6 @@ function tournamentsController(db: any, useMock: boolean) {
           lat,
           lon,
           codeOrganizer,
-          championshipId,
-          roundNumber,
           winPoints = 2,
           drawPoints = 1,
           lossPoints = 0,
@@ -198,8 +202,6 @@ function tournamentsController(db: any, useMock: boolean) {
           lat,
           lon,
           codeOrganizer,
-          championshipId,
-          roundNumber,
           winPoints,
           drawPoints,
           lossPoints,
@@ -277,8 +279,6 @@ function tournamentsController(db: any, useMock: boolean) {
           lat,
           lon,
           codeOrganizer,
-          championshipId,
-          roundNumber,
           winPoints = 2,
           drawPoints = 1,
           lossPoints = 0,
@@ -291,8 +291,6 @@ function tournamentsController(db: any, useMock: boolean) {
           lat,
           lon,
           codeOrganizer,
-          championshipId,
-          roundNumber,
           winPoints,
           drawPoints,
           lossPoints,
@@ -305,15 +303,76 @@ function tournamentsController(db: any, useMock: boolean) {
     },
 
     updateTournamentStatus: async (
-      req: Request,
+      req: AuthenticatedRequest,
       res: Response,
       next: NextFunction
     ) => {
       try {
-        const { tournamentId, status } = req.params as TournamentParams;
-        await dbSvc.updateTournamentStatus(parseInt(tournamentId, 10), status);
-        const tournament = await dbSvc.getTournament(tournamentId);
-        res.status(200).json(tournament);
+        const { tournamentId } = req.params;
+        const { status } = req.body;
+        const tId = parseInt(tournamentId, 10);
+
+        if (isNaN(tId)) {
+          res.status(400).json({ error: 'INVALID_ID' });
+          return;
+        }
+
+        const VALID_STATUSES = [
+          'new',
+          'in-design',
+          'published',
+          'started',
+          'on-hold',
+          'closed',
+        ];
+        if (!VALID_STATUSES.includes(status)) {
+          res.status(400).json({ error: 'INVALID_STATUS' });
+          return;
+        }
+
+        const tournament = await dbSvc.getTournament(tId);
+        if (!tournament) {
+          res.status(404).json({ error: 'NOT_FOUND' });
+          return;
+        }
+
+        const user = req.user;
+        const isAdmin = user?.role === 'admin';
+        let isOrganizer = false;
+        if (!isAdmin && user?.id) {
+          isOrganizer = await dbSvc.isOrganizer(tId, user.id);
+        }
+        if (!isAdmin && !isOrganizer) {
+          res.status(403).json({ error: 'FORBIDDEN' });
+          return;
+        }
+
+        const currentStatus = tournament.status;
+        const allowedTransitions: Record<string, string[]> = {
+          new: ['in-design', 'published'],
+          'in-design': ['new', 'published'],
+          published: ['in-design', 'started', 'on-hold'],
+          started: ['on-hold', 'closed'],
+          'on-hold': ['started', 'published', 'closed'],
+          closed: ['on-hold'],
+        };
+
+        if (!allowedTransitions[currentStatus]?.includes(status)) {
+          res.status(400).json({
+            error: 'INVALID_TRANSITION',
+            message: `Cannot transition from '${currentStatus}' to '${status}'`,
+          });
+          return;
+        }
+
+        const result = await dbSvc.updateTournamentStatus(tId, status);
+        res.status(200).json({
+          data: {
+            id: tId,
+            status: result.status,
+            previousStatus: result.previousStatus,
+          },
+        });
       } catch (err) {
         next(err);
       }
