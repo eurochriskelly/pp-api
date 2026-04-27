@@ -2,8 +2,14 @@ import dotenv from 'dotenv';
 import mysql from 'mysql2';
 import apiSetup from './api/index';
 import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
+// Load .env.local if present (overrides .env)
+const localEnvPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(localEnvPath)) {
+  dotenv.config({ path: localEnvPath, override: true });
+}
 
 // Get version from package.json
 // Works both with tsx (src/) and compiled output (dist/src/)

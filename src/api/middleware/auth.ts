@@ -23,6 +23,21 @@ function authMiddleware(db: any, useMock: boolean) {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7, authHeader.length);
+
+      // Dev bypass: allow "dev-bypass-token" when PP_BYPASS_AUTH=1
+      if (process.env.PP_BYPASS_AUTH === '1' && token === 'dev-bypass-token') {
+        const bypassEmail = process.env.PP_EMAIL;
+        if (bypassEmail) {
+          req.user = {
+            id: 'dev-bypass',
+            email: bypassEmail,
+            role: process.env.PP_BYPASS_ROLE || 'player',
+            username: bypassEmail,
+          };
+          return next();
+        }
+      }
+
       try {
         const user = await authService.verifyToken(token);
         req.user = user;
