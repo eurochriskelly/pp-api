@@ -18,8 +18,9 @@ function createMockRes() {
 
 test('updateScore accepts structured team score payloads', async () => {
   const servicePath = require.resolve('../../../../src/api/services/fixtures');
-  const controllerPath =
-    require.resolve('../../../../src/api/controllers/fixtures');
+  const controllerPath = require.resolve(
+    '../../../../src/api/controllers/fixtures'
+  );
   const originalServiceModule = require.cache[servicePath];
   const originalControllerModule = require.cache[controllerPath];
 
@@ -128,8 +129,9 @@ test('reschedule rejects missing placement', async () => {
 
 test('reschedule maps targetFixture to relativeFixtureId', async () => {
   const servicePath = require.resolve('../../../../src/api/services/fixtures');
-  const controllerPath =
-    require.resolve('../../../../src/api/controllers/fixtures');
+  const controllerPath = require.resolve(
+    '../../../../src/api/controllers/fixtures'
+  );
   const originalServiceModule = require.cache[servicePath];
   const originalControllerModule = require.cache[controllerPath];
 
