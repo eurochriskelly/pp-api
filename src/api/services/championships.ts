@@ -177,13 +177,16 @@ function championshipsService(db: DbConnection) {
     },
 
     deleteChampionship: async (id: number) => {
-      await update(`UPDATE championships SET status = 'archived' WHERE id = ?`, [
-        id,
-      ]);
+      await update(
+        `UPDATE championships SET status = 'archived' WHERE id = ?`,
+        [id]
+      );
       return { id, message: 'Championship archived' };
     },
 
-    listEntrants: async (championshipId: number): Promise<ChampionshipEntrant[]> => {
+    listEntrants: async (
+      championshipId: number
+    ): Promise<ChampionshipEntrant[]> => {
       return (await select(
         `SELECT id, championshipId, entrantType, clubId, displayName, status
          FROM championship_entrants
@@ -256,7 +259,11 @@ function championshipsService(db: DbConnection) {
       });
 
       if (fields.length === 0) {
-        return { id: entrantId, championshipId, message: 'No changes provided' };
+        return {
+          id: entrantId,
+          championshipId,
+          message: 'No changes provided',
+        };
       }
 
       params.push(championshipId);
@@ -311,7 +318,9 @@ function championshipsService(db: DbConnection) {
       }
 
       if (entrants[0].entrantType !== 'amalgamation') {
-        throw new Error('Amalgamation clubs can only be added to amalgamation entrants');
+        throw new Error(
+          'Amalgamation clubs can only be added to amalgamation entrants'
+        );
       }
 
       await insert(
@@ -325,11 +334,11 @@ function championshipsService(db: DbConnection) {
 
     listRounds: async (championshipId: number): Promise<RoundSummary[]> => {
       const rows = (await select(
-        `SELECT t.roundNumber, t.id, t.Title, t.Date, t.status
-         FROM tournaments t
-         WHERE t.championshipId = ?
-           AND t.roundNumber IS NOT NULL
-         ORDER BY t.roundNumber ASC, t.Date ASC`,
+        `SELECT r.roundNumber, t.id, t.Title, t.Date, t.status
+         FROM rounds r
+         JOIN tournaments t ON t.id = r.eventId
+         WHERE r.championshipId = ?
+         ORDER BY r.roundNumber ASC, t.Date ASC`,
         [championshipId]
       )) as unknown as Array<{
         roundNumber: number;
