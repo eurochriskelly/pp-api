@@ -43,6 +43,14 @@ const cardPlayerSchema = z
   })
   .passthrough(); // Allow other fields like confirmed
 
+// Define Zod schema for slack
+const slackSchema = z.object({
+  minutes: z.number({
+    required_error: 'minutes is required',
+    invalid_type_error: 'minutes must be a number',
+  }),
+});
+
 // Define Zod schema for reschedule
 const rescheduleSchema = z
   .object({
@@ -237,6 +245,41 @@ function fixturesController(db: any, useMock: boolean) {
           return;
         }
         res.status(500).json({ error: 'Internal server error in reschedule' });
+      }
+    },
+
+    slack: async (req: Request, res: Response): Promise<void> => {
+      const { tournamentId, fixtureId } = req.params;
+
+      const validationResult = slackSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        res.status(400).json({
+          error: 'INVALID_REQUEST',
+          message: 'Invalid request body for slack',
+          details: validationResult.error.flatten().fieldErrors,
+        });
+        return;
+      }
+
+      const { minutes } = validationResult.data;
+
+      try {
+        const result = await dbSvc.slack({
+          tournamentId: parseInt(tournamentId, 10),
+          fixtureId: parseInt(fixtureId, 10),
+          minutes,
+        });
+        res.json({ data: result });
+      } catch (err: any) {
+        console.error('Error in slack:', err);
+        if (err?.statusCode) {
+          res.status(err.statusCode).json({
+            error: err.code || 'SLACK_FAILED',
+            message: err.message,
+          });
+          return;
+        }
+        res.status(500).json({ error: 'Internal server error in slack' });
       }
     },
 
