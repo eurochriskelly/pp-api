@@ -572,12 +572,16 @@ export default function fixturesService(db: any) {
         // Insert moved fixture at new position
         fixtures.splice(insertIndex, 0, fixtureToMove);
 
+        fixtures.forEach((fixture: any, index: number) => {
+          fixture.newScheduled = timeSlots[index];
+        });
+
         // Assign saved time slots to fixtures by position
         await transaction(async (tx) => {
           for (let i = 0; i < fixtures.length; i++) {
             await tx.update(
               `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
-              [timeSlots[i], fixtures[i].id, tournamentId]
+              [fixtures[i].newScheduled, fixtures[i].id, tournamentId]
             );
           }
         });
@@ -587,7 +591,7 @@ export default function fixturesService(db: any) {
           fixtureId,
           action: 'move',
           newScheduled: movedFixture
-            ? String(movedFixture.scheduled)
+            ? String(movedFixture.newScheduled || movedFixture.scheduled)
             : String(fixtureToMove.scheduled),
           pitch: destPitch,
         };
@@ -819,7 +823,8 @@ export default function fixturesService(db: any) {
         if (!value) return null;
         const d = new Date(String(value));
         d.setTime(d.getTime() + dayOffsetMs);
-        return d.toISOString().slice(0, 19).replace('T', ' ');
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       };
 
       const updatePlaceholders = (value: any): any => {
