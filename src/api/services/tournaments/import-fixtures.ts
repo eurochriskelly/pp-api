@@ -15,6 +15,7 @@ export interface TsvRow {
   TEAM2: string;
   UMPIRES: string;
   DURATION: string | number;
+  DAY_OFFSET?: string | number;
 }
 
 export interface Fixture {
@@ -157,7 +158,11 @@ function rowsToFixtures(
       }
     }
 
-    const iso = `${startDate}T${pad(r.TIME)}:00.000Z`;
+    const dayOffset = r.DAY_OFFSET ? parseInt(r.DAY_OFFSET as string, 10) : 0;
+    const baseDate = new Date(startDate);
+    baseDate.setDate(baseDate.getDate() + dayOffset);
+    const dateStr = baseDate.toISOString().split('T')[0];
+    const iso = `${dateStr}T${pad(r.TIME)}:00.000Z`;
     const sched = new Date(iso).toISOString().slice(0, 19).replace('T', ' ');
 
     const isGroupStage = stage === 'group';

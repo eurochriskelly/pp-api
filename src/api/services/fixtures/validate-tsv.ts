@@ -90,7 +90,7 @@ export class TSVValidator {
     'UMPIRES',
     'DURATION',
   ];
-  static OPT = ['REFEREE'];
+  static OPT = ['DAY_OFFSET', 'REFEREE'];
   static KO_CODES = new Set([
     'FIN',
     'SF1',
@@ -350,6 +350,7 @@ export class TSVValidator {
       )
     );
     put('DURATION', this._dur(c, r));
+    if (this.hdx.has('DAY_OFFSET')) put('DAY_OFFSET', this._dayOffset(c, r));
     if (this.hdx.has('REFEREE'))
       put('REFEREE', this._pass('REFEREE', c, r, true));
     return out;
@@ -684,6 +685,16 @@ export class TSVValidator {
     return /^\d+$/.test(v)
       ? { value: +v, warnings: [] }
       : this._fw('DURATION', r, 'Non-numeric', v);
+  }
+
+  private _dayOffset(c: string[], r: number): CellResult {
+    const v = (c[this.hdx.get('DAY_OFFSET')!] || '').trim();
+    if (!v) return { value: 0, warnings: [] };
+    if (!/^\d+$/.test(v))
+      return this._fw('DAY_OFFSET', r, 'Must be a positive integer', v);
+    const n = +v;
+    if (n < 0) return this._fw('DAY_OFFSET', r, 'Must be non-negative', v);
+    return { value: n, warnings: [] };
   }
 
   private _pass(h: string, c: string[], r: number, opt = false): CellResult {
