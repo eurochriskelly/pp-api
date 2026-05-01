@@ -1,0 +1,64 @@
+---
+post:
+  summary: 'Slack Fixture Schedule'
+  parameters:
+    - name: tournamentId
+      in: path
+      required: true
+      schema:
+        type: number
+    - name: fixtureId
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - minutes
+          properties:
+            minutes:
+              type: number
+              description: Minutes to add (positive) or subtract (negative) from the selected fixture and all subsequent fixtures on the same pitch.
+
+  responses:
+    '200':
+      description: 'Success'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  fixtureId:
+                    type: number
+                  minutes:
+                    type: number
+                  affectedCount:
+                    type: number
+                  newScheduled:
+                    type: string
+    '400':
+      description: 'Bad Request'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'
+    '404':
+      description: 'Fixture not found'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'
+    '500':
+      description: 'Internal Server Error'
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas/Error.yaml'

@@ -46,6 +46,19 @@ export interface RescheduleResult {
   pitch?: string;
 }
 
+export interface SlackInput {
+  tournamentId: number;
+  fixtureId: number;
+  minutes: number;
+}
+
+export interface SlackResult {
+  fixtureId: number;
+  minutes: number;
+  affectedCount: number;
+  newScheduled?: string;
+}
+
 export default function fixturesService(db: any) {
   const {
     select,
@@ -666,6 +679,82 @@ export default function fixturesService(db: any) {
           pitch: destPitch,
         };
       }
+    },
+
+    slack: async ({
+      tournamentId,
+      fixtureId,
+      minutes,
+    }: SlackInput): Promise<SlackResult> => {
+      // 1. Load fixture
+      const [fixture] = await select(
+        `SELECT id, scheduled, pitch FROM fixtures
+         WHERE id = ? AND tournamentId = ?`,
+        [fixtureId, tournamentId]
+      );
+      if (!fixture) {
+        const error = new Error(`Fixture ${fixtureId} not found`) as Error & {
+          statusCode?: number;
+          code?: string;
+        };
+        error.statusCode = 404;
+        error.code = 'FIXTURE_NOT_FOUND';
+        throw error;
+      }
+
+      const pitch = String(fixture.pitch);
+
+      // 2. Load all fixtures on the same pitch ordered by scheduled time
+      const fixtures = await select(
+        `SELECT id, scheduled FROM fixtures
+         WHERE tournamentId = ? AND pitch = ?
+         ORDER BY scheduled ASC, id ASC`,
+        [tournamentId, pitch]
+      );
+
+      // 3. Find the index of the selected fixture
+      const slackIndex = fixtures.findIndex((f: any) => f.id === fixtureId);
+      if (slackIndex === -1) {
+        const error = new Error(
+          `Fixture ${fixtureId} not found on pitch ${pitch}`
+        ) as Error & {
+          statusCode?: number;
+          code?: string;
+        };
+        error.statusCode = 404;
+        error.code = 'FIXTURE_NOT_ON_PITCH';
+        throw error;
+      }
+
+      // 4. Apply slack to selected fixture and all subsequent fixtures
+      const addMinutes = (value: string, mins: number) => {
+        const date = new Date(String(value));
+        date.setMinutes(date.getMinutes() + mins);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+      };
+
+      const affectedFixtures = fixtures.slice(slackIndex);
+      for (const f of affectedFixtures) {
+        f.newScheduled = addMinutes(String(f.scheduled), minutes);
+      }
+
+      // 5. Update in transaction
+      await transaction(async (tx) => {
+        for (const f of affectedFixtures) {
+          await tx.update(
+            `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
+            [f.newScheduled, f.id, tournamentId]
+          );
+        }
+      });
+
+      return {
+        fixtureId,
+        minutes,
+        affectedCount: affectedFixtures.length,
+        newScheduled: String(affectedFixtures[0].newScheduled),
+      };
     },
 
     copyFixtures: async (

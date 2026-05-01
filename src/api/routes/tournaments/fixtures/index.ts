@@ -49,6 +49,7 @@ export default (db: any, useMock: boolean) => {
     validateNumericId('fixtureId'),
     ctrl.reschedule
   );
+  router.post('/:fixtureId/slack', validateNumericId('fixtureId'), ctrl.slack);
   router.post(
     '/:fixtureId/score',
     validateNumericId('fixtureId'),
