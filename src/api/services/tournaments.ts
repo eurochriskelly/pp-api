@@ -410,6 +410,14 @@ export default (db: any) => {
     createFixtures: async (tournamentId: number, fixtureRows: any[]) => {
       DD(`Creating fixtures for tournament with id ${tournamentId}`);
       try {
+        const [tournamentRow] = (await select(
+          'SELECT Date FROM tournaments WHERE id = ?',
+          [tournamentId]
+        )) as { Date: string | null }[];
+        const startDate = tournamentRow?.Date
+          ? new Date(tournamentRow.Date).toISOString().split('T')[0]
+          : '2025-01-01';
+
         const uniquePitches = [...new Set(fixtureRows.map((row) => row.PITCH))];
         const pitches = uniquePitches.map((pitchName) => {
           return {
@@ -422,7 +430,7 @@ export default (db: any) => {
         const sql = buildFixturesInsertSQL(
           fixtureRows,
           tournamentId,
-          '2025-01-01'
+          startDate
         );
         await deleteFixtures(dbDelete, tournamentId);
         await deletePitches(dbDelete, tournamentId);

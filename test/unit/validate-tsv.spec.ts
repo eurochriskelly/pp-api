@@ -178,3 +178,47 @@ test('TSV validator scopes WINNER/LOSER uniqueness per category', () => {
   );
   assert.equal(dupWarnings.length, 0);
 });
+
+test('TSV validator accepts valid DAY_OFFSET values', () => {
+  const tsvWithOffset = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+10:00\tA.02\tCup\tPitch_2\tCharlie\tGp.1\tDelta\tEpsilon\t20\t1
+11:00\tA.03\tCup\tPitch_3\tEcho\tGp.2\tFoxtrot\tGolf\t20\t5`;
+  const result = new TSVValidator(
+    Buffer.from(tsvWithOffset, 'utf8').toString('base64')
+  ).validate();
+
+  const offsetWarnings = result.warnings.filter(
+    (w) => w.column === 'DAY_OFFSET'
+  );
+  assert.equal(offsetWarnings.length, 0);
+  assert.equal(result.rows[0].DAY_OFFSET.value, 0);
+  assert.equal(result.rows[1].DAY_OFFSET.value, 1);
+  assert.equal(result.rows[2].DAY_OFFSET.value, 5);
+});
+
+test('TSV validator rejects negative DAY_OFFSET values', () => {
+  const tsvNegOffset = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t-1`;
+  const result = new TSVValidator(
+    Buffer.from(tsvNegOffset, 'utf8').toString('base64')
+  ).validate();
+
+  const offsetWarnings = result.warnings.filter(
+    (w) => w.column === 'DAY_OFFSET' && w.message.includes('positive integer')
+  );
+  assert.equal(offsetWarnings.length, 1);
+});
+
+test('TSV validator rejects non-numeric DAY_OFFSET values', () => {
+  const tsvBadOffset = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\ttomorrow`;
+  const result = new TSVValidator(
+    Buffer.from(tsvBadOffset, 'utf8').toString('base64')
+  ).validate();
+
+  const offsetWarnings = result.warnings.filter(
+    (w) => w.column === 'DAY_OFFSET' && w.message.includes('positive integer')
+  );
+  assert.equal(offsetWarnings.length, 1);
+});
