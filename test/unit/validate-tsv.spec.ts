@@ -131,7 +131,7 @@ test('TSV validator rejects duplicate WINNER/LOSER in TEAM1/TEAM2', () => {
   );
   assert.equal(dupWarnings.length, 1);
   assert.equal(dupWarnings[0].column, 'TEAM1');
-  assert.ok(dupWarnings[0].message.includes('WINNER A.01'));
+  assert.ok(dupWarnings[0].message.includes('WINNER A.1'));
 });
 
 test('TSV validator allows same WINNER/LOSER in UMPIRES and TEAM1', () => {
@@ -221,4 +221,172 @@ test('TSV validator rejects non-numeric DAY_OFFSET values', () => {
     (w) => w.column === 'DAY_OFFSET' && w.message.includes('positive integer')
   );
   assert.equal(offsetWarnings.length, 1);
+});
+
+test('TSV validator allows same time and pitch on different days via DAY_OFFSET', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:00\tA.02\tCup\tPitch_1\tCharlie\tGp.1\tDelta\tEpsilon\t20\t1`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const twoMatchesWarnings = result.warnings.filter((w) =>
+    w.message.includes('Two matches at')
+  );
+  assert.equal(twoMatchesWarnings.length, 0);
+});
+
+test('TSV validator still warns same time and pitch on same day', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:00\tA.02\tCup\tPitch_1\tCharlie\tGp.1\tDelta\tEpsilon\t20\t0`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const twoMatchesWarnings = result.warnings.filter((w) =>
+    w.message.includes('Two matches at')
+  );
+  assert.equal(twoMatchesWarnings.length, 1);
+});
+
+test('TSV validator allows team in two matches at same time on different days', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:00\tA.02\tCup\tPitch_2\tAlpha\tGp.1\tDelta\tEpsilon\t20\t1`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const teamWarnings = result.warnings.filter((w) =>
+    w.message.includes('in two matches at')
+  );
+  assert.equal(teamWarnings.length, 0);
+});
+
+test('TSV validator still warns when team in two matches at same time same day', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:00\tA.02\tCup\tPitch_2\tAlpha\tGp.1\tDelta\tEpsilon\t20\t0`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const teamWarnings = result.warnings.filter((w) =>
+    w.message.includes('in two matches at')
+  );
+  assert.equal(teamWarnings.length, 1);
+});
+
+test('TSV validator allows pitch overlap on different days', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t30\t0
+09:15\tA.02\tCup\tPitch_1\tCharlie\tGp.1\tDelta\tEpsilon\t30\t1`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const overlapWarnings = result.warnings.filter((w) =>
+    w.message.includes('Overlap on')
+  );
+  assert.equal(overlapWarnings.length, 0);
+});
+
+test('TSV validator still warns pitch overlap on same day', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t30\t0
+09:15\tA.02\tCup\tPitch_1\tCharlie\tGp.1\tDelta\tEpsilon\t30\t0`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const overlapWarnings = result.warnings.filter((w) =>
+    w.message.includes('Overlap on')
+  );
+  assert.equal(overlapWarnings.length, 1);
+});
+
+test('TSV validator allows WINNER/LOSER reference from earlier day to later day', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tA.SF1\tBeta\tGamma\t20\t0
+08:00\tA.02\tCup\tPitch_2\tWinner A.01\tA.FIN\tDelta\tEpsilon\t20\t1`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const refWarnings = result.warnings.filter((w) =>
+    w.message.includes('scheduled later or same time')
+  );
+  assert.equal(refWarnings.length, 0);
+});
+
+test('TSV validator warns WINNER/LOSER reference from earlier day to later day', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tA.SF1\tBeta\tGamma\t20\t1
+08:00\tA.02\tCup\tPitch_2\tWinner A.01\tA.FIN\tDelta\tEpsilon\t20\t0`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const refWarnings = result.warnings.filter((w) =>
+    w.message.includes('scheduled later or same time')
+  );
+  assert.equal(refWarnings.length, 1);
+});
+
+test('TSV validator allows short rest gap on different days', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:05\tA.02\tCup\tPitch_2\tAlpha\tGp.1\tDelta\tEpsilon\t20\t1`;
+  const result = new TSVValidator(Buffer.from(tsv, 'utf8').toString('base64'), {
+    restGapMultiplier: 1,
+  }).validate();
+
+  const gapWarnings = result.warnings.filter((w) =>
+    w.message.includes('rest gap')
+  );
+  assert.equal(gapWarnings.length, 0);
+});
+
+test('TSV validator warns short rest gap on same day', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:05\tA.02\tCup\tPitch_2\tAlpha\tGp.1\tDelta\tEpsilon\t20\t0`;
+  const result = new TSVValidator(Buffer.from(tsv, 'utf8').toString('base64'), {
+    restGapMultiplier: 1,
+  }).validate();
+
+  const gapWarnings = result.warnings.filter((w) =>
+    w.message.includes('rest gap')
+  );
+  assert.equal(gapWarnings.length, 1);
+});
+
+test('TSV validator allows team playing and umpiring at same time on different days', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:00\tA.02\tCup\tPitch_2\tCharlie\tGp.1\tDelta\tAlpha\t20\t1`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const roleWarnings = result.warnings.filter((w) =>
+    w.message.includes('both playing and umpiring')
+  );
+  assert.equal(roleWarnings.length, 0);
+});
+
+test('TSV validator warns team playing and umpiring at same time same day', () => {
+  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION\tDAY_OFFSET
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20\t0
+09:00\tA.02\tCup\tPitch_2\tCharlie\tGp.1\tDelta\tAlpha\t20\t0`;
+  const result = new TSVValidator(
+    Buffer.from(tsv, 'utf8').toString('base64')
+  ).validate();
+
+  const roleWarnings = result.warnings.filter((w) =>
+    w.message.includes('both playing and umpiring')
+  );
+  assert.equal(roleWarnings.length, 1);
 });
