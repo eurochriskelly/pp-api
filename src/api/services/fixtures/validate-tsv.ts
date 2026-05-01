@@ -471,8 +471,9 @@ export class TSVValidator {
         return this._fw(col, r, 'WINNER/LOSER needs match reference', up);
       let mid = tok[1];
 
-      if (/^[A-Z]+\.\d+$/.test(mid)) {
-        // It's already a match ID
+      const normRef = /^([A-Z]+)\.([0-9]+)$/.exec(mid);
+      if (normRef) {
+        mid = `${normRef[1]}.${Number(normRef[2])}`;
       } else if (/^[A-Z]+\.[A-Z0-9/]+$/i.test(mid)) {
         const stageMap = this.preScannedCatStages.get(cat) || new Map();
         const resolvedMatchId = stageMap.get(mid.toUpperCase());
@@ -504,6 +505,19 @@ export class TSVValidator {
 
       const preScannedMap = this.preScannedCatMatches.get(cat) || new Map();
       if (!preScannedMap.has(mid)) {
+        // For umpires, allow cross-category match references
+        if (isUmp) {
+          let foundInOtherCat = false;
+          for (const [otherCat, otherMap] of this.preScannedCatMatches) {
+            if (otherCat !== cat && otherMap.has(mid)) {
+              foundInOtherCat = true;
+              break;
+            }
+          }
+          if (foundInOtherCat) {
+            return { value: `${tok[0]} ${mid}`, warnings: [] };
+          }
+        }
         const w = warn(
           'integrity',
           `Unknown match ${mid} referenced in "${raw}"`,
@@ -666,8 +680,8 @@ export class TSVValidator {
       };
     }
 
-    // Allow real team names as umpires for knockout stages
-    if (isUmp && this._isRealTeam(up)) {
+    // Allow real team names for knockout stages
+    if (this._isRealTeam(up)) {
       return { value: up, warnings: [] };
     }
 
@@ -726,6 +740,10 @@ export class TSVValidator {
     return !/^(WINNER|LOSER|BEST|WORST|GP\.|\d+(?:ST|ND|RD|TH))/.test(
       v.toUpperCase()
     );
+  }
+
+  private _day(row: RowData): number {
+    return (row.DAY_OFFSET?.value as number) ?? 0;
   }
 
   /* —— cross-checks —— */
@@ -795,21 +813,24 @@ export class TSVValidator {
 
     const timePitch = new Set<string>();
     this.rows.forEach((r) => {
-      const key = `${r.TIME.value}@${r.PITCH.value}`;
+      const key = `${this._day(r)}#${r.TIME.value}@${r.PITCH.value}`;
       if (timePitch.has(key)) {
-        this.warnings.push(warn('integrity', `Two matches at ${key}`));
+        this.warnings.push(
+          warn('integrity', `Two matches at ${r.TIME.value}@${r.PITCH.value}`)
+        );
       }
       timePitch.add(key);
     });
 
     const teamTime = new Set<string>();
     this.rows.forEach((r) => {
+      const d = this._day(r);
       const t = r.TIME.value as string;
       const cat = r.CATEGORY.value as string;
       [r.TEAM1, r.TEAM2].forEach((ent) => {
         const name = (ent.value as string)?.toUpperCase();
         if (!name || !this._isRealTeam(name)) return;
-        const key = `${t}#${cat}#${name}`;
+        const key = `${d}#${t}#${cat}#${name}`;
         if (teamTime.has(key)) {
           this.warnings.push(
             warn('integrity', `Team ${name} (${cat}) in two matches at ${t}`)
@@ -820,19 +841,25 @@ export class TSVValidator {
     });
 
     const byPitch: {
-      [pitch: string]: Array<{ s: number; e: number; row: number }>;
+      [pitch: string]: Array<{
+        day: number;
+        s: number;
+        e: number;
+        row: number;
+      }>;
     } = {};
     this.rows.forEach((r, idx) => {
+      const day = this._day(r);
       const s = this._min(r.TIME.value as string);
       const e = s + ((r.DURATION.value as number) || 0);
       const p = r.PITCH.value as string;
       byPitch[p] ??= [];
-      byPitch[p].push({ s, e, row: idx });
+      byPitch[p].push({ day, s, e, row: idx });
     });
     for (const [p, list] of Object.entries(byPitch)) {
-      list.sort((a, b) => a.s - b.s);
+      list.sort((a, b) => (a.day !== b.day ? a.day - b.day : a.s - b.s));
       for (let i = 1; i < list.length; i++) {
-        if (list[i].s < list[i - 1].e) {
+        if (list[i].day === list[i - 1].day && list[i].s < list[i - 1].e) {
           this.warnings.push(
             warn(
               'integrity',
@@ -843,21 +870,27 @@ export class TSVValidator {
       }
     }
 
-    const matchMinutes = new Map<string, number>();
+    const matchMinutes = new Map<string, { day: number; min: number }>();
     this.rows.forEach((r) =>
-      matchMinutes.set(
-        r.MATCH.value as string,
-        this._min(r.TIME.value as string)
-      )
+      matchMinutes.set(r.MATCH.value as string, {
+        day: this._day(r),
+        min: this._min(r.TIME.value as string),
+      })
     );
     this.rows.forEach((r, row) => {
+      const curDay = this._day(r);
+      const curMin = this._min(r.TIME.value as string);
       ['TEAM1', 'TEAM2', 'UMPIRES'].forEach((col) => {
         const val = (r[col].value as string)?.toUpperCase() || '';
         const m = /\b(?:WINNER|LOSER) ([A-Z]+\.\d+)/.exec(val);
         if (m) {
           const ref = m[1];
-          const refT = matchMinutes.get(ref);
-          if (refT !== undefined && this._min(r.TIME.value as string) <= refT) {
+          const refInfo = matchMinutes.get(ref);
+          if (
+            refInfo !== undefined &&
+            (curDay < refInfo.day ||
+              (curDay === refInfo.day && curMin <= refInfo.min))
+          ) {
             this.warnings.push(
               warn(
                 'integrity',
@@ -928,9 +961,10 @@ export class TSVValidator {
     if (this.opts.restGapMultiplier > 0) {
       const sched = new Map<
         string,
-        Array<{ s: number; d: number; row: number }>
+        Array<{ day: number; s: number; d: number; row: number }>
       >();
       this.rows.forEach((r, idx) => {
+        const day = this._day(r);
         const s = this._min(r.TIME.value as string);
         const d = (r.DURATION.value as number) || 0;
         const cat = r.CATEGORY.value as string;
@@ -939,15 +973,16 @@ export class TSVValidator {
           if (!name || !this._isRealTeam(name)) return;
           const key = `${cat}#${name}`;
           if (!sched.has(key)) sched.set(key, []);
-          sched.get(key)!.push({ s, d, row: idx });
+          sched.get(key)!.push({ day, s, d, row: idx });
         });
       });
       for (const [key, list] of sched.entries()) {
         const [cat, team] = key.split('#');
-        list.sort((a, b) => a.s - b.s);
+        list.sort((a, b) => (a.day !== b.day ? a.day - b.day : a.s - b.s));
         for (let i = 1; i < list.length; i++) {
           const prev = list[i - 1];
           const cur = list[i];
+          if (cur.day !== prev.day) continue;
           const minGap = prev.d * this.opts.restGapMultiplier;
           if (cur.s < prev.s + prev.d + minGap) {
             this.warnings.push(
@@ -963,11 +998,12 @@ export class TSVValidator {
 
     const roleMap = new Map<string, { play: boolean; ump: boolean }>();
     this.rows.forEach((r, idx) => {
+      const d = this._day(r);
       const t = r.TIME.value as string;
       const cat = r.CATEGORY.value as string;
       const add = (team: string | undefined, role: 'play' | 'ump') => {
         if (!team || !this._isRealTeam(team)) return;
-        const key = `${t}#${cat}#${team}`;
+        const key = `${d}#${t}#${cat}#${team}`;
         const obj = roleMap.get(key) || { play: false, ump: false };
         obj[role] = true;
         if (obj.play && obj.ump) {
@@ -1054,10 +1090,9 @@ export class TSVValidator {
       }
 
       const matchIdParts = matchId.split('.');
-      const formattedMatchId = `${matchIdParts[0]}.${matchIdParts[1].padStart(
-        2,
-        ' '
-      )}>`;
+      const formattedMatchId = `${matchIdParts[0]}.${(
+        matchIdParts[1] || ''
+      ).padStart(2, ' ')}>`;
 
       const team1Display = `"${team1}"`.padEnd(26);
       const team2Display = `"${team2}"`.padEnd(26);
