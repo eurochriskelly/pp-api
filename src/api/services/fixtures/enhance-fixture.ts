@@ -69,6 +69,8 @@ export interface Infringements {
 export interface EmbellishedFixture extends Fixture {
   team1: string;
   team2: string;
+  team1Ready: boolean;
+  team2Ready: boolean;
   lane: LaneInfo;
   competition: CompetitionInfo;
   umpireTeam: string | undefined;
@@ -97,6 +99,20 @@ export default function enhanceFixtureFactory({
     select,
     logger: DD,
   });
+
+  async function getTeamReady(
+    tournamentId: number,
+    teamName: string
+  ): Promise<boolean> {
+    if (!teamName || teamName.startsWith('~')) {
+      return false;
+    }
+    const [record] = await select(
+      `SELECT ready FROM competition_teams WHERE tournamentId = ? AND teamName = ?`,
+      [tournamentId, teamName]
+    );
+    return record ? record.ready === true : false;
+  }
 
   async function embellishFixture(
     fixture: Fixture | null,
@@ -135,10 +151,19 @@ export default function enhanceFixtureFactory({
       );
     }
 
+    const team1Name = fixture.team1Id || fixture.team1 || '';
+    const team2Name = fixture.team2Id || fixture.team2 || '';
+    const [team1Ready, team2Ready] = await Promise.all([
+      getTeamReady(fixture.tournamentId, team1Name),
+      getTeamReady(fixture.tournamentId, team2Name),
+    ]);
+
     const baseEmbellished: EmbellishedFixture = {
       ...fixture,
-      team1: fixture.team1Id || fixture.team1 || '',
-      team2: fixture.team2Id || fixture.team2 || '',
+      team1: team1Name,
+      team2: team2Name,
+      team1Ready,
+      team2Ready,
       lane: { current: currentLane, allowedLanes },
       competition: {
         offset: competitionData.offset,
