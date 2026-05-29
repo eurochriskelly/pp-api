@@ -65,6 +65,19 @@ export function calculateFinalRankings(
     });
   });
 
+  const realTeams = new Set<string>();
+  teamsByGroup.forEach((g) => {
+    g.teams.forEach((team) => realTeams.add(team));
+  });
+  teamsByBracket.forEach((b) => {
+    b.teams.forEach((team) => realTeams.add(team));
+  });
+  allGroupsStandings.forEach((standing) => realTeams.add(standing.team));
+
+  function isRealTeam(teamName: string | null | undefined): teamName is string {
+    return Boolean(teamName && realTeams.has(teamName));
+  }
+
   function getTeamGroup(teamName: string): string | null {
     return teamToGroupMap.get(teamName) || null;
   }
@@ -138,8 +151,8 @@ export function calculateFinalRankings(
 
       const bracketTeams = new Set<string>();
       bracketFixtures.forEach((f) => {
-        if (f.team1.name) bracketTeams.add(f.team1.name);
-        if (f.team2.name) bracketTeams.add(f.team2.name);
+        if (isRealTeam(f.team1.name)) bracketTeams.add(f.team1.name);
+        if (isRealTeam(f.team2.name)) bracketTeams.add(f.team2.name);
       });
 
       PLAYOFF_STAGE_ORDER.forEach((stageCode) => {
@@ -150,7 +163,9 @@ export function calculateFinalRankings(
           fixture.outcome === 'not played' ||
           fixture.outcome === 'skipped' ||
           !fixture.team1.name ||
-          !fixture.team2.name
+          !fixture.team2.name ||
+          !isRealTeam(fixture.team1.name) ||
+          !isRealTeam(fixture.team2.name)
         ) {
           return;
         }
@@ -206,7 +221,7 @@ export function calculateFinalRankings(
     if (teamsByBracketMap.has('None')) {
       const noneBracketTeams = teamsByBracketMap
         .get('None')!
-        .filter((team) => !rankedTeams.has(team))
+        .filter((team) => isRealTeam(team) && !rankedTeams.has(team))
         .sort(compareTeamsForRanking);
 
       noneBracketTeams.forEach((team) => {
@@ -224,7 +239,7 @@ export function calculateFinalRankings(
     });
 
     sortedTeams.forEach((standing) => {
-      if (!rankedTeams.has(standing.team)) {
+      if (isRealTeam(standing.team) && !rankedTeams.has(standing.team)) {
         rankings.push(createRankingEntry(standing.team, 'None', null));
         rankedTeams.add(standing.team);
       }
