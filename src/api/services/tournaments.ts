@@ -511,6 +511,7 @@ export default (db: any) => {
         lat,
         lon,
         codeOrganizer,
+        codeCoordinator,
         winPoints = 2,
         drawPoints = 1,
         lossPoints = 0,
@@ -522,6 +523,7 @@ export default (db: any) => {
         lat: number;
         lon: number;
         codeOrganizer: string;
+        codeCoordinator?: string;
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
@@ -530,10 +532,11 @@ export default (db: any) => {
       const eventUuid = uuidv4();
       await insert(
         `INSERT INTO tournaments (
-           region, Title, Date, Location, Lat, Lon, eventUuid, code, status,
+           region, Title, Date, Location, Lat, Lon, eventUuid, code,
+           codeCoordinator, status,
            pointsForWin, pointsForDraw, pointsForLoss
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           region,
           title,
@@ -543,6 +546,7 @@ export default (db: any) => {
           lon,
           eventUuid,
           codeOrganizer,
+          codeCoordinator || null,
           'in-design',
           winPoints,
           drawPoints,
@@ -642,6 +646,7 @@ export default (db: any) => {
         lat,
         lon,
         codeOrganizer,
+        codeCoordinator,
         winPoints = 3,
         drawPoints = 1,
         lossPoints = 0,
@@ -653,6 +658,7 @@ export default (db: any) => {
         lat: number;
         lon: number;
         codeOrganizer: string;
+        codeCoordinator?: string;
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
@@ -661,7 +667,7 @@ export default (db: any) => {
       await update(
         `UPDATE tournaments 
          SET Region = ?, Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ?, 
-         code = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
+         code = ?, codeCoordinator = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
          WHERE id = ?`,
         [
           region,
@@ -671,6 +677,7 @@ export default (db: any) => {
           lat,
           lon,
           codeOrganizer,
+          codeCoordinator || null,
           winPoints,
           drawPoints,
           lossPoints,
