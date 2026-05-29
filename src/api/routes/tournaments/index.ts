@@ -227,6 +227,7 @@ export default (db: any, useMock: boolean) => {
   );
   router.post(
     '/:tournamentId/fixtures',
+    auth,
     validateTournamentId,
     express.raw({
       type: isTsvUploadRequest,
