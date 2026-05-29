@@ -258,6 +258,23 @@ export default function mockTournamentsService() {
       }
     },
 
+    findTournamentByUniqueFields: async (
+      region: string,
+      title: string,
+      date: string,
+      location: string
+    ) => {
+      return (
+        mockTournaments.find(
+          (t) =>
+            t.region === region &&
+            t.title === title &&
+            t.startDate === date &&
+            t.location === location
+        ) || null
+      );
+    },
+
     deleteTournament: async (id: string | number) => {
       const index = mockTournaments.findIndex((t) => t.id === String(id));
       if (index >= 0) {
