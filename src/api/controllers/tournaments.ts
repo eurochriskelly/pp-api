@@ -135,6 +135,36 @@ type AuthenticatedRequest = Request & {
   };
 };
 
+function parseTsvMetadata(tsvText: string): {
+  metadata: Record<string, string>;
+  tsvBody: string;
+} {
+  const lines = tsvText.split('\n');
+  const metadata: Record<string, string> = {};
+  let firstDataLine = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('%')) {
+      const content = line.substring(1).trim();
+      const colonIndex = content.indexOf(':');
+      if (colonIndex > 0) {
+        const key = content.substring(0, colonIndex).trim().toUpperCase();
+        const value = content.substring(colonIndex + 1).trim();
+        metadata[key] = value;
+      }
+      firstDataLine = i + 1;
+    } else if (line === '') {
+      firstDataLine = i + 1;
+    } else {
+      break;
+    }
+  }
+
+  const tsvBody = lines.slice(firstDataLine).join('\n');
+  return { metadata, tsvBody };
+}
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     value
@@ -920,6 +950,141 @@ function tournamentsController(db: any, useMock: boolean) {
         const fixtureRows = normalizeFixtureImportInput(dbSvc, req.body);
         const fixtures = await dbSvc.createFixtures(tournamentId, fixtureRows);
         res.status(201).json({ data: fixtures });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    createFixturesWithTournament: async (
+      req: AuthenticatedRequest,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        let tsvText: string;
+        if (Buffer.isBuffer(req.body)) {
+          tsvText = req.body.toString('utf8');
+        } else if (typeof req.body === 'string') {
+          tsvText = req.body;
+        } else if (req.body && typeof req.body === 'object') {
+          const payload = req.body as { tsv?: string; key?: string };
+          if (typeof payload.tsv === 'string') {
+            tsvText = payload.tsv;
+          } else if (typeof payload.key === 'string') {
+            tsvText = Buffer.from(payload.key, 'base64').toString('utf8');
+          } else {
+            res.status(400).json({ error: 'TSV_BODY_REQUIRED' });
+            return;
+          }
+        } else {
+          res.status(400).json({ error: 'TSV_BODY_REQUIRED' });
+          return;
+        }
+
+        const { metadata, tsvBody } = parseTsvMetadata(tsvText);
+
+        const region = metadata['REGION'];
+        const title = metadata['TITLE'];
+        const location = metadata['LOCATION'];
+        const date = metadata['DATE'];
+
+        if (!region || !title || !location || !date) {
+          res.status(400).json({
+            error: 'MISSING_TOURNAMENT_METADATA',
+            message:
+              'TSV must include % REGION, % TITLE, % LOCATION, and % DATE headers.',
+          });
+          return;
+        }
+
+        const latLon = metadata['LAT-LON'];
+        let lat = 0;
+        let lon = 0;
+        if (latLon) {
+          const [latStr, lonStr] = latLon.split(',').map((s) => s.trim());
+          lat = parseFloat(latStr) || 0;
+          lon = parseFloat(lonStr) || 0;
+        }
+
+        const codeOrgCoord = metadata['CODE-ORG-COORD'];
+        let codeOrganizer = '';
+        let codeCoordinator = '';
+        if (codeOrgCoord) {
+          const parts = codeOrgCoord.split(',').map((s) => s.trim());
+          codeOrganizer = parts[0] || '';
+          codeCoordinator = parts[1] || '';
+        }
+
+        const winDrawLoss = metadata['WIN-DRAW-LOSS'];
+        let winPoints = 2;
+        let drawPoints = 1;
+        let lossPoints = 0;
+        if (winDrawLoss) {
+          const parts = winDrawLoss.split(',').map((s) => s.trim());
+          winPoints = parseInt(parts[0], 10) || 2;
+          drawPoints = parseInt(parts[1], 10) || 1;
+          lossPoints = parseInt(parts[2], 10) || 0;
+        }
+
+        const userId =
+          (req.user?.id as number | string | undefined) ??
+          (req.body?.userId as number | string | undefined) ??
+          1;
+
+        let tournament = await dbSvc.findTournamentByUniqueFields(
+          region,
+          title,
+          date,
+          location
+        );
+
+        if (tournament) {
+          await dbSvc.updateTournament(tournament.id, {
+            region,
+            title,
+            date,
+            location,
+            lat,
+            lon,
+            codeOrganizer,
+            codeCoordinator,
+            winPoints,
+            drawPoints,
+            lossPoints,
+          });
+          tournament = await dbSvc.getTournament(tournament.id);
+        } else {
+          tournament = await dbSvc.createTournament(userId, {
+            region,
+            title,
+            date,
+            location,
+            lat,
+            lon,
+            codeOrganizer,
+            codeCoordinator,
+            winPoints,
+            drawPoints,
+            lossPoints,
+          });
+        }
+
+        const fixtureRows = normalizeFixtureImportInput(
+          dbSvc,
+          Buffer.from(tsvBody, 'utf8')
+        );
+        const fixtures = await dbSvc.createFixtures(tournament.id, fixtureRows);
+
+        res.status(201).json({
+          data: {
+            tournament: {
+              id: tournament.id,
+              title: tournament.Title || tournament.title,
+              eventUuid: tournament.eventUuid,
+            },
+            fixtures,
+          },
+        });
       } catch (err) {
         next(err);
       }

@@ -60,6 +60,17 @@ export default (db: any, useMock: boolean) => {
   router.get('/', ctrl.getTournaments);
   router.get('/summary', ctrl.getTournamentsSummary);
   router.get('/by-status/:status', ctrl.getTournamentsByStatus);
+
+  router.post(
+    '/fixtures',
+    auth,
+    express.raw({
+      type: isTsvUploadRequest,
+      limit: '10mb',
+    }),
+    ctrl.createFixturesWithTournament
+  );
+
   router.get('/:tournamentId', validateTournamentId, ctrl.getTournament);
   router.get(
     '/:tournamentId/report',

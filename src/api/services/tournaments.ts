@@ -694,6 +694,24 @@ export default (db: any) => {
       return updatedTournament;
     },
 
+    findTournamentByUniqueFields: async (
+      region: string,
+      title: string,
+      date: string,
+      location: string
+    ) => {
+      const rows = await select(
+        `SELECT id, Date, endDate, Title, Location, region, season, eventUuid,
+         status, code, Lat, Lon, codeCoordinator, codeReferee, codeTeam,
+         pointsForWin, pointsForDraw, pointsForLoss
+         FROM tournaments
+         WHERE region = ? AND Title = ? AND Date = ? AND Location = ?
+         LIMIT 1`,
+        [region, title, date, location]
+      );
+      return rows.length > 0 ? rows[0] : null;
+    },
+
     updateTournamentStatus: async (id: number, status: string) => {
       const [existing] = (await select(
         `SELECT status FROM tournaments WHERE id = ?`,
