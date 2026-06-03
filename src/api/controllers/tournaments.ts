@@ -113,6 +113,7 @@ type TournamentBody = {
   lat?: number;
   lon?: number;
   codeOrganizer?: string;
+  codeCoordinator?: string;
   winPoints?: number;
   drawPoints?: number;
   lossPoints?: number;
@@ -312,23 +313,35 @@ function tournamentsController(db: any, useMock: boolean) {
           lon,
           codeOrganizer,
           codeCoordinator,
-          winPoints = 2,
-          drawPoints = 1,
-          lossPoints = 0,
-        } = req.body;
-        await dbSvc.updateTournament(tournamentId, {
-          region,
-          title,
-          date,
-          location,
-          lat,
-          lon,
-          codeOrganizer,
-          codeCoordinator,
           winPoints,
           drawPoints,
           lossPoints,
-        });
+        } = req.body;
+        const updateData: Partial<{
+          region: string;
+          title: string;
+          date: string;
+          location: string;
+          lat: number;
+          lon: number;
+          codeOrganizer: string;
+          codeCoordinator: string;
+          winPoints: number;
+          drawPoints: number;
+          lossPoints: number;
+        }> = {};
+        if (region !== undefined) updateData.region = region;
+        if (title !== undefined) updateData.title = title;
+        if (date !== undefined) updateData.date = date;
+        if (location !== undefined) updateData.location = location;
+        if (lat !== undefined) updateData.lat = lat;
+        if (lon !== undefined) updateData.lon = lon;
+        if (codeOrganizer !== undefined) updateData.codeOrganizer = codeOrganizer;
+        if (codeCoordinator !== undefined) updateData.codeCoordinator = codeCoordinator;
+        if (winPoints !== undefined) updateData.winPoints = winPoints;
+        if (drawPoints !== undefined) updateData.drawPoints = drawPoints;
+        if (lossPoints !== undefined) updateData.lossPoints = lossPoints;
+        await dbSvc.updateTournament(tournamentId, updateData);
         const tournament = await dbSvc.getTournament(tournamentId);
         res.status(200).json(tournament);
       } catch (err) {
