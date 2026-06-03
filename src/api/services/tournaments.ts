@@ -638,51 +638,48 @@ export default (db: any) => {
 
     updateTournament: async (
       id: number,
-      {
-        region,
-        title,
-        date,
-        location,
-        lat,
-        lon,
-        codeOrganizer,
-        codeCoordinator,
-        winPoints = 3,
-        drawPoints = 1,
-        lossPoints = 0,
-      }: {
-        region: string;
-        title: string;
-        date: string;
-        location: string;
-        lat: number;
-        lon: number;
-        codeOrganizer: string;
+      updateData: {
+        region?: string;
+        title?: string;
+        date?: string;
+        location?: string;
+        lat?: number;
+        lon?: number;
+        codeOrganizer?: string;
         codeCoordinator?: string;
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
       }
     ) => {
+      const fields: string[] = [];
+      const values: (string | number | null)[] = [];
+      const fieldMap: Record<string, string> = {
+        region: 'Region',
+        title: 'Title',
+        date: 'Date',
+        location: 'Location',
+        lat: 'Lat',
+        lon: 'Lon',
+        codeOrganizer: 'code',
+        codeCoordinator: 'codeCoordinator',
+        winPoints: 'pointsForWin',
+        drawPoints: 'pointsForDraw',
+        lossPoints: 'pointsForLoss',
+      };
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== undefined) {
+          fields.push(`${fieldMap[key]} = ?`);
+          values.push(value);
+        }
+      }
+      if (fields.length === 0) {
+        throw new Error('No fields provided for update');
+      }
+      values.push(id);
       await update(
-        `UPDATE tournaments 
-         SET Region = ?, Title = ?, Date = ?, Location = ?, Lat = ?, Lon = ?, 
-         code = ?, codeCoordinator = ?, pointsForWin = ?, pointsForDraw = ?, pointsForLoss = ? 
-         WHERE id = ?`,
-        [
-          region,
-          title,
-          date,
-          location,
-          lat,
-          lon,
-          codeOrganizer,
-          codeCoordinator || null,
-          winPoints,
-          drawPoints,
-          lossPoints,
-          id,
-        ]
+        `UPDATE tournaments SET ${fields.join(', ')} WHERE id = ?`,
+        values
       );
       const [updatedTournament] = await select(
         `SELECT * FROM tournaments WHERE id = ?`,
