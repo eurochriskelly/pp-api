@@ -1,5 +1,6 @@
 import express from 'express';
 import tournamentController from '../../controllers/tournaments';
+import tournamentReportsRoutes from './reports';
 import {
   validateNumericId,
   validateTournamentIdentifier,
@@ -87,6 +88,13 @@ export default (db: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.buildTournamentReport
   );
+
+  router.use(
+    '/:tournamentId/reports',
+    validateTournamentId,
+    tournamentReportsRoutes(db, useMock)
+  );
+
   router.put('/:tournamentId', validateTournamentId, ctrl.updateTournament);
   router.put(
     '/:tournamentId/status',
