@@ -32,6 +32,13 @@ function dbHelper(db: DbConnection | any): DbHelper {
     params: unknown[] = []
   ): Promise<QueryResult[]> => {
     return new Promise((resolve, reject) => {
+      if (!db || typeof db.query !== 'function') {
+        const error = new Error(
+          'Database connection is not available. Please check your database configuration and ensure the database is running.'
+        );
+        EE(error.message);
+        return reject(error);
+      }
       if (systemService.getPrintSqlStatements()) {
         DD(`Executing [${type}]`);
         DD(`- query: ${query.split('\n').join(' ').replace(/ /g, ' ')}`);

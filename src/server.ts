@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import mysql from 'mysql2';
+import createDbManager from './lib/db-manager';
 import apiSetup from './api/index';
 import path from 'path';
 import fs from 'fs';
@@ -25,12 +25,6 @@ const staticPath = `/gcp/dist/${app}/`;
 
 const ARGS = { port, app, database, staticPath };
 
-const ensureUtf8mb4Pool = (pool: mysql.Pool) => {
-  pool.on('connection', (connection) => {
-    connection.query('SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci');
-  });
-};
-
 // Startup banner - impossible to miss
 console.log('╔══════════════════════════════════════════════════════════╗');
 console.log(
@@ -48,8 +42,8 @@ console.log('╚═════════════════════�
 
 // Import config from local directory
 const run = async () => {
-  let db: mysql.Pool | null = null;
-  let dbClub: mysql.Pool | null = null;
+  let db: any = null;
+  let dbClub: any = null;
   const effectiveArgs: { [key: string]: any } = { ...ARGS };
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -67,36 +61,46 @@ const run = async () => {
       console.log(`Database: ${dbConf.database}`);
       console.log('--------------------------------');
 
-      db = mysql.createPool(dbConf);
-      ensureUtf8mb4Pool(db);
-      await new Promise<void>((resolve, reject) => {
-        db!.query('SELECT 1', (err) => {
-          if (err) reject(err);
-          else resolve();
+      db = createDbManager(dbConf);
+      try {
+        await new Promise<void>((resolve, reject) => {
+          db.query('SELECT 1', (err: Error | null) => {
+            if (err) reject(err);
+            else resolve();
+          });
         });
-      });
-      console.log('✓ Connected to MySQL (Main) - data will be persisted');
+        console.log('✓ Connected to MySQL (Main) - data will be persisted');
+      } catch (mainErr: any) {
+        console.log(
+          `⚠️  Main DB unavailable at startup: ${mainErr.message}`
+        );
+        console.log(
+          '    Requests will attempt to reconnect on demand.'
+        );
+      }
 
       // Try to connect to ClubEvents DB, but allow it to fail gracefully
+      dbClub = createDbManager(clubEventsDbConf);
       try {
-        dbClub = mysql.createPool(clubEventsDbConf);
-        ensureUtf8mb4Pool(dbClub);
         await new Promise<void>((resolve, reject) => {
-          dbClub!.query('SELECT 1', (err) => {
+          dbClub.query('SELECT 1', (err: Error | null) => {
             if (err) reject(err);
             else resolve();
           });
         });
         console.log('✓ Connected to MySQL (ClubEvents)');
       } catch (clubErr: any) {
-        dbClub = null;
         if (clubErr.message && clubErr.message.includes('Unknown database')) {
           console.log(
             `⚠️  ${clubEventsDbConf.database} database not found - skipping ClubEvents features`
           );
+          dbClub = null;
         } else {
           console.log(
-            `⚠️  Could not connect to ClubEvents: ${clubErr.message}`
+            `⚠️  ClubEvents DB unavailable at startup: ${clubErr.message}`
+          );
+          console.log(
+            '    Requests will attempt to reconnect on demand.'
           );
         }
       }

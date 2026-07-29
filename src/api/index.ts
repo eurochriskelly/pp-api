@@ -203,6 +203,14 @@ function setupApi(dbs: Dbs, ARGS: Args) {
 
   // Global error handler
   app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+    if (
+      err.message &&
+      err.message.includes('Database connection is not available')
+    ) {
+      console.error(err.message);
+      res.status(503).json({ error: err.message });
+      return;
+    }
     console.error(err.stack);
     res.status(500).json({ error: 'Internal server error' });
   });
