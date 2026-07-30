@@ -96,7 +96,7 @@ function usersController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.userId, 10);
+        const id = parseInt(req.params.roleId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid role ID' });
           return;
@@ -114,7 +114,7 @@ function usersController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const id = parseInt(req.params.userId, 10);
+        const id = parseInt(req.params.roleId, 10);
         if (isNaN(id)) {
           res.status(400).json({ error: 'Invalid role ID' });
           return;

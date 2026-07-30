@@ -64,7 +64,7 @@ function eventsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { eventId: id } = req.params;
         const event = await dbSvc.getEvent(id);
         if (!event) {
           res.status(404).json({ error: 'Event not found' });
@@ -102,7 +102,7 @@ function eventsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { eventId: id } = req.params;
         await dbSvc.updateEvent(id, req.body);
         const updated = await dbSvc.getEvent(id);
         res.json({ data: updated });
@@ -117,7 +117,7 @@ function eventsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const { id } = req.params;
+        const { eventId: id } = req.params;
         await dbSvc.deleteEvent(id);
         res.status(204).send();
       } catch (err) {

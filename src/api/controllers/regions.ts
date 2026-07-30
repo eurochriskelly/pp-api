@@ -26,7 +26,7 @@ function regionsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const info = await dbSvc.listRegionInfo(req.params.region, req.query);
+        const info = await dbSvc.listRegionInfo(req.params.regionId, req.query);
         res.json(info);
       } catch (err) {
         next(err);
@@ -40,7 +40,7 @@ function regionsController(db: any, useMock: boolean) {
     ): Promise<void> => {
       try {
         // Type assertion to handle both real and mock services
-        const clubs = await (dbSvc as any).listRegionClubs(req.params.region);
+        const clubs = await (dbSvc as any).listRegionClubs(req.params.regionId);
         res.json({ data: clubs });
       } catch (err) {
         next(err);
