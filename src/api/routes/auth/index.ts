@@ -1,9 +1,10 @@
 import express from 'express';
 import authController from '../../controllers/auth';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
-  const ctrl = authController(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = authController(dbMain, useMock);
 
   router.post('/signup', ctrl.signup);
   router.post('/verify', ctrl.verify);

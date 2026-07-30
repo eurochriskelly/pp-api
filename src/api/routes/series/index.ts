@@ -3,10 +3,11 @@ import seriesController from '../../controllers/series';
 import authMiddlewareFactory from '../../middleware/auth';
 import { validateNumericId } from '../../middleware/validation';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
-  const ctrl = seriesController(db, useMock);
-  const auth = authMiddlewareFactory(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = seriesController(dbMain, useMock);
+  const auth = authMiddlewareFactory(dbMain, useMock);
 
   router.get('/', ctrl.listSeries);
   router.get('/:seriesId', validateNumericId('seriesId'), ctrl.getSeriesById);

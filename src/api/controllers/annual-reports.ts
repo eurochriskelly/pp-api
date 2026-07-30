@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/annual-reports';
 
-function annualReportsController(db: any) {
+function annualReportsController(db: any, useMock: boolean) {
   const service = serviceFactory(db);
 
   return {

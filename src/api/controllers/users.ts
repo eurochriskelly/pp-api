@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/users';
 
-function usersController(db: any) {
+function usersController(db: any, useMock: boolean) {
   const service = serviceFactory(db);
 
   return {

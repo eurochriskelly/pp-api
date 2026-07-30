@@ -1,12 +1,13 @@
 import express from 'express';
 import tournamentController from '../../controllers/tournaments';
+import generalController from '../../controllers/general';
 import tournamentReportsRoutes from './reports';
 import {
   validateNumericId,
   validateTournamentIdentifier,
   validateUUID,
 } from '../../middleware/validation';
-const authMiddlewareFactory = require('../../middleware/auth');
+import authMiddlewareFactory from '../../middleware/auth';
 
 const PPP_CONTENT_TYPES = new Set([
   'application/zip',
@@ -34,11 +35,13 @@ const isTsvUploadRequest = (req: express.Request): boolean => {
   return TSV_CONTENT_TYPES.has(contentType);
 };
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
-  const ctrl = tournamentController(db, useMock);
-  const auth = authMiddlewareFactory(db, useMock);
-  const validateTournamentId = validateTournamentIdentifier(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = tournamentController(dbMain, useMock);
+  const generalCtrl = generalController(dbMain, useMock);
+  const auth = authMiddlewareFactory(dbMain, useMock);
+  const validateTournamentId = validateTournamentIdentifier(dbMain, useMock);
 
   router.post(
     '/',
@@ -92,7 +95,7 @@ export default (db: any, useMock: boolean) => {
   router.use(
     '/:tournamentId/reports',
     validateTournamentId,
-    tournamentReportsRoutes(db, useMock)
+    tournamentReportsRoutes(dbs, useMock)
   );
 
   router.put('/:tournamentId', validateTournamentId, ctrl.updateTournament);
@@ -281,6 +284,25 @@ export default (db: any, useMock: boolean) => {
     validateTournamentId,
     validateNumericId('clubId'),
     ctrl.getClubLogo
+  );
+
+  router.get(
+    '/:tournamentId/pitches',
+    validateTournamentId,
+    generalCtrl.listPitches
+  );
+  router.get(
+    '/:tournamentId/standings',
+    validateTournamentId,
+    generalCtrl.listStandings
+  );
+
+  router.post(
+    '/:tournamentId/club/:clubId/teamsheet',
+    validateTournamentId,
+    validateNumericId('clubId'),
+    express.raw({ type: 'application/pdf', limit: '10mb' }),
+    ctrl.uploadTeamsheet
   );
 
   return router;

@@ -4,26 +4,40 @@ import {
   getPrintSqlStatements,
 } from '../services/system';
 
-const enablePrintSqlStatements = (req: Request, res: Response): void => {
-  setPrintSqlStatements(true);
-  res.status(200).send('SQL statement printing enabled.');
-};
+function systemController(db: any, useMock: boolean) {
+  const database = process.env.PP_DATABASE || process.env.PP_DBN || 'unknown';
 
-const disablePrintSqlStatements = (req: Request, res: Response): void => {
-  setPrintSqlStatements(false);
-  res.status(200).send('SQL statement printing disabled.');
-};
+  return {
+    enablePrintSqlStatements: (req: Request, res: Response): void => {
+      setPrintSqlStatements(true);
+      res.status(200).send('SQL statement printing enabled.');
+    },
 
-const healthCheck = (req: Request, res: Response): void => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    printSql: getPrintSqlStatements(),
-  });
-};
+    disablePrintSqlStatements: (req: Request, res: Response): void => {
+      setPrintSqlStatements(false);
+      res.status(200).send('SQL statement printing disabled.');
+    },
 
-export = {
-  enablePrintSqlStatements,
-  disablePrintSqlStatements,
-  healthCheck,
-};
+    getMode: (req: Request, res: Response): void => {
+      res.json({
+        mode: useMock ? 'mock' : 'database',
+        useMock: useMock,
+        database: database,
+        timestamp: new Date().toISOString(),
+        warning: useMock
+          ? 'Running in MOCK MODE - all data stored in memory only!'
+          : undefined,
+      });
+    },
+
+    healthCheck: (req: Request, res: Response): void => {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        printSql: getPrintSqlStatements(),
+      });
+    },
+  };
+}
+
+export = systemController;

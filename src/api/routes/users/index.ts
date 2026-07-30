@@ -1,14 +1,18 @@
 import express from 'express';
 import controllerFactory from '../../controllers/users';
+import generalController from '../../controllers/general';
 import authMiddlewareFactory from '../../middleware/auth';
 import { validateNumericId } from '../../middleware/validation';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router();
-  const ctrl = controllerFactory(db);
-  const auth = authMiddlewareFactory(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = controllerFactory(dbMain, useMock);
+  const generalCtrl = generalController(dbMain, useMock);
+  const auth = authMiddlewareFactory(dbMain, useMock);
 
   // Users
+  router.get('/users', generalCtrl.getUsers);
   router.post('/users', ctrl.createUser);
   router.put(
     '/users/:userId',

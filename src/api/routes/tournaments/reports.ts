@@ -1,11 +1,12 @@
 import express from 'express';
 import tournamentReportsController from '../../controllers/tournament-reports';
-const authMiddlewareFactory = require('../../middleware/auth');
+import authMiddlewareFactory from '../../middleware/auth';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
-  const ctrl = tournamentReportsController(db, useMock);
-  const protect = authMiddlewareFactory(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = tournamentReportsController(dbMain, useMock);
+  const protect = authMiddlewareFactory(dbMain, useMock);
 
   router.get('/', ctrl.listReports);
   router.get('/current', ctrl.getCurrentReport);

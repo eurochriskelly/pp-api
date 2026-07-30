@@ -1,30 +1,21 @@
 import express from 'express';
 import systemController from '../../controllers/system';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router();
+  const dbMain = dbs.main || dbs;
+  const ctrl = systemController(dbMain, useMock);
 
   router.put(
     '/diagnostics/print-sql-statements',
-    systemController.enablePrintSqlStatements
+    ctrl.enablePrintSqlStatements
   );
   router.delete(
     '/diagnostics/print-sql-statements',
-    systemController.disablePrintSqlStatements
+    ctrl.disablePrintSqlStatements
   );
 
-  router.get('/mode', (req, res) => {
-    const database = process.env.PP_DATABASE || process.env.PP_DBN || 'unknown';
-    res.json({
-      mode: useMock ? 'mock' : 'database',
-      useMock: useMock,
-      database: database,
-      timestamp: new Date().toISOString(),
-      warning: useMock
-        ? 'Running in MOCK MODE - all data stored in memory only!'
-        : undefined,
-    });
-  });
+  router.get('/mode', ctrl.getMode);
 
   return router;
 };

@@ -3,10 +3,11 @@ import tournamentTeamsController from '../../../controllers/tournament-teams';
 import authMiddlewareFactory from '../../../middleware/auth';
 import { validateNumericId } from '../../../middleware/validation';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
-  const ctrl = tournamentTeamsController(db, useMock);
-  const auth = authMiddlewareFactory(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = tournamentTeamsController(dbMain, useMock);
+  const auth = authMiddlewareFactory(dbMain, useMock);
 
   router.get('/', ctrl.listTeams);
   router.get('/:id', validateNumericId('id'), ctrl.getTeamById);

@@ -21,7 +21,6 @@ const ROUTE_BASES: Array<{ file: string; basePath: string }> = [
     basePath: '/api/tournaments/:tournamentId/teams',
   },
   { file: 'src/api/routes/regions/index.ts', basePath: '/api/regions' },
-  { file: 'src/api/routes/general.ts', basePath: '/api' },
   { file: 'src/api/routes/auth/index.ts', basePath: '/api/auth' },
   { file: 'src/api/routes/system/index.ts', basePath: '/api/system' },
   { file: 'src/api/routes/clubs/index.ts', basePath: '/api/clubs' },
@@ -40,17 +39,13 @@ const ROUTE_BASES: Array<{ file: string; basePath: string }> = [
   { file: 'src/api/routes/listings/index.ts', basePath: '/api/listings' },
   { file: 'src/api/routes/users/index.ts', basePath: '/api' },
   { file: 'src/api/routes/internal/index.ts', basePath: '/api/internal' },
+  {
+    file: 'src/api/routes/tournaments/reports.ts',
+    basePath: '/api/tournaments/:tournamentId/reports',
+  },
 ];
 
 const DIRECT_ROUTES: RouteDefinition[] = [
-  {
-    method: 'POST',
-    path: '/api/tournaments/:tournamentId/club/:clubId/teamsheet',
-    source: 'src/api/index.ts',
-  },
-  { method: 'POST', path: '/api/clubs/:id/logo', source: 'src/api/index.ts' },
-  { method: 'POST', path: '/api/teams/:id/logo', source: 'src/api/index.ts' },
-  { method: 'POST', path: '/api/upload', source: 'src/api/index.ts' },
   { method: 'GET', path: '/health', source: 'src/api/index.ts' },
 ];
 

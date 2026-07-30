@@ -3,10 +3,11 @@ import clubsController from '../../controllers/clubs';
 import authMiddlewareFactory from '../../middleware/auth';
 import { validateNumericId } from '../../middleware/validation';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
-  const ctrl = clubsController(db, useMock);
-  const auth = authMiddlewareFactory(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = clubsController(dbMain, useMock);
+  const auth = authMiddlewareFactory(dbMain, useMock);
 
   // Public endpoints
   router.get('/', ctrl.listClubs);
@@ -17,6 +18,13 @@ export default (db: any, useMock: boolean) => {
   router.post('/', auth, ctrl.createClub);
   router.put('/:clubId', auth, validateNumericId('clubId'), ctrl.updateClub);
   router.delete('/:clubId', auth, validateNumericId('clubId'), ctrl.deleteClub);
+  router.post(
+    '/:clubId/logo',
+    auth,
+    validateNumericId('clubId'),
+    express.raw({ type: 'image/*', limit: '5mb' }),
+    ctrl.uploadLogo
+  );
 
   return router;
 };

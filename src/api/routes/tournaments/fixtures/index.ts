@@ -1,12 +1,13 @@
 import express from 'express';
 import fixtureController from '../../../controllers/fixtures';
 import { validateNumericId } from '../../../middleware/validation';
-const authMiddlewareFactory = require('../../../middleware/auth');
+import authMiddlewareFactory from '../../../middleware/auth';
 
-export default (db: any, useMock: boolean) => {
+export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
-  const ctrl = fixtureController(db, useMock);
-  const auth = authMiddlewareFactory(db, useMock);
+  const dbMain = dbs.main || dbs;
+  const ctrl = fixtureController(dbMain, useMock);
+  const auth = authMiddlewareFactory(dbMain, useMock);
 
   router.get('/', ctrl.getFixtures);
   router.get('/nextup', ctrl.nextFixtures);
