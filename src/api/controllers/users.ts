@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/users';
+import mockServiceFactory from '../services/mocks/users';
 
 function usersController(db: any, useMock: boolean) {
-  const service = serviceFactory(db);
+  const factory = useMock ? mockServiceFactory : serviceFactory;
+  const service = factory(db);
 
   return {
     createUser: async (
@@ -72,7 +74,7 @@ function usersController(db: any, useMock: boolean) {
         }
         res.json(result);
       } catch (err) {
-        res.status(500).json({ error: (err as Error).message });
+        next(err);
       }
     },
 

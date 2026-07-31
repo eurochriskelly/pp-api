@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import serviceFactory from '../services/fixtures';
+import mockServiceFactory from '../services/mocks/fixtures';
 
 const teamScoreSchema = z
   .object({
@@ -13,7 +14,6 @@ const teamScoreSchema = z
   })
   .passthrough();
 
-// Define Zod schema for score updates
 const updateScoreSchema = z.object({
   scores: z.object(
     {
@@ -25,10 +25,8 @@ const updateScoreSchema = z.object({
   outcome: z.string().optional(),
 });
 
-// Define Zod schema for a single card object in the request body
 const cardPlayerSchema = z
   .object({
-    // 'id' is the primary key of the card record itself. Nullable/optional for inserts.
     id: z.number().int().positive().nullable().optional(),
     team: z
       .string({ required_error: 'Team is required' })
@@ -37,13 +35,11 @@ const cardPlayerSchema = z
       required_error: 'Card color is required',
       invalid_type_error: 'Invalid card color',
     }),
-    // Add playerNumber and playerName - assuming they are strings and can be empty
     playerNumber: z.number({ required_error: 'playerNumber is required' }),
     playerName: z.string({ required_error: 'playerName is required' }),
   })
-  .passthrough(); // Allow other fields like confirmed
+  .passthrough();
 
-// Define Zod schema for slack
 const slackSchema = z.object({
   minutes: z.number({
     required_error: 'minutes is required',
@@ -51,7 +47,6 @@ const slackSchema = z.object({
   }),
 });
 
-// Define Zod schema for reschedule
 const rescheduleSchema = z
   .object({
     placement: z.enum(['before', 'after'], {
@@ -78,86 +73,112 @@ const rescheduleSchema = z
   );
 
 function fixturesController(db: any, useMock: boolean) {
-  const serviceFactory = require('../services/fixtures').default;
-  const dbSvc = serviceFactory(db);
+  const factory = useMock ? mockServiceFactory : serviceFactory;
+  const dbSvc: any = factory(db);
 
   return {
-    validateTsv: (req: Request, res: Response): void => {
-      const { sample } = req.params;
-      let tsvEncoded: string;
-      if (sample) {
-        const sampleTsv = `TIME	MATCH	CATEGORY	PITCH	TEAM1	STAGE	TEAM2	UMPIRES	DURATION
-11:00	M1	MEN	Pitch 1	Team A	Gp.1	Team B	Team C	20
-11:30	M2	MEN	Pitch 1	Team C	Gp.1	Team B	Team A	20
-12:00	M3	MEN	Pitch 1	Team A	Gp.1	Team C	Team B	20
-12:30	M4	MEN	Pitch 4	Team D	Gp.2	Team E	Team D	20
-13:15	M5	MEN	Pitch 1	1st Gp1	CUP.SF1	1st Gp2	2nd Gp1	20
-14:15	M6	MEN	Pitch 2	2nd Gp2	CUP.SF2	2nd Gp1	3rd Gp1	20
-15:30	M7	MEN	Pitch 3	Winner Cup.Sf1	CUP.FIN	Winner Cup.Sf2	Loser M.6	30`;
-        Buffer.from(sampleTsv, 'utf8').toString('base64');
-      } else {
-        tsvEncoded = req.body.tsvEncoded;
-        console.log('got this....', tsvEncoded);
+    validateTsv: (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const tsvEncoded =
+          (req.body && (req.body.key || req.body.tsvEncoded)) || '';
+        const { rows, warnings } = dbSvc.validateTsv(tsvEncoded);
+        res.json({ data: { rows, warnings } });
+      } catch (err) {
+        next(err);
       }
-      const { rows, warnings } = dbSvc.validateTsv();
-      res.json({ data: { rows, warnings } });
     },
 
     updateCalculatedFixtures: async (
       req: Request,
-      res: Response
+      res: Response,
+      next: NextFunction
     ): Promise<void> => {
-      const { tournamentId, fixtureId: id } = req.params;
-      const fixtures = await dbSvc.updateCalculatedFixtures(tournamentId, id);
-      res.json({ data: fixtures });
-    },
-
-    getFixtures: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId, pitch, category, outcome, order } = req.params;
-      const fixtures = await dbSvc.getFixtures(tournamentId, {
-        pitch,
-        category,
-        outcome,
-        order,
-      });
-      res.json({ data: fixtures });
-    },
-
-    getFilteredFixtures: async (req: Request, res: Response): Promise<void> => {
-      const { Competitions, Pitches, Referee, Team } = req.body;
-      const { tournamentId, outcome, order } = req.params;
-      const fixtures = await dbSvc.getFilteredFixtures(tournamentId, {
-        pitch: Pitches,
-        category: Competitions,
-        referee: Referee,
-        team: Team,
-        outcome,
-        order,
-      });
-      res.json({ data: fixtures });
-    },
-
-    getFixture: async (req: Request, res: Response): Promise<void> => {
-      const tournamentId = req.params.tournamentId;
-      const fixtureId = req.params.fixtureId;
       try {
-        const fixture = await dbSvc.getFixture(tournamentId, fixtureId);
-        res.json({ data: fixture });
+        const { tournamentId, fixtureId: id } = req.params;
+        const fixtures = await dbSvc.updateCalculatedFixtures(tournamentId, id);
+        res.json({ data: fixtures });
       } catch (err) {
-        console.error('Error in getFixture:', err);
-        res.status(500).json({ error: 'Internal server error' });
+        next(err);
       }
     },
 
-    nextFixtures: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId } = req.params;
-      const fixtures = await dbSvc.getNextFixtures(tournamentId);
-      res.json({ data: fixtures });
+    getFixtures: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const { tournamentId, pitch, category, outcome, order } = req.params;
+        const fixtures = await dbSvc.getFixtures(tournamentId, {
+          pitch,
+          category,
+          outcome,
+          order,
+        });
+        res.json({ data: fixtures });
+      } catch (err) {
+        next(err);
+      }
     },
 
-    rewindFixture: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId } = req.params;
+    getFilteredFixtures: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { Competitions, Pitches, Referee, Team } = req.body;
+        const { tournamentId, outcome, order } = req.params;
+        const fixtures = await dbSvc.getFilteredFixtures(tournamentId, {
+          pitch: Pitches,
+          category: Competitions,
+          referee: Referee,
+          team: Team,
+          outcome,
+          order,
+        });
+        res.json({ data: fixtures });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    getFixture: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const tournamentId = req.params.tournamentId;
+        const fixtureId = req.params.fixtureId;
+        const fixture = await dbSvc.getFixture(tournamentId, fixtureId);
+        res.json({ data: fixture });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    nextFixtures: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const { tournamentId } = req.params;
+        const fixtures = await dbSvc.getNextFixtures(tournamentId);
+        res.json({ data: fixtures });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    rewindFixture: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const { tournamentId } = req.params;
         const result = await dbSvc.rewindLatestFixture(tournamentId);
         if (!result) {
           res.status(404).json({
@@ -170,7 +191,6 @@ function fixturesController(db: any, useMock: boolean) {
           message: `Removed score for category [${category}] fixture [${id}] stage [${stage}]`,
         });
       } catch (err: any) {
-        console.error('Error in rewindFixture:', err);
         if (err?.statusCode) {
           res.status(err.statusCode).json({
             error: err.code || 'REWIND_FAILED',
@@ -178,65 +198,76 @@ function fixturesController(db: any, useMock: boolean) {
           });
           return;
         }
-        res.status(500).json({ error: 'Internal server error' });
+        next(err);
       }
     },
 
-    startFixture: async (req: Request, res: Response): Promise<void> => {
-      const { fixtureId } = req.params;
+    startFixture: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { fixtureId } = req.params;
         const result = await dbSvc.startFixture(fixtureId);
         res.json({ data: result });
-      } catch {
-        res.status(500).json({ error: 'Internal server error' });
+      } catch (err) {
+        next(err);
       }
     },
 
-    endFixture: async (req: Request, res: Response): Promise<void> => {
-      const { fixtureId } = req.params;
+    endFixture: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { fixtureId } = req.params;
         const result = await dbSvc.endFixture(fixtureId);
         res.json({ data: result });
-      } catch {
-        res.status(500).json({ error: 'Internal server error' });
+      } catch (err) {
+        next(err);
       }
     },
 
-    reschedule: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId, fixtureId } = req.params;
-
-      const validationResult = rescheduleSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Invalid request body for reschedule',
-          details: validationResult.error.flatten().fieldErrors,
-        });
-        return;
-      }
-
-      const { placement, targetPitch } = validationResult.data;
-      const relativeFixtureId =
-        validationResult.data.targetFixtureId ||
-        validationResult.data.targetFixture ||
-        validationResult.data.relativeFixtureId;
-      const action = 'move';
-
-      const data = {
-        operation: 'reschedule',
-        targetPitch,
-        tournamentId: parseInt(tournamentId, 10),
-        fixtureId: parseInt(fixtureId, 10),
-        relativeFixtureId,
-        placement,
-        action,
-      };
-
+    reschedule: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { tournamentId, fixtureId } = req.params;
+
+        const validationResult = rescheduleSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          res.status(400).json({
+            error: 'INVALID_REQUEST',
+            message: 'Invalid request body for reschedule',
+            details: validationResult.error.flatten().fieldErrors,
+          });
+          return;
+        }
+
+        const { placement, targetPitch } = validationResult.data;
+        const relativeFixtureId =
+          validationResult.data.targetFixtureId ||
+          validationResult.data.targetFixture ||
+          validationResult.data.relativeFixtureId;
+        const action = 'move';
+
+        const data = {
+          operation: 'reschedule',
+          targetPitch,
+          tournamentId: parseInt(tournamentId, 10),
+          fixtureId: parseInt(fixtureId, 10),
+          relativeFixtureId,
+          placement,
+          action,
+        };
+
         const result = await dbSvc.reschedule(data);
         res.json({ data: result });
       } catch (err: any) {
-        console.error('Error in reschedule:', err);
         if (err?.statusCode) {
           res.status(err.statusCode).json({
             error: err.code || 'RESCHEDULE_FAILED',
@@ -244,26 +275,30 @@ function fixturesController(db: any, useMock: boolean) {
           });
           return;
         }
-        res.status(500).json({ error: 'Internal server error in reschedule' });
+        next(err);
       }
     },
 
-    slack: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId, fixtureId } = req.params;
-
-      const validationResult = slackSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Invalid request body for slack',
-          details: validationResult.error.flatten().fieldErrors,
-        });
-        return;
-      }
-
-      const { minutes } = validationResult.data;
-
+    slack: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { tournamentId, fixtureId } = req.params;
+
+        const validationResult = slackSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          res.status(400).json({
+            error: 'INVALID_REQUEST',
+            message: 'Invalid request body for slack',
+            details: validationResult.error.flatten().fieldErrors,
+          });
+          return;
+        }
+
+        const { minutes } = validationResult.data;
+
         const result = await dbSvc.slack({
           tournamentId: parseInt(tournamentId, 10),
           fixtureId: parseInt(fixtureId, 10),
@@ -271,7 +306,6 @@ function fixturesController(db: any, useMock: boolean) {
         });
         res.json({ data: result });
       } catch (err: any) {
-        console.error('Error in slack:', err);
         if (err?.statusCode) {
           res.status(err.statusCode).json({
             error: err.code || 'SLACK_FAILED',
@@ -279,11 +313,15 @@ function fixturesController(db: any, useMock: boolean) {
           });
           return;
         }
-        res.status(500).json({ error: 'Internal server error in slack' });
+        next(err);
       }
     },
 
-    updateScore: async (req: Request, res: Response): Promise<void> => {
+    updateScore: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
         const { tournamentId, fixtureId } = req.params;
 
@@ -302,37 +340,28 @@ function fixturesController(db: any, useMock: boolean) {
         await dbSvc.updateScore(tournamentId, fixtureId, team1, team2, outcome);
         res.json({ message: 'Score updated successfully' });
       } catch (err) {
-        console.error('Error updating score:', err);
-        res
-          .status(500)
-          .json({ error: 'Internal server error while updating score' });
+        next(err);
       }
     },
 
-    cardPlayers: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId, fixtureId } = req.params;
-
-      // Validate request body
-      console.log('card', req.body);
-      const validationResult = cardPlayerSchema.safeParse(req.body);
-
-      if (!validationResult.success) {
-        console.error(
-          'CardPlayers validation error:',
-          validationResult.error.flatten()
-        );
-        // Return a 400 Bad Request with validation errors
-        res.status(400).json({
-          message: 'Invalid request body for carding players.',
-          errors: validationResult.error.flatten().fieldErrors,
-        });
-        return;
-      }
-
-      // Use validated data
-      const validatedCardData = validationResult.data;
-
+    cardPlayers: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { tournamentId, fixtureId } = req.params;
+
+        const validationResult = cardPlayerSchema.safeParse(req.body);
+        if (!validationResult.success) {
+          res.status(400).json({
+            message: 'Invalid request body for carding players.',
+            errors: validationResult.error.flatten().fieldErrors,
+          });
+          return;
+        }
+
+        const validatedCardData = validationResult.data;
         const result = await dbSvc.cardPlayers(
           tournamentId,
           fixtureId,
@@ -340,25 +369,17 @@ function fixturesController(db: any, useMock: boolean) {
         );
         res.json({ data: result });
       } catch (err) {
-        // Log the error for server-side inspection
-        console.error(
-          `Error in cardPlayers controller for fixture [${fixtureId}]:`,
-          err
-        );
-
-        // Reverted: Handle potential errors (like DB connection issues, constraints)
-        // Send a generic 500 error to the client
-        // The foreign key constraint error will now result in a 500 again,
-        // which might be acceptable if the client ensures valid player IDs.
-        res
-          .status(500)
-          .json({ error: 'Internal server error while processing card.' });
+        next(err);
       }
     },
 
-    getCardedPlayers: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId, fixtureId } = req.params;
+    getCardedPlayers: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { tournamentId, fixtureId } = req.params;
         if (!tournamentId) {
           res.status(400).json({ error: 'Tournament ID is required' });
           return;
@@ -369,22 +390,24 @@ function fixturesController(db: any, useMock: boolean) {
         );
         res.json(players);
       } catch (err) {
-        console.error('Error in getCardedPlayers:', err);
-        res.status(500).json({ error: 'Internal server error' });
+        next(err);
       }
     },
 
-    deleteCard: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId, fixtureId, cardId } = req.params;
-
-      // Basic validation for cardId
-      const cardIdNum = parseInt(cardId, 10);
-      if (isNaN(cardIdNum) || cardIdNum <= 0) {
-        res.status(400).json({ error: 'Invalid Card ID format.' });
-        return;
-      }
-
+    deleteCard: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { tournamentId, fixtureId, cardId } = req.params;
+
+        const cardIdNum = parseInt(cardId, 10);
+        if (isNaN(cardIdNum) || cardIdNum <= 0) {
+          res.status(400).json({ error: 'Invalid Card ID format.' });
+          return;
+        }
+
         const result = await dbSvc.deleteCard(
           tournamentId,
           fixtureId,
@@ -396,32 +419,29 @@ function fixturesController(db: any, useMock: boolean) {
             message: `Card with ID ${cardIdNum} deleted successfully.`,
           });
         } else {
-          // If the service returns cardDeleted: false, it means the card wasn't found
           res.status(404).json({
             error: `Card with ID ${cardIdNum} not found for the specified tournament/fixture.`,
           });
         }
       } catch (err) {
-        console.error(
-          `Error in deleteCard controller for card [${cardIdNum}]:`,
-          err
-        );
-        res
-          .status(500)
-          .json({ error: 'Internal server error while deleting card.' });
+        next(err);
       }
     },
 
-    copyFixtures: async (req: Request, res: Response): Promise<void> => {
-      const { tournamentId } = req.params;
-      const { sourceTournamentId } = req.body;
-
-      if (!sourceTournamentId || isNaN(parseInt(sourceTournamentId, 10))) {
-        res.status(400).json({ error: 'sourceTournamentId is required' });
-        return;
-      }
-
+    copyFixtures: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
+        const { tournamentId } = req.params;
+        const { sourceTournamentId } = req.body;
+
+        if (!sourceTournamentId || isNaN(parseInt(sourceTournamentId, 10))) {
+          res.status(400).json({ error: 'sourceTournamentId is required' });
+          return;
+        }
+
         const result = await dbSvc.copyFixtures(
           parseInt(sourceTournamentId, 10),
           parseInt(tournamentId, 10)
@@ -431,7 +451,6 @@ function fixturesController(db: any, useMock: boolean) {
           data: result,
         });
       } catch (err: any) {
-        console.error('Error in copyFixtures:', err);
         if (err?.statusCode) {
           res.status(err.statusCode).json({
             error: err.code || 'COPY_FAILED',
@@ -439,7 +458,7 @@ function fixturesController(db: any, useMock: boolean) {
           });
           return;
         }
-        res.status(500).json({ error: 'Internal server error' });
+        next(err);
       }
     },
   };

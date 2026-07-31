@@ -78,10 +78,8 @@ function authController(db: any, useMock: boolean) {
       try {
         const result = await dbSvc.logout(token);
         res.json(result);
-      } catch {
-        res
-          .status(500)
-          .json({ error: 'An unexpected error occurred during logout.' });
+      } catch (err) {
+        next(err);
       }
     },
 
@@ -155,7 +153,7 @@ function authController(db: any, useMock: boolean) {
         const users = await (dbSvc as any).getUsers(filter);
         res.json({ data: users });
       } catch (err) {
-        res.status(500).json({ error: (err as Error).message });
+        next(err);
       }
     },
 
@@ -177,7 +175,7 @@ function authController(db: any, useMock: boolean) {
           res.status(404).json({ exists: false });
         }
       } catch (err) {
-        res.status(500).json({ error: (err as Error).message });
+        next(err);
       }
     },
   };

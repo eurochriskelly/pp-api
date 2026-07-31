@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/annual-reports';
+import mockServiceFactory from '../services/mocks/annual-reports';
 
 function annualReportsController(db: any, useMock: boolean) {
-  const service = serviceFactory(db);
+  const factory = useMock ? mockServiceFactory : serviceFactory;
+  const service = factory(db);
 
   return {
     getYearsSummary: async (

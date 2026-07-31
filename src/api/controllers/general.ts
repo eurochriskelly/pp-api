@@ -14,18 +14,17 @@ function generalController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const phase = (req.query.stage as string).split('_').shift();
+        const stage = (req.query.stage as string)?.split('_').shift();
         const groupNumber = (req.query.group as string) || '0';
         const teams = await (dbSvc as any).listTeams(
           req.params.tournamentId,
           req.query.category as string,
-          phase,
+          stage,
           parseInt(groupNumber)
         );
         res.json({ data: teams });
       } catch (err) {
-        console.log(err);
-        res.status(500).json({ code: 500, message: 'Internal Server Error' });
+        next(err);
       }
     },
 
@@ -40,8 +39,7 @@ function generalController(db: any, useMock: boolean) {
         );
         res.json({ data: pitches });
       } catch (err) {
-        console.log(err);
-        res.status(500).json({ code: 500, message: 'Internal Server Error' });
+        next(err);
       }
     },
 
@@ -76,8 +74,7 @@ function generalController(db: any, useMock: boolean) {
             break;
         }
       } catch (err) {
-        console.log(err);
-        res.status(500).json({ code: 500, message: 'Internal Server Error' });
+        next(err);
       }
     },
 
@@ -91,7 +88,7 @@ function generalController(db: any, useMock: boolean) {
         const users = await dbSvc.getUsers(filter as string);
         res.json({ data: users });
       } catch (err) {
-        res.status(500).json({ error: (err as Error).message });
+        next(err);
       }
     },
   };
