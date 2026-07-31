@@ -168,6 +168,19 @@ export default function mockAuthService() {
       II(`Mock: checkEmail for [${email}]`);
       return users[email] || null;
     },
+
+    getUsers: async (filter?: string) => {
+      II(`Mock: getUsers called with filter [${filter}]`);
+      const allUsers = Object.values(users).map((u) => ({
+        userId: u.id,
+        name: u.name,
+      }));
+      if (!filter || filter.length < 2) {
+        return allUsers;
+      }
+      const lowerFilter = filter.toLowerCase();
+      return allUsers.filter((u) => u.name.toLowerCase().includes(lowerFilter));
+    },
   };
 }
 

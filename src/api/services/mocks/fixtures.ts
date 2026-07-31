@@ -118,6 +118,68 @@ export default function mockFixturesService() {
       return null;
     },
 
+    getFixtures: async (
+      tournamentId: number,
+      filters: {
+        pitch?: string;
+        category?: string;
+        outcome?: string;
+        order?: string;
+      } = {}
+    ) => {
+      II(`Mock: getFixtures called for tournament [${tournamentId}]`);
+      let result = mockFixtures.filter(
+        (f) => f.tournamentId === Number(tournamentId)
+      );
+      if (filters.pitch && filters.pitch !== '*') {
+        result = result.filter((f) => f.pitch === filters.pitch);
+      }
+      if (filters.category && filters.category !== '*') {
+        result = result.filter((f) => f.category === filters.category);
+      }
+      if (filters.outcome && filters.outcome !== '*') {
+        result = result.filter((f) => f.outcome === filters.outcome);
+      }
+      DD(`Mock: Returning ${result.length} fixtures`);
+      return result.map((f) => ({ ...f }));
+    },
+
+    getFilteredFixtures: async (
+      tournamentId: number,
+      filters: {
+        pitch?: string[];
+        category?: string[];
+        referee?: string;
+        team?: string;
+        order?: string;
+      } = {}
+    ) => {
+      II(`Mock: getFilteredFixtures called for tournament [${tournamentId}]`);
+      let result = mockFixtures.filter(
+        (f) => f.tournamentId === Number(tournamentId)
+      );
+      if (filters.pitch && filters.pitch.length) {
+        result = result.filter((f) =>
+          filters.pitch!.map((p) => p.toLowerCase()).includes(f.pitch.toLowerCase())
+        );
+      }
+      if (filters.category && filters.category.length) {
+        result = result.filter((f) =>
+          filters.category!.map((c) => c.toLowerCase()).includes(f.category.toLowerCase())
+        );
+      }
+      DD(`Mock: Returning ${result.length} filtered fixtures`);
+      return result.map((f) => ({ ...f }));
+    },
+
+    validateTsv: (tsvEncoded: string) => {
+      II(`Mock: validateTsv called with encoded length [${tsvEncoded?.length ?? 0}]`);
+      return {
+        rows: [],
+        warnings: [],
+      };
+    },
+
     getFixturesByPitch: async (tournamentId: number, pitch: string) => {
       II(
         `Mock: getFixturesByPitch called for tournament [${tournamentId}], pitch [${pitch}]`
