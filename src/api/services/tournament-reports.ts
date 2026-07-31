@@ -1,5 +1,5 @@
 import dbHelper from '../../lib/db-helper';
-import { buildReport } from './tournaments/build-report/index.js';
+import { buildReport } from './tournaments/build-report/index';
 
 interface ReportRecord {
   id: number;

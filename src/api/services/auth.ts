@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import dbHelper from '../../lib/db-helper';
+import { sendOtpEmail } from '../../lib/email';
 
 const otpStore = new Map<string, { code: string; expires: number }>();
 
@@ -19,9 +20,6 @@ interface User {
 
 function authService(db: any) {
   const { select, insert, update } = dbHelper(db);
-
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { sendOtpEmail } = require('../../lib/email');
 
   const getUserWithRole = async (email: string): Promise<User | undefined> => {
     const users = (await select(

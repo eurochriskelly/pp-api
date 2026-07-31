@@ -6,16 +6,9 @@ interface DbConfig {
   charset?: string;
 }
 
-interface Section {
-  title: string;
-  name: string;
-  action: () => void;
-}
-
 interface Config {
   dbConf: DbConfig;
   clubEventsDbConf: DbConfig;
-  sections: Section[];
 }
 
 const config: Config = {
@@ -33,18 +26,6 @@ const config: Config = {
     database: 'PPClubEvents',
     charset: 'utf8mb4',
   },
-  sections: [
-    {
-      title: 'live competitation status',
-      name: 'competitions',
-      action: () => {},
-    },
-    {
-      title: 'field coordination',
-      name: 'pitches',
-      action: () => {},
-    },
-  ],
 };
 
 export = config;

@@ -18,12 +18,9 @@ const packageJson = require(path.resolve(process.cwd(), 'package.json'));
 
 // Dereference all from env at top
 const port = parseInt(process.env.PP_PORT_API || process.env.PORT || '4001');
-const app =
-  process.env.PP_API_APP || `${process.env.PP_ENV || 'development'}/mobile`;
 const database = process.env.PP_DATABASE || process.env.PP_DBN || 'EuroTourno';
-const staticPath = `/gcp/dist/${app}/`;
 
-const ARGS = { port, app, database, staticPath };
+const ARGS = { port, database };
 
 // Startup banner - impossible to miss
 console.log('╔══════════════════════════════════════════════════════════╗');

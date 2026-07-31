@@ -7,10 +7,10 @@ import {
   extractH2HMatches,
   cleanStandingsData,
 } from '../../lib/headToHead';
-import { buildReport } from './tournaments/build-report/index.js';
+import { buildReport } from './tournaments/build-report/index';
 import TSVValidator from './fixtures/validate-tsv';
-import { buildFixturesInsertSQL } from './tournaments/import-fixtures.js';
-import { generateFixturesForCompetition } from './tournaments/generate-fixtures.js';
+import { buildFixturesInsertSQL } from './tournaments/import-fixtures';
+import { generateFixturesForCompetition } from './tournaments/generate-fixtures';
 import { parseCoachPdfToJson } from '../../lib/pdf-parser';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -1699,7 +1699,7 @@ export default (db: any) => {
     integrityCheck: async (tournamentId: number) => {
       const {
         checkIntegrity,
-      } = require('./tournaments/integrity-check/index.js');
+      } = require('./tournaments/integrity-check');
       return await checkIntegrity(tournamentId, select);
     },
 

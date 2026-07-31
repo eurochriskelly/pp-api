@@ -22,9 +22,7 @@ import { validateTournamentIdentifier } from './middleware/validation';
 
 interface Args {
   port: number;
-  app: string;
   database: string;
-  staticPath: string;
   useMock: boolean;
   errorMsg?: string;
 }
