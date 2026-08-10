@@ -1,0 +1,11 @@
+ListingTimeline:
+  type: object
+  additionalProperties:
+    type: object
+    properties:
+      count:
+        type: integer
+      months:
+        type: object
+        additionalProperties:
+          type: integer

@@ -1,0 +1,25 @@
+Championship:
+  type: object
+  properties:
+    id:
+      type: integer
+    seriesId:
+      type: integer
+    name:
+      type: string
+    year:
+      type: integer
+    numRounds:
+      type: integer
+    squadSize:
+      type: integer
+    playersPerTeam:
+      type: integer
+    status:
+      type: string
+      enum:
+        - draft
+        - open
+        - in-progress
+        - completed
+        - archived

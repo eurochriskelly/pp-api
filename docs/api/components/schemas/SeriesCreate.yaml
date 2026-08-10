@@ -1,0 +1,22 @@
+SeriesCreate:
+  type: object
+  properties:
+    name:
+      type: string
+    description:
+      type: string
+    sport:
+      type: string
+    defaultSquadSize:
+      type: integer
+    defaultPlayersPerTeam:
+      type: integer
+    rulesetId:
+      type: integer
+    status:
+      type: string
+      enum:
+        - active
+        - inactive
+  required:
+    - name

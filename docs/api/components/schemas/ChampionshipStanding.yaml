@@ -1,0 +1,17 @@
+ChampionshipStanding:
+  type: object
+  properties:
+    entrantId:
+      type: integer
+    displayName:
+      type: string
+    played:
+      type: integer
+    wins:
+      type: integer
+    draws:
+      type: integer
+    losses:
+      type: integer
+    points:
+      type: integer

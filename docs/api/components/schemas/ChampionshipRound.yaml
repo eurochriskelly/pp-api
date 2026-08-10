@@ -1,0 +1,21 @@
+ChampionshipRound:
+  type: object
+  properties:
+    roundNumber:
+      type: integer
+    tournamentCount:
+      type: integer
+    tournaments:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          title:
+            type: string
+          date:
+            type: string
+            format: date
+          status:
+            type: string

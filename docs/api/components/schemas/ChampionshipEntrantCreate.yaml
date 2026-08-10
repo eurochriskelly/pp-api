@@ -1,0 +1,20 @@
+ChampionshipEntrantCreate:
+  type: object
+  properties:
+    entrantType:
+      type: string
+      enum:
+        - club
+        - amalgamation
+    displayName:
+      type: string
+    clubId:
+      type: integer
+    status:
+      type: string
+      enum:
+        - registered
+        - withdrawn
+        - active
+  required:
+    - displayName

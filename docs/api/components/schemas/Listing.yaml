@@ -1,0 +1,23 @@
+Listing:
+  type: object
+  properties:
+    id:
+      type: string
+    title:
+      type: string
+    slug:
+      type: string
+    description:
+      type: string
+    heroConfig:
+      type: object
+    createdBy:
+      type: string
+    eventIds:
+      type: array
+      items:
+        type: string
+    events:
+      type: array
+      items:
+        $ref: "./Event.yaml#/Event"

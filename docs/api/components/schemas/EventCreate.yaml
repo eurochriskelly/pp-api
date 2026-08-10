@@ -1,0 +1,31 @@
+EventCreate:
+  type: object
+  properties:
+    title:
+      type: string
+    description:
+      type: string
+    startDate:
+      type: string
+      format: date-time
+    endDate:
+      type: string
+      format: date-time
+    location:
+      type: string
+    region:
+      type: string
+    imageUrl:
+      type: string
+    organizerId:
+      type: string
+    organizerEmail:
+      type: string
+    sports:
+      type: array
+      items:
+        type: string
+  required:
+    - title
+    - startDate
+    - organizerId

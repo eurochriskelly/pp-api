@@ -1,0 +1,22 @@
+ListingCreate:
+  type: object
+  properties:
+    title:
+      type: string
+    slug:
+      type: string
+    description:
+      type: string
+    hero_config:
+      type: object
+    event_ids:
+      type: array
+      items:
+        type: string
+    eventIds:
+      type: array
+      items:
+        type: string
+  required:
+    - title
+    - slug
