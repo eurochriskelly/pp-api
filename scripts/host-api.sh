@@ -7,7 +7,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Generate API documentation from source code
 echo "Generating API documentation..."
 cd "$PROJECT_ROOT"
-node scripts/generate-api-docs.js
+node scripts/generate-openapi-spec.js
 
 # Check if docs/api directory exists
 if [ ! -d "docs/api" ]; then
