@@ -36,7 +36,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 0.3 Commit API-contract feature
   - Files: current uncommitted working tree (capabilities endpoint, fixture import hardening, squad scoping, contract tests, CI workflow)
   - Verify: `npm run build && npm run test:contract`
-- [ ] 0.4 Baseline verification
+- [x] 0.4 Baseline verification
   - Verify: `npm run build && npm run lint && npm run test:unit && npm run test:contract`
 
 ### Phase 1 — Security foundations (P0)
