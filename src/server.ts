@@ -104,6 +104,30 @@ const run = async () => {
     }
     apiSetup({ main: db, club: dbClub }, effectiveArgs as any);
   } catch (err: any) {
+    const allowMockFallback = process.env.PP_ALLOW_MOCK_FALLBACK === '1';
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isProduction || !allowMockFallback) {
+      console.error(
+        `Startup error: ${err.message}`
+      );
+      console.error(
+        '╔══════════════════════════════════════════════════════════╗'
+      );
+      console.error(
+        '║  FATAL: Database connection failed                       ║'
+      );
+      console.error(
+        isProduction
+          ? '║  Mock fallback is not allowed in production             ║'
+          : '║  Set PP_ALLOW_MOCK_FALLBACK=1 to run in mock mode       ║'
+      );
+      console.error(
+        '╚══════════════════════════════════════════════════════════╝'
+      );
+      process.exit(1);
+    }
+
     console.error(`Startup error: ${err.message}`);
     console.error(
       '╔══════════════════════════════════════════════════════════╗'

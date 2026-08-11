@@ -47,7 +47,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 1.2 Fail at boot in production if `JWT_SECRET` is unset
   - File: `src/api/services/auth.ts`
   - Verify: `npm run build`
-- [ ] 1.3 Make mock-mode DB fallback opt-in instead of silent
+- [x] 1.3 Make mock-mode DB fallback opt-in instead of silent
   - Files: `src/config.ts`, `src/server.ts`
   - Verify: `npm run build && npm run test:unit`
 - [ ] 1.4 Add `helmet`, restrictive CORS, rate limiting on auth/OTP endpoints
