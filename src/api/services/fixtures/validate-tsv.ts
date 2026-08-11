@@ -4,7 +4,9 @@ import decodeBase64Text from './decode-base64-text';
  * validate-tsv.ts – fixture-list validator (TypeScript, v4 · Jun 2025)
  *
  * Accepts a base-64 encoded TSV schedule string.
- * Returns { rows, warnings } where each cell is { value, warnings[] }.
+ * Returns { valid, rows, warnings, errors } where each cell is
+ * { value, warnings[] }. Errors are schedule defects which make an import
+ * unsafe; warnings are advisory scheduling concerns.
  * Field-level validation + cross-checks.
  * Options (constructor 2nd arg):
  *   - restGapMultiplier: gap ≥ N × previous match duration (default 2, 0 = disabled)
@@ -36,8 +38,10 @@ export interface RowData {
 }
 
 export interface ValidationResult {
+  valid: boolean;
   rows: RowData[];
   warnings: Warning[];
+  errors: Warning[];
   stages: StageSummary;
 }
 
@@ -274,6 +278,9 @@ export class TSVValidator {
     }
     this._cross();
     this._buildStagesSummary();
+    if (this.rows.length === 0) {
+      this.warnings.push(warn('integrity', 'No fixture rows found'));
+    }
     return this._result();
   }
 
@@ -1139,7 +1146,19 @@ export class TSVValidator {
 
   /* —— result —— */
   private _result(): ValidationResult {
-    return { rows: this.rows, warnings: this.warnings, stages: this.stages };
+    const errors = this.warnings.filter(
+      (issue) => issue.type === 'field' || issue.type === 'integrity'
+    );
+    return {
+      valid: errors.length === 0,
+      rows: this.rows,
+      // Keep the legacy warnings collection intact for existing API consumers.
+      // New callers should use `errors` and `valid` to decide whether import
+      // is safe.
+      warnings: this.warnings,
+      errors,
+      stages: this.stages,
+    };
   }
 }
 

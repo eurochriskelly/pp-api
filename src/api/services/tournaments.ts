@@ -354,7 +354,7 @@ const extractArchivePayload = (
 };
 
 export default (db: any) => {
-  const { select, insert, update, delete: dbDelete } = dbHelper(db);
+  const { select, insert, update, delete: dbDelete, transaction } = dbHelper(db);
   const winAward = 2;
   return {
     codeCheck: async (tournamentId: number, code: string, role: string) => {
@@ -432,11 +432,39 @@ export default (db: any) => {
           tournamentId,
           startDate
         );
-        await deleteFixtures(dbDelete, tournamentId);
-        await deletePitches(dbDelete, tournamentId);
-        await createPitches(insert, tournamentId, pitches);
-        await insert(sql, []);
-        return {};
+        const createdPitches = await transaction(async (tx) => {
+          await deleteFixtures(tx.delete, tournamentId);
+          await deletePitches(tx.delete, tournamentId);
+          const transactionPitches = await createPitches(
+            tx.insert,
+            tournamentId,
+            pitches
+          );
+          await tx.insert(sql, []);
+          const verificationRows = await tx.select(
+            'SELECT COUNT(*) AS fixtureCount FROM fixtures WHERE tournamentId = ?',
+            [tournamentId]
+          );
+          const fixtureCount = Number(verificationRows[0]?.fixtureCount ?? 0);
+          if (fixtureCount !== fixtureRows.length) {
+            throw new Error(
+              `Fixture verification failed: expected ${fixtureRows.length}, found ${fixtureCount}`
+            );
+          }
+
+          return { pitches: transactionPitches, fixtureCount };
+        });
+
+        return {
+          message: `Replaced fixtures for tournament ${tournamentId}`,
+          count: createdPitches.fixtureCount,
+          pitchCount: createdPitches.pitches.length,
+          verification: {
+            expectedFixtureCount: fixtureRows.length,
+            actualFixtureCount: createdPitches.fixtureCount,
+            verified: true,
+          },
+        };
       } catch (err: any) {
         console.log(err);
         throw new Error(
@@ -449,8 +477,9 @@ export default (db: any) => {
     createPitches: (pitches: any[], tournamentId: number) =>
       createPitches(insert, tournamentId, pitches),
 
-    // Players CRUD (New)
+    // Players CRUD
     createPlayer: async (
+      tournamentId: number,
       squadId: number,
       {
         firstName,
@@ -460,28 +489,49 @@ export default (db: any) => {
       }: {
         firstName: string;
         secondName: string;
-        dateOfBirth: string;
-        foirreannId: string;
+        dateOfBirth?: string | null;
+        foirreannId?: string | null;
       }
     ) => {
+      const squad = await select(
+        `SELECT id FROM squads WHERE id = ? AND tournamentId = ?`,
+        [squadId, tournamentId]
+      );
+      if (!squad[0]) {
+        throw new Error('Squad not found in tournament');
+      }
       const playerId = await insert(
         `INSERT INTO players (firstName, secondName, dateOfBirth, foirreannId, teamId) 
          VALUES (?, ?, ?, ?, ?)`,
-        [firstName, secondName, dateOfBirth, foirreannId, squadId]
+        [firstName, secondName, dateOfBirth || null, foirreannId || null, squadId]
       );
       return playerId;
     },
 
-    getPlayers: async (squadId: number) => {
-      return await select(`SELECT * FROM players WHERE teamId = ?`, [squadId]);
+    getPlayers: async (tournamentId: number, squadId: number) => {
+      return await select(
+        `SELECT p.*
+         FROM players p
+         JOIN squads s ON s.id = p.teamId
+         WHERE p.teamId = ? AND s.tournamentId = ?`,
+        [squadId, tournamentId]
+      );
     },
 
-    getPlayer: async (id: number) => {
-      const rows = await select(`SELECT * FROM players WHERE id = ?`, [id]);
+    getPlayer: async (tournamentId: number, squadId: number, id: number) => {
+      const rows = await select(
+        `SELECT p.*
+         FROM players p
+         JOIN squads s ON s.id = p.teamId
+         WHERE p.id = ? AND p.teamId = ? AND s.tournamentId = ?`,
+        [id, squadId, tournamentId]
+      );
       return rows[0] || null;
     },
 
     updatePlayer: async (
+      tournamentId: number,
+      squadId: number,
       id: number,
       {
         firstName,
@@ -491,13 +541,16 @@ export default (db: any) => {
       }: {
         firstName: string;
         secondName: string;
-        dateOfBirth: string;
-        foirreannId: string;
+        dateOfBirth?: string | null;
+        foirreannId?: string | null;
       }
     ) => {
       await update(
-        `UPDATE players SET firstName = ?, secondName = ?, dateOfBirth = ?, foirreannId = ? WHERE id = ?`,
-        [firstName, secondName, dateOfBirth, foirreannId, id]
+        `UPDATE players p
+         JOIN squads s ON s.id = p.teamId
+         SET p.firstName = ?, p.secondName = ?, p.dateOfBirth = ?, p.foirreannId = ?
+         WHERE p.id = ? AND p.teamId = ? AND s.tournamentId = ?`,
+        [firstName, secondName, dateOfBirth || null, foirreannId || null, id, squadId, tournamentId]
       );
     },
 
@@ -791,10 +844,10 @@ export default (db: any) => {
         notes,
       }: {
         teamName: string;
-        groupLetter: string;
-        category: string;
-        teamSheetSubmitted: boolean;
-        notes: string;
+        groupLetter?: string | null;
+        category?: string | null;
+        teamSheetSubmitted?: boolean;
+        notes?: string | null;
       }
     ) => {
       const squadId = await insert(
@@ -802,10 +855,10 @@ export default (db: any) => {
          VALUES (?, ?, ?, ?, ?, ?)`,
         [
           teamName,
-          groupLetter,
-          category,
+          groupLetter ?? null,
+          category ?? null,
           teamSheetSubmitted || false,
-          notes,
+          notes ?? null,
           tournamentId,
         ]
       );
@@ -818,20 +871,33 @@ export default (db: any) => {
     deletePitches: (tournamentId: number) =>
       deletePitches(dbDelete, tournamentId),
 
-    deletePlayer: async (id: number) => {
-      await dbDelete(`DELETE FROM players WHERE id = ?`, [id]);
+    deletePlayer: async (tournamentId: number, squadId: number, id: number) => {
+      await dbDelete(
+        `DELETE p FROM players p
+         JOIN squads s ON s.id = p.teamId
+         WHERE p.id = ? AND p.teamId = ? AND s.tournamentId = ?`,
+        [id, squadId, tournamentId]
+      );
     },
 
-    deleteSquad: async (id: number) => {
+    deleteSquad: async (tournamentId: number, squadId: number) => {
       try {
-        await dbDelete(`DELETE FROM players WHERE teamId = ?`, [id]);
+        await dbDelete(
+          `DELETE p FROM players p
+           JOIN squads s ON s.id = p.teamId
+           WHERE p.teamId = ? AND s.tournamentId = ?`,
+          [squadId, tournamentId]
+        );
       } catch (err: any) {
         // Legacy schemas may not include players.teamId.
         if (err?.code !== 'ER_BAD_FIELD_ERROR') {
           throw err;
         }
       }
-      await dbDelete(`DELETE FROM squads WHERE id = ?`, [id]);
+      await dbDelete(`DELETE FROM squads WHERE id = ? AND tournamentId = ?`, [
+        squadId,
+        tournamentId,
+      ]);
     },
 
     deleteTournament: async (id: number) => {
@@ -1668,30 +1734,36 @@ export default (db: any) => {
     },
 
     updateSquad: async (
+      tournamentId: number,
       id: number,
-      {
-        teamName,
-        groupLetter,
-        category,
-        teamSheetSubmitted,
-        notes,
-      }: {
-        teamName: string;
-        groupLetter: string;
-        category: string;
-        teamSheetSubmitted: boolean;
-        notes: string;
+      updates: {
+        teamName?: string;
+        groupLetter?: string | null;
+        category?: string | null;
+        teamSheetSubmitted?: boolean;
+        notes?: string | null;
       }
     ) => {
+      const [existing] = await select(
+        `SELECT teamName, groupLetter, category, teamSheetSubmitted, notes
+         FROM squads WHERE id = ? AND tournamentId = ?`,
+        [id, tournamentId]
+      );
+      if (!existing) {
+        throw new Error('Squad not found in tournament');
+      }
       await update(
-        `UPDATE squads SET teamName = ?, groupLetter = ?, category = ?, teamSheetSubmitted = ?, notes = ? WHERE id = ?`,
+        `UPDATE squads
+         SET teamName = ?, groupLetter = ?, category = ?, teamSheetSubmitted = ?, notes = ?
+         WHERE id = ? AND tournamentId = ?`,
         [
-          teamName,
-          groupLetter,
-          category,
-          teamSheetSubmitted || false,
-          notes,
+          updates.teamName ?? existing.teamName,
+          updates.groupLetter ?? existing.groupLetter,
+          updates.category ?? existing.category,
+          updates.teamSheetSubmitted ?? existing.teamSheetSubmitted,
+          updates.notes ?? existing.notes,
           id,
+          tournamentId,
         ]
       );
     },

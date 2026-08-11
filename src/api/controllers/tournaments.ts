@@ -3,6 +3,35 @@ import serviceFactory from '../services/tournaments';
 import mockServiceFactory from '../services/mocks/tournaments';
 import { createTournamentReportCache } from '../services/tournaments/report-cache';
 
+class FixtureValidationError extends Error {
+  readonly statusCode = 422;
+
+  constructor(readonly details: unknown) {
+    super('Fixture validation failed');
+  }
+}
+
+class UnsupportedFixtureImportError extends Error {
+  readonly statusCode = 400;
+
+  constructor() {
+    super(
+      'Fixture rows are not accepted directly. Submit the TSV so it can be validated before import.'
+    );
+  }
+}
+
+function sendFixtureImportError(res: Response, err: FixtureValidationError | UnsupportedFixtureImportError): void {
+  res.status(err.statusCode).json({
+    error:
+      err instanceof FixtureValidationError
+        ? 'FIXTURE_VALIDATION_FAILED'
+        : 'TSV_IMPORT_REQUIRED',
+    message: err.message,
+    ...(err instanceof FixtureValidationError ? { details: err.details } : {}),
+  });
+}
+
 function flattenValidatedRows(rows: any[]): Record<string, string | number>[] {
   return rows.map((row) =>
     Object.fromEntries(
@@ -11,15 +40,21 @@ function flattenValidatedRows(rows: any[]): Record<string, string | number>[] {
   );
 }
 
+function validatedFixtureRows(dbSvc: any, tsvEncoded: string) {
+  const validation = dbSvc.validateTsv(tsvEncoded);
+  if (validation.valid === false) {
+    throw new FixtureValidationError(validation);
+  }
+  return flattenValidatedRows(validation.rows);
+}
+
 function normalizeFixtureImportInput(dbSvc: any, body: unknown) {
   if (Array.isArray(body)) {
-    return body;
+    throw new UnsupportedFixtureImportError();
   }
 
   if (Buffer.isBuffer(body)) {
-    return flattenValidatedRows(
-      dbSvc.validateTsv(body.toString('base64')).rows
-    );
+    return validatedFixtureRows(dbSvc, body.toString('base64'));
   }
 
   let tsvText: string | null = null;
@@ -36,15 +71,15 @@ function normalizeFixtureImportInput(dbSvc: any, body: unknown) {
     if (typeof payload.tsv === 'string') {
       tsvText = payload.tsv;
     } else if (typeof payload.key === 'string') {
-      return flattenValidatedRows(dbSvc.validateTsv(payload.key).rows);
+      return validatedFixtureRows(dbSvc, payload.key);
     } else if (typeof payload.tsvEncoded === 'string') {
-      return flattenValidatedRows(dbSvc.validateTsv(payload.tsvEncoded).rows);
+      return validatedFixtureRows(dbSvc, payload.tsvEncoded);
     }
   }
 
   if (typeof tsvText === 'string') {
     const tsvEncoded = Buffer.from(tsvText, 'utf8').toString('base64');
-    return flattenValidatedRows(dbSvc.validateTsv(tsvEncoded).rows);
+    return validatedFixtureRows(dbSvc, tsvEncoded);
   }
 
   throw new Error(
@@ -198,9 +233,10 @@ function tournamentsController(db: any, useMock: boolean) {
     validateTsv: (req: Request, res: Response, next: NextFunction) => {
       try {
         const tsvEncoded = req.body.key;
-        const { rows, warnings, stages } = dbSvc.validateTsv(tsvEncoded);
+        const validation = dbSvc.validateTsv(tsvEncoded);
+        const { stages } = validation;
         prettyPrintStages(stages);
-        res.status(201).json({ data: { rows, warnings, stages } });
+        res.status(200).json({ data: validation });
       } catch (err) {
         next(err);
       }
@@ -964,6 +1000,10 @@ function tournamentsController(db: any, useMock: boolean) {
         const fixtures = await dbSvc.createFixtures(tournamentId, fixtureRows);
         res.status(201).json({ data: fixtures });
       } catch (err) {
+        if (err instanceof FixtureValidationError || err instanceof UnsupportedFixtureImportError) {
+          sendFixtureImportError(res, err);
+          return;
+        }
         next(err);
       }
     },
@@ -1009,6 +1049,13 @@ function tournamentsController(db: any, useMock: boolean) {
           });
           return;
         }
+
+        // Validate before creating or updating tournament metadata, so a failed
+        // schedule import cannot leave a partially updated tournament behind.
+        const fixtureRows = normalizeFixtureImportInput(
+          dbSvc,
+          Buffer.from(tsvBody, 'utf8')
+        );
 
         const latLon = metadata['LAT-LON'];
         let lat = 0;
@@ -1082,10 +1129,6 @@ function tournamentsController(db: any, useMock: boolean) {
           });
         }
 
-        const fixtureRows = normalizeFixtureImportInput(
-          dbSvc,
-          Buffer.from(tsvBody, 'utf8')
-        );
         const fixtures = await dbSvc.createFixtures(tournament.id, fixtureRows);
 
         res.status(201).json({
@@ -1099,6 +1142,10 @@ function tournamentsController(db: any, useMock: boolean) {
           },
         });
       } catch (err) {
+        if (err instanceof FixtureValidationError || err instanceof UnsupportedFixtureImportError) {
+          sendFixtureImportError(res, err);
+          return;
+        }
         next(err);
       }
     },

@@ -19,6 +19,18 @@ test('TSV validator preserves accented characters for UTF-8 uploads', () => {
   assert.equal(getImportedTeamName(tsvEncoded), 'CHOUETTES GALLÈSES');
 });
 
+test('TSV validator returns explicit errors for an unsafe schedule', () => {
+  const unsafeTsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDURATION
+09:00\tA.01\tCup\tPitch_1\tAlpha\tGp.1\tBeta\tGamma\t20
+09:00\tA.02\tCup\tPitch_1\tCharlie\tGp.1\tDelta\tEpsilon\t20`;
+  const result = new TSVValidator(
+    Buffer.from(unsafeTsv, 'utf8').toString('base64')
+  ).validate();
+
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((issue) => issue.message.includes('Two matches at')));
+});
+
 test('TSV validator preserves accented characters for Windows-1252 uploads', () => {
   const tsvEncoded = Buffer.from(tsv, 'latin1').toString('base64');
 

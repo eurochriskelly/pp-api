@@ -45,6 +45,7 @@ test('createFixtures accepts raw TSV uploads', async () => {
         validateTsv: (tsvEncoded) => {
           capturedTsvEncoded = tsvEncoded;
           return {
+            valid: true,
             rows: [
               {
                 TIME: { value: '11:30' },
@@ -56,6 +57,7 @@ test('createFixtures accepts raw TSV uploads', async () => {
                 TEAM2: { value: 'CHOUETTES GALLÈSES' },
                 UMPIRES: { value: 'RENNES' },
                 DURATION: { value: 20 },
+                DAY_OFFSET: { value: 1 },
               },
             ],
             warnings: [],
@@ -90,8 +92,8 @@ test('createFixtures accepts raw TSV uploads', async () => {
     controllerModule.default || controllerModule;
   const controller = tournamentsControllerFactory({}, false);
 
-  const tsv = `TIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDuration
-11:30\tA.07\tDivision1\tPitch_1\tNantes\tGp.3\tChouettes Gallèses\tRennes\t20`;
+  const tsv = `DAY_OFFSET\tTIME\tMATCH\tCATEGORY\tPITCH\tTEAM1\tSTAGE\tTEAM2\tUMPIRES\tDuration
+1\t11:30\tA.07\tDivision1\tPitch_1\tNantes\tGp.3\tChouettes Gallèses\tRennes\t20`;
 
   const req = {
     params: { tournamentId: '77' },
@@ -143,6 +145,7 @@ test('createFixtures accepts raw TSV uploads', async () => {
       TEAM2: 'CHOUETTES GALLÈSES',
       UMPIRES: 'RENNES',
       DURATION: 20,
+      DAY_OFFSET: 1,
     },
   ]);
 });

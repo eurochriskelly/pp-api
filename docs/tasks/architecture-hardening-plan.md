@@ -33,7 +33,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 0.2 Fix lint errors (prettier in new tests + unused vars in `scripts/create-endpoint.js`)
   - Files: `scripts/create-endpoint.js`, `test/unit/api/controllers/tournaments-createFixturesWithTournament.spec.js`, `test/unit/api/routes/fixture-contract.spec.js`
   - Verify: `npm run lint`
-- [ ] 0.3 Commit API-contract feature
+- [x] 0.3 Commit API-contract feature
   - Files: current uncommitted working tree (capabilities endpoint, fixture import hardening, squad scoping, contract tests, CI workflow)
   - Verify: `npm run build && npm run test:contract`
 - [ ] 0.4 Baseline verification

@@ -16,6 +16,8 @@ export default (dbs: any, useMock: boolean) => {
   );
 
   router.get('/mode', ctrl.getMode);
+  router.get('/health', ctrl.healthCheck);
+  router.get('/capabilities', ctrl.getCapabilities);
 
   return router;
 };

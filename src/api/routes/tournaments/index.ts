@@ -109,6 +109,7 @@ export default (dbs: any, useMock: boolean) => {
   router.get('/by-uuid/:uuid', validateUUID('uuid'), ctrl.getTournament);
   router.post(
     '/:tournamentId/reset',
+    auth,
     validateTournamentId,
     ctrl.resetTournament
   );

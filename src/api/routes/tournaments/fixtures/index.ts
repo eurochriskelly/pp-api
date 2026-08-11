@@ -12,6 +12,9 @@ export default (dbs: any, useMock: boolean) => {
   router.get('/', ctrl.getFixtures);
   router.get('/nextup', ctrl.nextFixtures);
   router.get('/pitches/:pitch/fixtures', ctrl.getFixtures);
+  router.put('/rewind', ctrl.rewindFixture);
+  // Retained for compatibility with older callers. Rewind always affects the
+  // latest started fixture, so fixtureId is intentionally ignored.
   router.put(
     '/:fixtureId/rewind',
     validateNumericId('fixtureId'),
