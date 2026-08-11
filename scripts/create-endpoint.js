@@ -85,7 +85,6 @@ const parentResource =
   pathParts.length > 1
     ? pathParts[pathParts.length - 2].replace(/^:/, '')
     : null;
-const isNested = endpointPath.includes('/:');
 const fileName = resourceName.replace(/-([a-z])/g, (_, letter) =>
   letter.toUpperCase()
 );
@@ -170,7 +169,6 @@ const requireAuth = (req: any, res: any, next: any) => {
 
   const routes = methods
     .map((method) => {
-      const lowerMethod = method.toLowerCase();
       const isGet = method === 'GET';
       const isCreate = method === 'POST';
       const isUpdate = method === 'PUT';

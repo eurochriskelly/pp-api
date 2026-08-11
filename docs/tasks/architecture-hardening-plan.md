@@ -30,7 +30,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 0.1 Commit this plan file
   - Files: `docs/tasks/architecture-hardening-plan.md`
   - Verify: `git diff --cached --stat` shows only this file
-- [ ] 0.2 Fix lint errors (prettier in new tests + unused vars in `scripts/create-endpoint.js`)
+- [x] 0.2 Fix lint errors (prettier in new tests + unused vars in `scripts/create-endpoint.js`)
   - Files: `scripts/create-endpoint.js`, `test/unit/api/controllers/tournaments-createFixturesWithTournament.spec.js`, `test/unit/api/routes/fixture-contract.spec.js`
   - Verify: `npm run lint`
 - [ ] 0.3 Commit API-contract feature

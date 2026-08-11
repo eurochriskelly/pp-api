@@ -292,3 +292,74 @@ test('createFixturesWithTournament returns 400 when metadata is missing', async 
   assert.equal(res.statusCode, 400);
   assert.equal(res.data.error, 'MISSING_TOURNAMENT_METADATA');
 });
+
+test('squad and player controllers preserve tournament and squad scope', async () => {
+  let updateSquadArgs = null;
+  let createPlayerArgs = null;
+  let deletePlayerArgs = null;
+  const { controller, restore } = setupControllerMocks({
+    updateSquad: async (...args) => {
+      updateSquadArgs = args;
+    },
+    getSquad: async () => ({ id: 7, teamName: 'Dublin A' }),
+    createPlayer: async (...args) => {
+      createPlayerArgs = args;
+      return 11;
+    },
+    getPlayer: async () => ({ id: 11, firstName: 'Jane', secondName: 'Doe' }),
+    deletePlayer: async (...args) => {
+      deletePlayerArgs = args;
+    },
+  });
+
+  try {
+    const updateRes = createMockRes();
+    await controller.updateSquad(
+      {
+        params: { tournamentId: '42', squadId: '7' },
+        body: { teamName: 'Dublin A', category: 'Senior' },
+      },
+      updateRes,
+      (err) => {
+        if (err) throw err;
+      }
+    );
+
+    const createPlayerRes = createMockRes();
+    await controller.createPlayer(
+      {
+        params: { tournamentId: '42', squadId: '7' },
+        body: { firstName: 'Jane', secondName: 'Doe' },
+      },
+      createPlayerRes,
+      (err) => {
+        if (err) throw err;
+      }
+    );
+
+    const deletePlayerRes = createMockRes();
+    await controller.deletePlayer(
+      { params: { tournamentId: '42', squadId: '7', playerId: '11' } },
+      deletePlayerRes,
+      (err) => {
+        if (err) throw err;
+      }
+    );
+
+    assert.deepEqual(updateSquadArgs, [
+      '42',
+      '7',
+      { teamName: 'Dublin A', category: 'Senior' },
+    ]);
+    assert.deepEqual(createPlayerArgs, [
+      '42',
+      '7',
+      { firstName: 'Jane', secondName: 'Doe' },
+    ]);
+    assert.deepEqual(deletePlayerArgs, ['42', '7', '11']);
+    assert.equal(createPlayerRes.statusCode, 201);
+    assert.equal(createPlayerRes.data.firstName, 'Jane');
+  } finally {
+    restore();
+  }
+});
