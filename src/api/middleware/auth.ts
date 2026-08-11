@@ -24,8 +24,12 @@ function authMiddleware(db: any, useMock: boolean) {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7, authHeader.length);
 
-      // Dev bypass: allow "dev-bypass-token" when PP_BYPASS_AUTH=1
-      if (process.env.PP_BYPASS_AUTH === '1' && token === 'dev-bypass-token') {
+      // Dev bypass: allow "dev-bypass-token" when PP_BYPASS_AUTH=1 (never in production)
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        process.env.PP_BYPASS_AUTH === '1' &&
+        token === 'dev-bypass-token'
+      ) {
         const bypassEmail = process.env.PP_EMAIL;
         if (bypassEmail) {
           req.user = {
