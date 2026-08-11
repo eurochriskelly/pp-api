@@ -5,8 +5,17 @@ import { sendOtpEmail } from '../../lib/email';
 
 const otpStore = new Map<string, { code: string; expires: number }>();
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || 'development-secret-do-not-use-in-prod';
+function getJwtSecret(): string {
+  if (process.env.JWT_SECRET) {
+    return process.env.JWT_SECRET;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+  return 'development-secret-do-not-use-in-prod';
+}
+
+const JWT_SECRET = getJwtSecret();
 const SALT_ROUNDS = 10;
 
 interface User {

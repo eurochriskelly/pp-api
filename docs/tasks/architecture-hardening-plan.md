@@ -44,7 +44,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 1.1 Env-gate dev auth bypass (`PP_BYPASS_AUTH` / `dev-bypass-token` only when `NODE_ENV !== 'production'`)
   - File: `src/api/middleware/auth.ts`
   - Verify: `npm run test:contract` (auth middleware tests now included)
-- [ ] 1.2 Fail at boot in production if `JWT_SECRET` is unset
+- [x] 1.2 Fail at boot in production if `JWT_SECRET` is unset
   - File: `src/api/services/auth.ts`
   - Verify: `npm run build`
 - [ ] 1.3 Make mock-mode DB fallback opt-in instead of silent
