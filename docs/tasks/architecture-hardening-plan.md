@@ -53,7 +53,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 1.4 Add security headers, restrictive CORS, and rate limiting on auth endpoints (implemented inline because npm registry is offline)
   - Files: `src/api/index.ts`, `package.json`
   - Verify: `npm run build && npm run lint`
-- [ ] 1.5 Implement `requireRole` middleware
+- [x] 1.5 Implement `requireRole` middleware
   - File: `src/api/middleware/auth.ts` (or new `src/api/middleware/authorization.ts`)
   - Verify: add unit tests; `npm run test:unit`
 - [ ] 1.6 Auth controller unit tests
