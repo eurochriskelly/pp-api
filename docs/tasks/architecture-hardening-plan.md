@@ -56,7 +56,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 1.5 Implement `requireRole` middleware
   - File: `src/api/middleware/auth.ts` (or new `src/api/middleware/authorization.ts`)
   - Verify: add unit tests; `npm run test:unit`
-- [ ] 1.6 Auth controller unit tests
+- [x] 1.6 Auth controller unit tests
   - Files: `test/unit/api/controllers/auth.spec.js` (new)
   - Verify: `npm run test:unit`
 

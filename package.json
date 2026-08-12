@@ -21,7 +21,7 @@
     "api": "bash scripts/host-api.sh",
     "test:api": "bash scripts/test-api.sh",
     "test:unit": "node --test dist/test/unit/**/*.spec.js",
-    "test:contract": "npm run build && node --test dist/test/unit/api/middleware/auth.spec.js dist/test/unit/api/middleware/authorization.spec.js dist/test/unit/api/controllers/system.spec.js dist/test/unit/api/controllers/tournaments.spec.js dist/test/unit/api/controllers/tournaments-createFixturesWithTournament.spec.js dist/test/unit/api/routes/fixture-contract.spec.js dist/test/unit/validate-tsv.spec.js",
+    "test:contract": "npm run build && node --test dist/test/unit/api/middleware/auth.spec.js dist/test/unit/api/middleware/authorization.spec.js dist/test/unit/api/controllers/auth.spec.js dist/test/unit/api/controllers/system.spec.js dist/test/unit/api/controllers/tournaments.spec.js dist/test/unit/api/controllers/tournaments-createFixturesWithTournament.spec.js dist/test/unit/api/routes/fixture-contract.spec.js dist/test/unit/validate-tsv.spec.js",
     "verify:contract": "npm run test:contract",
     "migrate:received-tournaments": "node scripts/migrate-received-tournaments.js",
     "lint": "eslint .",
