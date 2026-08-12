@@ -38,6 +38,38 @@ const createApp = () => {
   return app;
 };
 
+function securityHeaders(req: Request, res: Response, next: NextFunction) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '0');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains'
+    );
+  }
+  next();
+}
+
+function createRateLimiter(windowMs: number, maxRequests: number) {
+  const requests = new Map<string, number[]>();
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    const timestamps = requests.get(key) || [];
+    const recent = timestamps.filter((t) => t > windowStart);
+    if (recent.length >= maxRequests) {
+      res.status(429).json({ error: 'Too many requests, please try again later' });
+      return;
+    }
+    recent.push(now);
+    requests.set(key, recent);
+    next();
+  };
+}
+
 function setupApi(dbs: Dbs, ARGS: Args) {
   const app = createApp();
 
@@ -53,8 +85,24 @@ function setupApi(dbs: Dbs, ARGS: Args) {
   }
   II(`Setting up API endpoints. Mock mode: ${ARGS.useMock}`);
 
-  app.use(cors());
+  app.use(securityHeaders);
+
+  const allowedOrigins = process.env.PP_ALLOWED_ORIGINS
+    ? process.env.PP_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+    : true;
+  if (process.env.NODE_ENV === 'production' && allowedOrigins === true) {
+    console.warn(
+      '⚠️  Production CORS is wide-open because PP_ALLOWED_ORIGINS is not set'
+    );
+  }
+  const corsOptions: cors.CorsOptions = {
+    origin: allowedOrigins,
+    credentials: true,
+  };
+  app.use(cors(corsOptions));
   app.use(morgan('dev', { skip: (req: Request) => req.path === '/health' }));
+
+  const authLimiter = createRateLimiter(15 * 60 * 1000, 50);
 
   app.use('/api/tournaments', tournamentRoutes(dbs, ARGS.useMock));
   app.use(
@@ -68,8 +116,8 @@ function setupApi(dbs: Dbs, ARGS: Args) {
     tournamentTeamsRoutes(dbs, ARGS.useMock)
   );
   app.use('/api/regions', regionRoutes(dbs, ARGS.useMock));
-  app.use('/api/auth', authRoutes(dbs, ARGS.useMock));
-  app.use('/auth', authRoutes(dbs, ARGS.useMock));
+  app.use('/api/auth', authLimiter, authRoutes(dbs, ARGS.useMock));
+  app.use('/auth', authLimiter, authRoutes(dbs, ARGS.useMock));
   app.use('/api/system', systemRoutes(dbs, ARGS.useMock));
   app.use('/api/clubs', clubsRoutes(dbs, ARGS.useMock));
   app.use('/api/annual-reports', annualReportsRoutes(dbs, ARGS.useMock));

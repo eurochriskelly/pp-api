@@ -50,7 +50,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 - [x] 1.3 Make mock-mode DB fallback opt-in instead of silent
   - Files: `src/config.ts`, `src/server.ts`
   - Verify: `npm run build && npm run test:unit`
-- [ ] 1.4 Add `helmet`, restrictive CORS, rate limiting on auth/OTP endpoints
+- [x] 1.4 Add security headers, restrictive CORS, and rate limiting on auth endpoints (implemented inline because npm registry is offline)
   - Files: `src/api/index.ts`, `package.json`
   - Verify: `npm run build && npm run lint`
 - [ ] 1.5 Implement `requireRole` middleware
@@ -125,7 +125,7 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
   - Verify: `npm run test:unit`
 - [ ] 5.2 Remove committed compiled artifact `test/unit/headToHead.spec.js`
   - Verify: `npm run test:unit` still passes
-- [ ] 5.3 Relabel/document `test:api` vs `make test-api*`
+- [ ] 5.3 Relabel/document `test:api` vs `task test-api*`
   - Files: `package.json`, `AGENTS.md`, `Makefile`
   - Verify: docs only
 - [ ] 5.4 Unit specs for remaining untested controllers
