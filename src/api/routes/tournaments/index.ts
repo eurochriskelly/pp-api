@@ -60,7 +60,7 @@ export default (dbs: any, useMock: boolean) => {
     }),
     ctrl.publishTournamentArchive
   );
-  router.post('/', ctrl.createTournament);
+  router.post('/', auth, ctrl.createTournament);
   router.get('/', ctrl.getTournaments);
   router.get('/summary', ctrl.getTournamentsSummary);
   router.get('/by-status/:status', ctrl.getTournamentsByStatus);
@@ -88,6 +88,7 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.put(
     '/:tournamentId/report',
+    auth,
     validateTournamentId,
     ctrl.buildTournamentReport
   );
@@ -98,14 +99,14 @@ export default (dbs: any, useMock: boolean) => {
     tournamentReportsRoutes(dbs, useMock)
   );
 
-  router.put('/:tournamentId', validateTournamentId, ctrl.updateTournament);
+  router.put('/:tournamentId', auth, validateTournamentId, ctrl.updateTournament);
   router.put(
     '/:tournamentId/status',
     auth,
     validateTournamentId,
     ctrl.updateTournamentStatus
   );
-  router.delete('/:tournamentId', validateTournamentId, ctrl.deleteTournament);
+  router.delete('/:tournamentId', auth, validateTournamentId, ctrl.deleteTournament);
   router.get('/by-uuid/:uuid', validateUUID('uuid'), ctrl.getTournament);
   router.post(
     '/:tournamentId/reset',
@@ -120,6 +121,7 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.post(
     '/:tournamentId/generate-fixtures',
+    auth,
     validateTournamentId,
     ctrl.generateFixtures
   );
@@ -276,6 +278,7 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.put(
     '/:tournamentId/organizers/:userId',
+    auth,
     validateTournamentId,
     validateNumericId('userId'),
     ctrl.assignOrganizer
