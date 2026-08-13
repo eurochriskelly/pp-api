@@ -64,7 +64,7 @@ If this file is lost or out of date, regenerate it from the previous commit: `gi
 
 For each domain: add `protect` / `requireRole` to mutating routes, update contract tests, note client impact.
 
-- [ ] 2.1 System diagnostics endpoints (`PUT/DELETE /api/system/diagnostics/*`)
+- [x] 2.1 System diagnostics endpoints (`PUT/DELETE /api/system/diagnostics/*`)
   - File: `src/api/routes/system/index.ts`
   - Verify: `npm run test:contract`
 - [ ] 2.2 Users domain (`POST/GET /api/users`, `/api/auth/users`)
