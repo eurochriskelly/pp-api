@@ -180,17 +180,6 @@ export default function mockFixturesService() {
       };
     },
 
-    getFixturesByPitch: async (tournamentId: number, pitch: string) => {
-      II(
-        `Mock: getFixturesByPitch called for tournament [${tournamentId}], pitch [${pitch}]`
-      );
-      const result = mockFixtures.filter(
-        (f) => f.tournamentId === tournamentId && f.pitch === pitch
-      );
-      DD(`Mock: Found ${result.length} fixtures for pitch [${pitch}]`);
-      return result;
-    },
-
     getFixture: async (tournamentId: number, fixtureId: number) => {
       II(
         `Mock: getFixture called for tournament [${tournamentId}], fixture [${fixtureId}]`
@@ -398,6 +387,10 @@ export default function mockFixturesService() {
           : `Mock: Card ${cardId} not found.`
       );
       return { cardDeleted };
+    },
+
+    slack: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
     },
 
     copyFixtures: async (

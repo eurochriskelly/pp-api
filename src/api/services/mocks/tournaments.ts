@@ -500,6 +500,115 @@ export default function mockTournamentsService() {
     getTournamentClubs: async () => {
       return [];
     },
+
+    assignOrganizer: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    codeCheck: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    createFixtures: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    createPitches: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    createPlayer: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    createSquad: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    deleteCards: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    deleteFixtures: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    deletePitches: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    deletePlayer: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    deleteSquad: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getAllMatches: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getCardedPlayers: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getClubLogo: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getFinalsResults: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getGroupFixtures: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getGroupStandings: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getKnockoutFixtures: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getMatchesByPitch: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getOrganizers: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getPlayer: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getPlayers: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getRecentMatches: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getSquad: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getSquads: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getStartedMatchCount: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getTournamentCategories: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getTournamentOverview: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    getTournamentReport: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    integrityCheck: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    isOrganizer: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    resetTournament: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    updatePlayer: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    updateSquad: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    updateTournamentStatus: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
+    validateTsv: async (..._args: any[]) => {
+      throw new Error('Not implemented in mock');
+    },
   };
 }
 

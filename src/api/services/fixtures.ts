@@ -929,5 +929,9 @@ export default function fixturesService(db: any) {
         ]),
       };
     },
+
+    updateCalculatedFixtures: async (..._args: any[]) => {
+      throw new Error('Not implemented');
+    },
   };
 }

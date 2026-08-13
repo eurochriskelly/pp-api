@@ -104,6 +104,10 @@ export default function mockEventsService() {
     deleteEvent: async (id: string): Promise<void> => {
       mockEvents = mockEvents.filter((e) => e.id !== id);
     },
+
+    searchEvents: async (..._args: any[]): Promise<Event[]> => {
+      throw new Error('Not implemented in mock');
+    },
   };
 }
 

@@ -280,6 +280,10 @@ export default function mockRegionsService() {
       DD(`Mock: Returning region info: ${JSON.stringify(regionData)}`);
       return Promise.resolve(regionData);
     },
+
+    listRegionClubs: async (..._args: any[]): Promise<any[]> => {
+      throw new Error('Not implemented in mock');
+    },
   };
 }
 

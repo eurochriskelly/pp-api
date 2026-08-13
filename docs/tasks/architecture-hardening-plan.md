@@ -82,19 +82,19 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
 
 ### Phase 3 — Mock parity + drift prevention (P1)
 
-- [ ] 3.1 Add parity test: every real service method must exist on its mock
+- [x] 3.1 Add parity test: every real service method must exist on its mock
   - File: `test/unit/api/services/mock-parity.spec.js` (new)
   - Verify: `npm run test:unit`
-- [ ] 3.2 Bring `mocks/tournaments.ts` to parity
+- [x] 3.2 Bring `mocks/tournaments.ts` to parity
   - File: `src/api/services/mocks/tournaments.ts`
   - Verify: parity test passes
-- [ ] 3.3 Bring `mocks/teams.ts` to parity
+- [x] 3.3 Bring `mocks/teams.ts` to parity
   - File: `src/api/services/mocks/teams.ts`
   - Verify: parity test passes
-- [ ] 3.4 Reconcile `mocks/fixtures.ts` drift
+- [x] 3.4 Reconcile `mocks/fixtures.ts` drift
   - File: `src/api/services/mocks/fixtures.ts`
   - Verify: parity test passes
-- [ ] 3.5 Verify mock mode serves all advertised capabilities without 500s
+- [x] 3.5 Verify mock mode serves all advertised capabilities without 500s
   - Verify: `PP_MODE=mock npm run test:contract`
 
 ### Phase 4 — Self-documenting API (P1/P2)

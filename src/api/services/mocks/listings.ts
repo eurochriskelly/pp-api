@@ -96,6 +96,14 @@ export default function mockListingsService() {
     deleteListing: async (id: string): Promise<void> => {
       mockListings = mockListings.filter((l) => l.id !== id);
     },
+
+    getListingEvents: async (..._args: any[]): Promise<any[]> => {
+      throw new Error('Not implemented in mock');
+    },
+
+    getListingTimeline: async (..._args: any[]): Promise<any[]> => {
+      throw new Error('Not implemented in mock');
+    },
   };
 }
 
