@@ -9,8 +9,8 @@ export default (dbs: any, useMock: boolean) => {
   const ctrl = teamsController(dbMain, useMock);
   const auth = authMiddlewareFactory(dbMain, useMock);
 
-  router.post('/batch', ctrl.createBatch);
-  router.post('/assign-tournament', ctrl.assignTournament);
+  router.post('/batch', auth, ctrl.createBatch);
+  router.post('/assign-tournament', auth, ctrl.assignTournament);
   router.get('/', ctrl.getTeams);
   router.get('/:teamId', validateNumericId('teamId'), ctrl.getTeam);
   router.get('/:teamId/logo', validateNumericId('teamId'), ctrl.getLogo);
@@ -21,8 +21,8 @@ export default (dbs: any, useMock: boolean) => {
     express.raw({ type: 'image/png', limit: '5mb' }),
     ctrl.uploadLogo
   );
-  router.post('/', ctrl.createTeam);
-  router.put('/:teamId', validateNumericId('teamId'), ctrl.updateTeam);
+  router.post('/', auth, ctrl.createTeam);
+  router.put('/:teamId', auth, validateNumericId('teamId'), ctrl.updateTeam);
 
   return router;
 };

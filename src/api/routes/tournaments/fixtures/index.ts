@@ -12,11 +12,12 @@ export default (dbs: any, useMock: boolean) => {
   router.get('/', ctrl.getFixtures);
   router.get('/nextup', ctrl.nextFixtures);
   router.get('/pitches/:pitch/fixtures', ctrl.getFixtures);
-  router.put('/rewind', ctrl.rewindFixture);
+  router.put('/rewind', auth, ctrl.rewindFixture);
   // Retained for compatibility with older callers. Rewind always affects the
   // latest started fixture, so fixtureId is intentionally ignored.
   router.put(
     '/:fixtureId/rewind',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.rewindFixture
   );
@@ -30,9 +31,10 @@ export default (dbs: any, useMock: boolean) => {
   router.post('/copy', auth, ctrl.copyFixtures);
 
   // modify
-  router.put('/update-calculated-fixtures', ctrl.updateCalculatedFixtures);
+  router.put('/update-calculated-fixtures', auth, ctrl.updateCalculatedFixtures);
   router.put(
     '/:fixtureId/update-calculated-fixtures',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.updateCalculatedFixtures
   );
@@ -40,27 +42,32 @@ export default (dbs: any, useMock: boolean) => {
   // create
   router.post(
     '/:fixtureId/start',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.startFixture
   );
   router.post(
     '/:fixtureId/end',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.endFixture
   );
   router.post(
     '/:fixtureId/reschedule',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.reschedule
   );
-  router.post('/:fixtureId/slack', validateNumericId('fixtureId'), ctrl.slack);
+  router.post('/:fixtureId/slack', auth, validateNumericId('fixtureId'), ctrl.slack);
   router.post(
     '/:fixtureId/score',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.updateScore
   );
   router.post(
     '/:fixtureId/carded',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.cardPlayers
   );
@@ -68,6 +75,7 @@ export default (dbs: any, useMock: boolean) => {
   // Add the new DELETE route
   router.delete(
     '/:fixtureId/carded/:cardId',
+    auth,
     validateNumericId('fixtureId'),
     validateNumericId('cardId'),
     ctrl.deleteCard
