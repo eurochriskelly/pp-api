@@ -2,6 +2,7 @@ import express from 'express';
 import controllerFactory from '../../controllers/users';
 import generalController from '../../controllers/general';
 import authMiddlewareFactory from '../../middleware/auth';
+import requireRole from '../../middleware/authorization';
 import { validateNumericId } from '../../middleware/validation';
 
 export default (dbs: any, useMock: boolean) => {
@@ -10,10 +11,11 @@ export default (dbs: any, useMock: boolean) => {
   const ctrl = controllerFactory(dbMain, useMock);
   const generalCtrl = generalController(dbMain, useMock);
   const auth = authMiddlewareFactory(dbMain, useMock);
+  const requireAdmin = requireRole(['admin']);
 
   // Users
-  router.get('/users', generalCtrl.getUsers);
-  router.post('/users', ctrl.createUser);
+  router.get('/users', auth, requireAdmin, generalCtrl.getUsers);
+  router.post('/users', auth, requireAdmin, ctrl.createUser);
   router.put(
     '/users/:userId',
     auth,

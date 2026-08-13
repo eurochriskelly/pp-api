@@ -67,7 +67,7 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
 - [x] 2.1 System diagnostics endpoints (`PUT/DELETE /api/system/diagnostics/*`)
   - File: `src/api/routes/system/index.ts`
   - Verify: `npm run test:contract`
-- [ ] 2.2 Users domain (`POST/GET /api/users`, `/api/auth/users`)
+- [x] 2.2 Users domain (`POST/GET /api/users`, `/api/auth/users`)
   - Files: `src/api/routes/users/index.ts`, `src/api/routes/auth/index.ts`
   - Verify: `npm run test:unit` + `npm run test:contract`
 - [ ] 2.3 Tournament lifecycle mutations (create/update/delete, reset, generate-fixtures, report)
