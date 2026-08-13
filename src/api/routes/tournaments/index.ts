@@ -181,7 +181,7 @@ export default (dbs: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.getCardedPlayers
   );
-  router.post('/:tournamentId/squads', validateTournamentId, ctrl.createSquad);
+  router.post('/:tournamentId/squads', auth, validateTournamentId, ctrl.createSquad);
   router.get('/:tournamentId/squads', validateTournamentId, ctrl.getSquads);
   router.get(
     '/:tournamentId/squads/:squadId',
@@ -191,18 +191,21 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.put(
     '/:tournamentId/squads/:squadId',
+    auth,
     validateTournamentId,
     validateNumericId('squadId'),
     ctrl.updateSquad
   );
   router.delete(
     '/:tournamentId/squads/:squadId',
+    auth,
     validateTournamentId,
     validateNumericId('squadId'),
     ctrl.deleteSquad
   );
   router.post(
     '/:tournamentId/squads/:squadId/players',
+    auth,
     validateTournamentId,
     validateNumericId('squadId'),
     ctrl.createPlayer
@@ -222,6 +225,7 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.put(
     '/:tournamentId/squads/:squadId/players/:playerId',
+    auth,
     validateTournamentId,
     validateNumericId('squadId'),
     validateNumericId('playerId'),
@@ -229,6 +233,7 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.delete(
     '/:tournamentId/squads/:squadId/players/:playerId',
+    auth,
     validateTournamentId,
     validateNumericId('squadId'),
     validateNumericId('playerId'),
@@ -236,17 +241,20 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.delete(
     '/:tournamentId/fixtures',
+    auth,
     validateTournamentId,
     ctrl.deleteFixtures
   );
   router.delete(
     '/:tournamentId/pitches',
+    auth,
     validateTournamentId,
     ctrl.deletePitches
   );
-  router.delete('/:tournamentId/cards', validateTournamentId, ctrl.deleteCards);
+  router.delete('/:tournamentId/cards', auth, validateTournamentId, ctrl.deleteCards);
   router.post(
     '/:tournamentId/pitches',
+    auth,
     validateTournamentId,
     ctrl.createPitches
   );
@@ -303,6 +311,7 @@ export default (dbs: any, useMock: boolean) => {
 
   router.post(
     '/:tournamentId/club/:clubId/teamsheet',
+    auth,
     validateTournamentId,
     validateNumericId('clubId'),
     express.raw({ type: 'application/pdf', limit: '10mb' }),

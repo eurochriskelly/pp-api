@@ -73,7 +73,7 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
 - [x] 2.3 Tournament lifecycle mutations (create/update/delete, reset, generate-fixtures, report)
   - File: `src/api/routes/tournaments/index.ts`
   - Verify: `npm run test:unit` + `npm run test:contract`
-- [ ] 2.4 Tournament squads/players/teamsheet/cards/pitches mutations
+- [x] 2.4 Tournament squads/players/teamsheet/cards/pitches mutations
   - File: `src/api/routes/tournaments/index.ts`
   - Verify: `npm run test:unit` + `npm run test:contract`
 - [ ] 2.5 Remaining domains (teams, events, clubs, annual-reports, listings, regions, rulesets, series, championships)
