@@ -7,7 +7,7 @@ info:
     name: UNLICENSED
     url: https://example.com/license
 servers:
-  - url: http://localhost:3001/api
+  - url: http://localhost:4001
     description: Local API server
 security:
   - {}

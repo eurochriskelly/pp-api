@@ -99,7 +99,7 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
 
 ### Phase 4 — Self-documenting API (P1/P2)
 
-- [ ] 4.1 Wire OpenAPI spec regeneration into npm scripts and CI
+- [x] 4.1 Wire OpenAPI spec regeneration into npm scripts and CI
   - Files: `package.json`, `.github/workflows/contract.yml` (or new `openapi.yml`)
   - Verify: `npm run generate:openapi` produces no diff on `docs/api/openapi.yaml`
 - [ ] 4.2 Declare `js-yaml` dependency
