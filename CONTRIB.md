@@ -6,7 +6,7 @@ Contributions should prioritize maintainability, small file sizes, and compatibi
 
 ## Application architecture
 
-The main entry points is `api/index.js`. From there the 'routes' are defined mostly by table and go through 'controllers' and finally 'services'.
+The main entry points are `src/server.ts` (server bootstrap) and `src/api/index.ts` (API setup and route mounting). Routes are defined per resource under `src/api/routes/`, pass through `src/api/controllers/`, and finally call `src/api/services/` for business logic.
 
 ## Contribution Guidelines
 
@@ -23,6 +23,11 @@ The main entry points is `api/index.js`. From there the 'routes' are defined mos
    
 ## MySql backend
 
-This API connects to a MySQL backend. The schema can be found in `docs/schema.sql`.
-At this pre-release stage, prefer schema changes than adding complex logic in the services layer.
+This API connects to a MySQL backend using the `mysql2` package. The schema can be found in `docs/schema/`.
+At this pre-release stage, prefer schema changes over adding complex logic in the services layer.
 
+## Further reading
+
+- `docs/architecture-overview.md` — current architecture and conventions.
+- `docs/tasks/architecture-hardening-plan.md` — resumable improvement plan.
+- `AGENTS.md` — agent/developer commands and patterns.

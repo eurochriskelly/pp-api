@@ -102,16 +102,16 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
 - [x] 4.1 Wire OpenAPI spec regeneration into npm scripts and CI
   - Files: `package.json`, `.github/workflows/contract.yml` (or new `openapi.yml`)
   - Verify: `npm run generate:openapi` produces no diff on `docs/api/openapi.yaml`
-- [ ] 4.2 Declare `js-yaml` dependency
+- [ ] 4.2 Declare `js-yaml` dependency (deferred: npm registry offline; script currently works because js-yaml is a transitive dependency of eslint)
   - Files: `package.json`, `package-lock.json`
   - Verify: `rm -rf node_modules && npm ci && npm run generate:openapi`
-- [ ] 4.3 Update `docs/architecture-overview.md` to TypeScript reality
+- [x] 4.3 Update `docs/architecture-overview.md` to TypeScript reality
   - File: `docs/architecture-overview.md`
   - Verify: docs only; `npm run lint`
-- [ ] 4.4 Fix stale references in `AGENTS.md`
+- [x] 4.4 Fix stale references in `AGENTS.md`
   - File: `AGENTS.md`
   - Verify: docs only
-- [ ] 4.5 Reconcile redundant/outdated contribution docs
+- [x] 4.5 Reconcile redundant/outdated contribution docs
   - Files: `CONTRIB.md`, `contrubution-guide.md`, `GEMINI.md`
   - Verify: docs only
 - [ ] 4.6 Complete endpoint schema mapping from existing OpenAPI schemas
