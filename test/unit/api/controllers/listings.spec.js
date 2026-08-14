@@ -4,7 +4,7 @@ const listingsControllerFactory = require('../../../../src/api/controllers/listi
 
 test('getListingIcal generates valid iCal content', async () => {
   const req = {
-    params: { id: 'lst_99' },
+    params: { listingId: 'lst_99' },
   };
 
   let headers = {};
@@ -59,7 +59,7 @@ test('getListingIcal generates valid iCal content', async () => {
 
 test('getListingIcal returns 404 for missing listing', async () => {
   const req = {
-    params: { id: 'non_existent_listing' },
+    params: { listingId: 'non_existent_listing' },
   };
 
   let sentData = null;
@@ -167,7 +167,7 @@ test('getListing returns heroConfig', async () => {
   const id = createRes.data.data.id;
 
   // Now get it
-  const req = { params: { id } };
+  const req = { params: { listingId: id } };
   const res = createMockRes();
 
   // Mock query for expand
@@ -196,7 +196,7 @@ test('updateListing updates hero_config', async () => {
   };
 
   const req = {
-    params: { id },
+    params: { listingId: id },
     body: {
       hero_config: newHeroConfig,
     },

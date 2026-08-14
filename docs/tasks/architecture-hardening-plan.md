@@ -120,12 +120,12 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
 
 ### Phase 5 — Test infrastructure (P2)
 
-- [ ] 5.1 Make `test:unit` build first; update AGENTS.md single-test instructions
+- [x] 5.1 Make `test:unit` build first; update AGENTS.md single-test instructions
   - Files: `package.json`, `AGENTS.md`
   - Verify: `npm run test:unit`
-- [ ] 5.2 Remove committed compiled artifact `test/unit/headToHead.spec.js`
+- [x] 5.2 Remove committed compiled artifact `test/unit/headToHead.spec.js`
   - Verify: `npm run test:unit` still passes
-- [ ] 5.3 Relabel/document `test:api` vs `task test-api*`
+- [x] 5.3 Relabel/document `test:api` vs `task test-api*`
   - Files: `package.json`, `AGENTS.md`, `Makefile`
   - Verify: docs only
 - [ ] 5.4 Unit specs for remaining untested controllers

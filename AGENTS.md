@@ -9,7 +9,7 @@
 - **Unit tests**: `npm run test:unit` (runs compiled specs under `dist/test/unit/`)
 - **Contract tests**: `npm run test:contract` / `npm run verify:contract`
 - **Single test**: `node --test dist/test/unit/path/filename.spec.js`
-- **API tests**: `npm run test:api`
+- **API tests**: `npm run test:api` (runs `task test:api`; story suite selectable via `STORY=...`)
 - **OpenAPI spec**: `npm run generate:openapi`
 - **Interactive**: `npm run interactive`
 
