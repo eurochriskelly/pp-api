@@ -117,7 +117,6 @@ function setupApi(dbs: Dbs, ARGS: Args) {
   );
   app.use('/api/regions', regionRoutes(dbs, ARGS.useMock));
   app.use('/api/auth', authLimiter, authRoutes(dbs, ARGS.useMock));
-  app.use('/auth', authLimiter, authRoutes(dbs, ARGS.useMock));
   app.use('/api/system', systemRoutes(dbs, ARGS.useMock));
   app.use('/api/clubs', clubsRoutes(dbs, ARGS.useMock));
   app.use('/api/annual-reports', annualReportsRoutes(dbs, ARGS.useMock));
@@ -140,7 +139,7 @@ function setupApi(dbs: Dbs, ARGS: Args) {
   );
 
   app.get('*', (req: Request, res: Response) => {
-    res.status(404).send('Resourse not found!');
+    res.status(404).send('Resource not found!');
   });
 
   app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {

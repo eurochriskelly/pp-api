@@ -134,7 +134,7 @@ For each domain: add `protect` / `requireRole` to mutating routes, update contra
 
 ### Phase 6 — Hygiene & decomposition (P3, opportunistic)
 
-- [ ] 6.1 Quick wins: 404 typo, dead `middleware/index.ts`, duplicate `/auth` mount, bare `/api` users mount
+- [x] 6.1 Quick wins: 404 typo, dead `middleware/index.ts`, duplicate `/auth` mount
   - Files: `src/api/index.ts`, `src/api/middleware/index.ts`
   - Verify: `npm run build && npm run test:contract`
 - [ ] 6.2 Root clutter cleanup
