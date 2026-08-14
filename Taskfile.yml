@@ -1,0 +1,128 @@
+version: '3'
+
+silent: true
+
+tasks:
+  default:
+    cmds:
+      - ./scripts/task/help.sh
+
+  help:
+    cmds:
+      - ./scripts/task/help.sh
+
+  build:
+    desc: Compile the TypeScript application
+    cmds:
+      - npm run build
+
+  lint:
+    desc: Check code style
+    cmds:
+      - npm run lint
+
+  lint:fix:
+    desc: Fix code style issues
+    cmds:
+      - npm run lint:fix
+
+  clean:
+    desc: Remove generated cache files
+    cmds:
+      - echo "Removing cache directory..."
+      - rm -rf ./cache
+
+  test:
+    desc: Run unit and contract tests
+    deps: [build]
+    cmds:
+      - npm run test:unit
+      - npm run test:contract
+
+  test:unit:
+    desc: Run unit tests
+    deps: [build]
+    cmds:
+      - npm run test:unit
+
+  test:contract:
+    desc: Run API contract tests
+    deps: [build]
+    cmds:
+      - npm run test:contract
+
+  test:api:
+    desc: Run an automated API story (STORY=tournament-day|pre-tournament|championships, CLEANUP=true)
+    env:
+      CLEANUP: '{{.CLEANUP | default ""}}'
+      STORY: '{{.STORY | default "tournament-day"}}'
+    cmds:
+      - ./scripts/task/test-api.sh
+
+  server:dev:
+    desc: Start the development server against tst-data.lan
+    cmds:
+      - ./scripts/task/dev-wrapper.sh
+
+  server:mock:
+    desc: Start the server with mock services (PORT=NUMBER)
+    cmds:
+      - './scripts/task/mocks.sh "{{.PORT | default ""}}"'
+
+  server:start:
+    desc: Start the server (ENV=production|acceptance, PORT=NUMBER, FORCE=true)
+    cmds:
+      - './scripts/task/start.sh "{{.ENV | default "development"}}" "{{.PORT | default ""}}" "{{.FORCE | default ""}}"'
+
+  server:logs:
+    desc: Tail application logs (ENV=production|acceptance)
+    cmds:
+      - './scripts/task/logs.sh "{{.ENV | default ""}}"'
+
+  server:follow:
+    desc: Follow the local server log
+    cmds:
+      - mkdir -p ./logs
+      - touch ./logs/server.log
+      - echo "Following ./logs/server.log (press Ctrl+C to exit)"
+      - tail -f ./logs/server.log | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'
+
+  server:stop:
+    desc: Stop this application's server (PORT=NUMBER)
+    cmds:
+      - './scripts/task/kill.sh "{{.PORT | default ""}}"'
+
+  server:diagnostics:
+    desc: Toggle SQL statement logging (ACTION=on|off, PORT=NUMBER)
+    preconditions:
+      - sh: '[ "{{.ACTION | default ""}}" = "on" ] || [ "{{.ACTION | default ""}}" = "off" ]'
+        msg: 'ACTION must be on or off. Usage: task server:diagnostics ACTION=on PORT=NUMBER'
+      - sh: '[ -n "{{.PORT | default ""}}" ]'
+        msg: 'PORT is required. Usage: task server:diagnostics ACTION=on PORT=NUMBER'
+    cmds:
+      - './scripts/task/diagnostics.sh "{{.ACTION}}" "{{.PORT}}"'
+
+  db:backup:
+    desc: Create a database backup (ENV=environment)
+    preconditions:
+      - sh: '[ -n "{{.ENV | default ""}}" ]'
+        msg: 'ENV is required. Usage: task db:backup ENV=<environment>'
+    env:
+      ENV: '{{.ENV}}'
+    cmds:
+      - /bin/bash scripts/backup.sh
+
+  db:restore:
+    desc: Restore a database backup (ENV=environment, FILE=path, DATABASE=dbname, DROP=true)
+    preconditions:
+      - sh: '[ -n "{{.ENV | default ""}}" ]'
+        msg: 'ENV is required. Usage: task db:restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true]'
+      - sh: '[ -n "{{.FILE | default ""}}" ]'
+        msg: 'FILE is required. Usage: task db:restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true]'
+    env:
+      DATABASE: '{{.DATABASE | default ""}}'
+      DROP: '{{.DROP | default ""}}'
+      ENV: '{{.ENV}}'
+      FILE: '{{.FILE}}'
+    cmds:
+      - /bin/bash scripts/restore.sh

@@ -3,13 +3,13 @@
 ## Run
 
 ```bash
-make test-api
+task test:api STORY=tournament-day
 ```
 
 Cleanup created data after test run:
 
 ```bash
-make test-api CLEANUP=true
+task test:api STORY=tournament-day CLEANUP=true
 ```
 
 ## Files
@@ -37,8 +37,8 @@ Each step supports:
 
 Variables can be referenced as `$VAR_NAME`.
 
-Story-based suites:
+Story-based suites are selected with `STORY`:
 
-- `make test-api`: tournament-day flow
-- `make test-api-pre-tournament`: pre-tournament admin/simulation flow
-- `make test-api-championships`: series/championships flow
+- `task test:api STORY=tournament-day`: tournament-day flow
+- `task test:api STORY=pre-tournament`: pre-tournament admin/simulation flow
+- `task test:api STORY=championships`: series/championships flow

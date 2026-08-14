@@ -34,13 +34,13 @@ fi
 
 # Validate ENV is provided
 if [ -z "$ENV" ]; then
-	echo "Error: ENV is required. Usage: make restore ENV=<environment> FILE=<path/to/file.sql>"
+	echo "Error: ENV is required. Usage: task db:restore ENV=<environment> FILE=<path/to/file.sql>"
 	exit 1
 fi
 
 # Validate FILE is provided
 if [ -z "$FILE" ]; then
-	echo "Error: FILE is required. Usage: make restore ENV=<environment> FILE=<path/to/file.sql>"
+	echo "Error: FILE is required. Usage: task db:restore ENV=<environment> FILE=<path/to/file.sql>"
 	exit 1
 fi
 

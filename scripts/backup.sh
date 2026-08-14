@@ -34,7 +34,7 @@ fi
 
 # Validate ENV is provided
 if [ -z "$ENV" ]; then
-	echo "Error: ENV is required. Usage: make backup ENV=<environment>"
+	echo "Error: ENV is required. Usage: task db:backup ENV=<environment>"
 	exit 1
 fi
 

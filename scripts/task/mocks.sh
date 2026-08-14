@@ -1,8 +1,10 @@
 #!/bin/bash
 
-port=${PP_PORT_API:-4000}
+port=${1:-${PP_PORT_API:-4000}}
+export PP_PORT_API="$port"
 export PP_ENV=mock
 export PP_DATABASE=MockTourno
+export PP_DBN=MockTourno
 export PP_USE_MOCK=true
 export PP_API_APP=mobile
 mkdir -p ./logs

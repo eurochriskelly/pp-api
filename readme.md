@@ -25,18 +25,47 @@ backend/
 │   ├── logging.js         # Unchanged
 │   └── utils.js           # Unchanged (jsonToCsv, sendXsls, etc.)
 
+This repository uses [Task](https://taskfile.dev/) for development commands. If
+`task` is not installed, install go-task by following the
+[installation guide](https://taskfile.dev/installation/).
+
+The command interface is grouped by responsibility:
+
+```bash
+task
+```
+
+Common commands:
+
+```bash
+task server:dev
+task server:mock PORT=4000
+task server:start ENV=acceptance PORT=4000
+task test
+task test:api STORY=tournament-day CLEANUP=true
+task db:backup ENV=production
+```
+
+`server:start` refuses to terminate an unrelated process that already owns the
+requested port. Stop a tracked application instance with
+`task server:stop PORT=4000`; use `FORCE=true` only when you intentionally want
+to reclaim a busy port.
+
+For the full grouped reference, run `task`. Use `task --list-all` only when
+inspecting lower-level Taskfile details.
+
 ## Automated API tests
 
 Run sequential API tests with:
 
 ```bash
-make test-api
+task test:api STORY=tournament-day
 ```
 
 Optional cleanup:
 
 ```bash
-make test-api CLEANUP=true
+task test:api STORY=tournament-day CLEANUP=true
 ```
 
 This command:

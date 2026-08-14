@@ -7,7 +7,7 @@ source .kamal/secrets.tst
 set +a
 
 # Check port and get final value
-export PP_PORT_API=$(./scripts/make/check-port.sh)
+export PP_PORT_API=$(./scripts/task/check-port.sh)
 
 # Set other env vars
 export PP_HST=${PP_HOSTNAME_DB_DEV:-tst-data.lan}

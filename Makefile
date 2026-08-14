@@ -1,83 +1,15 @@
-.PHONY: help start mocks logs backup clean follow kill diagnostics-sql-on diagnostics-sql-off test-api test-api-tournament test-api-pre-tournament test-api-championships
+.PHONY: task-required
 
-DEFAULT_GOAL := help
+.DEFAULT_GOAL := task-required
 
-help:  ## Show this help menu
-	@echo "Available commands:"
-	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
-
-mocks:  ## Start server in mock mode (usage: make mocks [port=NUMBER])
-	./scripts/make/mocks.sh $(port)
-
-dev:  ## Start server in dev mode connecting to tst-data.lan
-	@./scripts/make/dev-wrapper.sh
-
-start:  ## Start server with auto-restart (usage: make start [env=production|acceptance] [port=NUMBER])
-	./scripts/make/start.sh $(env) $(port)
-
-test:  ## Run unit tests
-	npm run test:unit
-
-test-api: ## Run tournament-day E2E API story (usage: make test-api [CLEANUP=true])
-	SUITE=suites/tournament-day.txt ./scripts/make/test-api.sh
-
-test-api-tournament: ## Run tournament-day E2E API story
-	SUITE=suites/tournament-day.txt ./scripts/make/test-api.sh
-
-test-api-pre-tournament: ## Run pre-tournament simulation/admin API story
-	SUITE=suites/pre-tournament-admin.txt ./scripts/make/test-api.sh
-
-test-api-championships: ## Run championships/series API story
-	SUITE=suites/championships.txt ./scripts/make/test-api.sh
-
-backup:  ## Create a database backup (usage: make backup ENV=<environment>)
-	@if [ -z "$(ENV)" ]; then \
-		echo "Error: ENV is required. Usage: make backup ENV=<environment>"; \
-		exit 1; \
+task-required:
+	@if command -v task >/dev/null 2>&1; then \
+		echo "This repository uses Task. Run 'task' and choose the grouped command instead."; \
+	else \
+		echo "This repository uses Task, but it is not installed."; \
+		echo "Install go-task: https://taskfile.dev/installation/"; \
 	fi
-	ENV=$(ENV) /bin/bash scripts/backup.sh
+	@exit 1
 
-restore:  ## Restore database from backup (usage: make restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true])
-	@if [ -z "$(ENV)" ]; then \
-		echo "Error: ENV is required. Usage: make restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true]"; \
-		exit 1; \
-	fi
-	@if [ -z "$(FILE)" ]; then \
-		echo "Error: FILE is required. Usage: make restore ENV=<environment> FILE=<path/to/file.sql> [DATABASE=<dbname>] [DROP=true]"; \
-		exit 1; \
-	fi
-	ENV=$(ENV) FILE=$(FILE) DATABASE=$(DATABASE) DROP=$(DROP) /bin/bash scripts/restore.sh
-
-clean: ## Remove cache directory
-	@echo "Removing cache directory..."
-	@rm -rf ./cache
-
-logs:  ## Tail latest log (usage: make logs [env=production|acceptance])
-	./scripts/make/logs.sh $(env)
-
-follow:  ## Follow the server log (always follows ./logs/server.log)
-	@mkdir -p ./logs
-	@touch ./logs/server.log
-	@echo "Following ./logs/server.log (press Ctrl+C to exit)"
-	@tail -f "./logs/server.log" | awk '{print} /\[EXIT\] Server stopped\./ {print "Server stopped detected, exiting..."; exit}'
-
-kill:  ## Kill running server instances (usage: make kill [port=NUMBER])
-	./scripts/make/kill.sh $(port)
-
-diagnostics-sql-on: ## Enable SQL statement printing (usage: make diagnostics-sql-on port=NUMBER)
-	@if [ -z "$(port)" ]; then \
-		echo "Usage: make diagnostics-sql-on port=NUMBER"; \
-		exit 1; \
-	fi
-	@curl -X PUT http://localhost:$(port)/api/system/diagnostics/print-sql-statements
-
-diagnostics-sql-off: ## Disable SQL statement printing (usage: make diagnostics-sql-off port=NUMBER)
-	@if [ -z "$(port)" ]; then \
-		echo "Usage: make diagnostics-sql-off port=NUMBER"; \
-		exit 1; \
-	fi
-	@curl -X DELETE http://localhost:$(port)/api/system/diagnostics/print-sql-statements
-
-%:
+%: task-required
 	@:

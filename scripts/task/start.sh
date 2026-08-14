@@ -7,9 +7,10 @@ RED='\033[1;31m'
 YELLOW='\033[1;33m'
 RESET='\033[0m'
 
-# Parse make args $1=env $2=port
+# Parse Task arguments: $1=env, $2=port, $3=force
 env=${1:-development}
 port_arg=${2:-}
+force=${3:-${FORCE:-false}}
 [ -n "$port_arg" ] && export PP_PORT_API="$port_arg"
 
 # Source pp_env.sh for defaults (respects exported vars)
@@ -28,8 +29,13 @@ mkdir -p ./pids
 if [ -f "$pidfile" ]; then
   old_pid=$(cat "$pidfile")
   if kill -0 "$old_pid" 2>/dev/null; then
-    echo -e "${RED}[ERROR]${RESET} Port $port running (PID $old_pid). Run 'make kill port=$port'"
-    exit 1
+    if [ "$force" != "true" ]; then
+      echo -e "${RED}[ERROR]${RESET} Port $port is already running this application (PID $old_pid). Run 'task server:stop PORT=$port' first, or use FORCE=true explicitly."
+      exit 1
+    fi
+    echo -e "${YELLOW}[WARN]${RESET} FORCE=true: stopping the existing application process $old_pid" >&2
+    kill -TERM "$old_pid" 2>/dev/null || true
+    sleep 1
   fi
   rm -f "$pidfile"
 fi
@@ -44,7 +50,7 @@ logfile="./logs/server.log"
 > "$logfile"
 echo "$trace" > "./pids/start-$trace.pid"
 echo "env=$env port=$port dbn=$dbn" >> "$pidfile"
-echo "Run \`make follow\` to follow logs. Log: $logfile"
+echo "Run \`task server:follow\` to follow logs. Log: $logfile"
 
 # Source pp_env.sh to display DB config
 if [ -f ./pp_env.sh ]; then
@@ -69,23 +75,31 @@ printf "\n"
 echo "env=$env" >> "$pidfile"
 echo "port=$port" >> "$pidfile"
 echo "dbn=$dbn" >> "$pidfile"
-echo "Run \`make follow\` to follow the logs."
+echo "Run \`task server:follow\` to follow the logs."
 echo "Log file: $logfile"
 
-pids=$(lsof -ti tcp:$port 2>/dev/null || true)
-[ -n "$pids" ] && {
-  echo -e "${YELLOW}[WARN]${RESET} Killing processes on port $port: $pids" | tee -a "$logfile"
-  kill -9 $pids
+port_pids=$(lsof -ti tcp:$port 2>/dev/null || true)
+if [ -n "$port_pids" ]; then
+  if [ "$force" != "true" ]; then
+    echo -e "${RED}[ERROR]${RESET} Port $port is already in use (PIDs: $port_pids). Stop the owning process or use FORCE=true explicitly." | tee -a "$logfile"
+    exit 1
+  fi
+
+  echo -e "${YELLOW}[WARN]${RESET} FORCE=true: stopping processes on port $port: $port_pids" | tee -a "$logfile"
+  kill $port_pids 2>/dev/null || true
   sleep 2
-}
-sleep 1
-if lsof -i tcp:$port >/dev/null 2>&1; then
-  echo -e "${RED}[ERROR]${RESET} Failed to free port $port." | tee -a "$logfile"
-  exit 1
+  if lsof -i tcp:$port >/dev/null 2>&1; then
+    kill -9 $(lsof -ti tcp:$port) 2>/dev/null || true
+    sleep 1
+  fi
+  if lsof -i tcp:$port >/dev/null 2>&1; then
+    echo -e "${RED}[ERROR]${RESET} Failed to free port $port." | tee -a "$logfile"
+    exit 1
+  fi
 fi
 echo -e "${GREEN}[SUCCESS]${RESET} Port $port free." | tee -a "$logfile"
 
-# Build and launch single instance (PM2 for restarts/watch)
+# Build and launch a single tracked instance.
 echo -e "${GREEN}[BUILD]${RESET} Compiling..." | tee -a "$logfile"
 npm run build >> "$logfile" 2>&1 || { echo -e "${RED}[ERROR]${RESET} Build failed" | tee -a "$logfile"; exit 1; }
 
