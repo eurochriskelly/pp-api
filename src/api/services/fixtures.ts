@@ -329,15 +329,14 @@ export default function fixturesService(db: any) {
       return { started: timestamp };
     },
 
-    endFixture: async (fixtureId: number, outcome?: string) => {
-      console.log('ok');
+    endFixture: async (fixtureId: number, outcome?: 'played' | 'skipped') => {
       const timestamp = mysqlCurrentTime();
       await update(`UPDATE fixtures SET ended = ?, outcome = ? WHERE id = ?`, [
         timestamp,
-        outcome || 'skipped',
+        outcome || 'played',
         fixtureId,
       ]);
-      return { started: timestamp };
+      return { ended: timestamp };
     },
 
     updateScore: async (

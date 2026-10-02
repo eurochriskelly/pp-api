@@ -32,6 +32,12 @@ const updateScoreSchema = z.object({
     .default('in-progress'),
 });
 
+const endFixtureSchema = z.object({
+  // Ending a started fixture means it was played unless an operator explicitly
+  // records it as skipped. An in-progress outcome is never valid at the end.
+  outcome: z.enum(['played', 'skipped']).optional(),
+});
+
 const cardPlayerSchema = z
   .object({
     id: z.number().int().positive().nullable().optional(),
@@ -262,8 +268,19 @@ function fixturesController(db: any, useMock: boolean) {
     ): Promise<void> => {
       try {
         const { fixtureId } = req.params;
-        const outcome = typeof req.body?.outcome === 'string' ? req.body.outcome : undefined;
-        const result = await dbSvc.endFixture(fixtureId, outcome);
+        const validationResult = endFixtureSchema.safeParse(req.body || {});
+        if (!validationResult.success) {
+          res.status(400).json({
+            error: 'INVALID_REQUEST',
+            message: 'Invalid request body for ending fixture',
+            details: validationResult.error.flatten().fieldErrors,
+          });
+          return;
+        }
+        const result = await dbSvc.endFixture(
+          fixtureId,
+          validationResult.data.outcome
+        );
         res.json({ data: result });
       } catch (err) {
         next(err);

@@ -254,12 +254,12 @@ export default function mockFixturesService() {
       return null;
     },
 
-    endFixture: async (fixtureId: number, outcome?: string) => {
+    endFixture: async (fixtureId: number, outcome?: 'played' | 'skipped') => {
       II(`Mock: endFixture called for fixture [${fixtureId}]`);
       const fixture = mockFixtures.find((f) => f.id === fixtureId);
       if (fixture && fixture.started) {
         fixture.ended = new Date().toISOString();
-        fixture.outcome = outcome || 'skipped';
+        fixture.outcome = outcome || 'played';
         DD('Mock: Ended fixture: ' + JSON.stringify(fixture));
         return { ended: fixture.ended };
       }

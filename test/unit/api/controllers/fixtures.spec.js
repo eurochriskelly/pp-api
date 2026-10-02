@@ -16,6 +16,70 @@ function createMockRes() {
   };
 }
 
+test('endFixture leaves outcome unspecified so the service records a played fixture', async () => {
+  const servicePath = require.resolve('../../../../src/api/services/fixtures');
+  const controllerPath = require.resolve(
+    '../../../../src/api/controllers/fixtures'
+  );
+  const originalServiceModule = require.cache[servicePath];
+  const originalControllerModule = require.cache[controllerPath];
+  let capturedArgs = null;
+
+  require.cache[servicePath] = {
+    exports: {
+      __esModule: true,
+      default: () => ({
+        endFixture: async (...args) => {
+          capturedArgs = args;
+          return { ended: '2026-10-02 20:46:15.195' };
+        },
+      }),
+    },
+  };
+  delete require.cache[controllerPath];
+
+  try {
+    const controllerModule = require('../../../../src/api/controllers/fixtures');
+    const controller = (controllerModule.default || controllerModule)(
+      {},
+      false
+    );
+    const res = createMockRes();
+
+    await controller.endFixture(
+      { params: { fixtureId: '680016' }, body: {} },
+      res
+    );
+
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(capturedArgs, ['680016', undefined]);
+    assert.deepEqual(res.data, {
+      data: { ended: '2026-10-02 20:46:15.195' },
+    });
+  } finally {
+    if (originalServiceModule)
+      require.cache[servicePath] = originalServiceModule;
+    else delete require.cache[servicePath];
+    if (originalControllerModule)
+      require.cache[controllerPath] = originalControllerModule;
+    else delete require.cache[controllerPath];
+  }
+});
+
+test('endFixture rejects an in-progress outcome', async () => {
+  const controllerModule = require('../../../../src/api/controllers/fixtures');
+  const controller = (controllerModule.default || controllerModule)({}, true);
+  const res = createMockRes();
+
+  await controller.endFixture(
+    { params: { fixtureId: '680016' }, body: { outcome: 'in-progress' } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.data.error, 'INVALID_REQUEST');
+});
+
 test('updateScore accepts structured team score payloads', async () => {
   const servicePath = require.resolve('../../../../src/api/services/fixtures');
   const controllerPath = require.resolve(
