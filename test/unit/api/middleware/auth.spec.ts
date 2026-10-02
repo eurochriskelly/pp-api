@@ -66,4 +66,21 @@ describe('auth middleware', () => {
     assert.strictEqual(res.statusCode, 401);
     assert.strictEqual(res.body.error, 'Invalid or expired token');
   });
+
+  it('allows tokenless requests in explicitly enabled insecure event mode', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.PP_INSECURE_EVENT_MODE = '1';
+
+    const middleware = authMiddleware({}, true);
+    const req: any = { headers: {} };
+    let nextCalled = false;
+
+    await middleware(req, {} as any, () => {
+      nextCalled = true;
+    });
+
+    assert.strictEqual(nextCalled, true);
+    assert.strictEqual(req.user.id, 'insecure-event-mode');
+    assert.strictEqual(req.user.role, 'admin');
+  });
 });

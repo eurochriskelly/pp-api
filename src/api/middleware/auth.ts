@@ -20,6 +20,19 @@ function authMiddleware(db: any, useMock: boolean) {
     res: Response,
     next: NextFunction
   ): Promise<void> => {
+    // Temporary operational override for a live event. This is intentionally
+    // opt-in and must be removed from deployment configuration after the event.
+    if (process.env.PP_INSECURE_EVENT_MODE === '1') {
+      req.user = {
+        id: 'insecure-event-mode',
+        email: 'event-operator@pitchperfect.local',
+        role: 'admin',
+        username: 'event-operator',
+      };
+      next();
+      return;
+    }
+
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7, authHeader.length);
