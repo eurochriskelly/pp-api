@@ -62,6 +62,7 @@ export default (dbs: any, useMock: boolean) => {
   );
   router.post('/', auth, ctrl.createTournament);
   router.get('/', ctrl.getTournaments);
+  router.get('/templates', ctrl.listTournamentTemplates);
   router.get('/summary', ctrl.getTournamentsSummary);
   router.get('/by-status/:status', ctrl.getTournamentsByStatus);
 
@@ -134,6 +135,12 @@ export default (dbs: any, useMock: boolean) => {
     '/:tournamentId/categories',
     validateTournamentId,
     ctrl.getTournamentCategories
+  );
+  router.post(
+    '/:tournamentId/competitions',
+    auth,
+    validateTournamentId,
+    ctrl.createTournamentCompetition
   );
   router.get(
     '/:tournamentId/group-fixtures',

@@ -59,6 +59,66 @@ function authController(db: any, useMock: boolean) {
       }
     },
 
+    createInvite: async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { phone } = req.body;
+        if (!phone) {
+          res.status(400).json({ error: 'Phone is required' });
+          return;
+        }
+        const result = await (dbSvc as any).createInvite(phone);
+        res.status(201).json(result);
+      } catch (err) {
+        res.status(400).json({ error: (err as Error).message });
+      }
+    },
+
+    getInviteStatus: async (req: Request, res: Response): Promise<void> => {
+      try {
+        const result = await (dbSvc as any).getInviteStatus(req.params.token);
+        res.json(result);
+      } catch (err) {
+        const message = (err as Error).message;
+        res.status(message === 'Invite not found' ? 404 : 400).json({ error: message });
+      }
+    },
+
+    registerFromInvite: async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { name, password, code, clubId, clubName } = req.body;
+        if (!name || !password || (!clubId && !clubName)) {
+          res.status(400).json({ error: 'Name, password and club are required' });
+          return;
+        }
+        const result = await (dbSvc as any).registerFromInvite(
+          req.params.token,
+          name,
+          password,
+          code,
+          clubId ? Number(clubId) : undefined,
+          clubName
+        );
+        res.status(201).json(result);
+      } catch (err) {
+        const message = (err as Error).message;
+        res.status(message.includes('expired') ? 410 : 400).json({ error: message });
+      }
+    },
+
+    loginWithCode: async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { phone, code } = req.body;
+        if (!phone || !code) {
+          res.status(400).json({ error: 'Phone and code are required' });
+          return;
+        }
+        const result = await (dbSvc as any).loginWithCode(phone, code);
+        res.json(result);
+      } catch (err) {
+        res.status(401).json({ error: (err as Error).message });
+      }
+    },
+
     /**
      * Logout a user by invalidating their token
      */

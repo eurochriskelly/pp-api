@@ -44,8 +44,9 @@ export function calculateTeamRankings(
 
       if (
         fixture &&
-        fixture.outcome !== 'not played' &&
-        fixture.outcome !== 'skipped'
+        fixture.outcome &&
+        fixture.outcome !== 'in-progress' &&
+        fixture.outcome !== 'not played'
       ) {
         const team1 = fixture.team1;
         const team2 = fixture.team2;

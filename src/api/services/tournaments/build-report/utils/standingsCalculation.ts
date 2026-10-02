@@ -98,6 +98,7 @@ function applyFixtureToStats(
   pointsConfig: PointsConfig
 ): void {
   const { win, draw, loss } = pointsConfig;
+  const winPoints = fixture.outcome === 'skipped' ? 1 : win;
 
   team1Stats.matchesPlayed++;
   team2Stats.matchesPlayed++;
@@ -108,14 +109,14 @@ function applyFixtureToStats(
 
   if (fixture.team1.status === 'won') {
     team1Stats.won++;
-    team1Stats.points += win;
+    team1Stats.points += winPoints;
     team2Stats.loss++;
     team2Stats.points += loss;
   } else if (fixture.team1.status === 'lost') {
     team1Stats.loss++;
     team1Stats.points += loss;
     team2Stats.won++;
-    team2Stats.points += win;
+    team2Stats.points += winPoints;
   } else if (fixture.team1.status === 'draw') {
     team1Stats.draw++;
     team1Stats.points += draw;
@@ -180,8 +181,11 @@ function buildOverallStandings(
 
   groupFixtures.forEach((fixture) => {
     if (
+      !fixture.outcome ||
+      fixture.outcome === 'in-progress' ||
       fixture.outcome === 'not played' ||
-      fixture.outcome === 'skipped' ||
+      fixture.team1.total == null ||
+      fixture.team2.total == null ||
       !fixture.team1.name ||
       !fixture.team2.name
     ) {
@@ -191,7 +195,10 @@ function buildOverallStandings(
     const groupName = `GP.${fixture.pool}`;
     const topTeams = topTeamsByGroup.get(groupName);
     if (!topTeams) return;
-    if (!topTeams.has(fixture.team1.name) || !topTeams.has(fixture.team2.name)) {
+    if (
+      !topTeams.has(fixture.team1.name) ||
+      !topTeams.has(fixture.team2.name)
+    ) {
       return;
     }
 
@@ -258,8 +265,11 @@ export function calculateStandings(
 
   groupFixtures.forEach((fixture) => {
     if (
+      !fixture.outcome ||
+      fixture.outcome === 'in-progress' ||
       fixture.outcome === 'not played' ||
-      fixture.outcome === 'skipped' ||
+      fixture.team1.total == null ||
+      fixture.team2.total == null ||
       !fixture.team1.name ||
       !fixture.team2.name
     ) {

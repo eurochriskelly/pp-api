@@ -346,9 +346,15 @@ export class ReportBuilder {
         lastUpdated = f.updated;
       }
 
-      const hasResult = !['not played', 'skipped'].includes(
-        String(f.outcome || '').toLowerCase()
-      );
+      const hasResult =
+        !!f.outcome &&
+        !['in-progress', 'not played'].includes(
+          String(f.outcome).toLowerCase()
+        ) &&
+        f.goals1 !== null &&
+        f.points1 !== null &&
+        f.goals2 !== null &&
+        f.points2 !== null;
       f.total1 = hasResult
         ? calculateAggregateMatchScore({
             goals: f.goals1,

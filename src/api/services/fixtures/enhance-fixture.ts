@@ -178,7 +178,10 @@ export default function enhanceFixtureFactory({
         ? fixture.started.toTimeString().substring(0, 5)
         : null,
       isResult: !!(fixture.goals1 === 0 || fixture.goals1),
-      played: fixture.outcome !== 'not played' && !!fixture.ended,
+      played:
+        !!fixture.outcome &&
+        !['in-progress', 'not played'].includes(fixture.outcome) &&
+        !!fixture.ended,
       cards,
       infringements: { team1: [], team2: [] },
     };

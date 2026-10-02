@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import dbHelper from '../../lib/db-helper';
 import { sendOtpEmail } from '../../lib/email';
 
@@ -17,6 +18,7 @@ function getJwtSecret(): string {
 
 const JWT_SECRET = getJwtSecret();
 const SALT_ROUNDS = 10;
+const INVITE_TTL_SECONDS = 30 * 60;
 
 interface User {
   id: string;
@@ -25,6 +27,20 @@ interface User {
   Pass: string;
   IsActive: number;
   Role: string;
+  PhoneNumber?: string;
+  Verified?: number;
+}
+
+function normalisePhone(phone: string): string {
+  return phone.trim().replace(/[\s()-]/g, '');
+}
+
+function createInviteToken(): string {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+function createLoginCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 function authService(db: any) {
@@ -35,9 +51,20 @@ function authService(db: any) {
       `SELECT u.id, u.Email, u.Name, u.Pass, u.IsActive, r.RoleName as Role 
        FROM sec_users u 
        LEFT JOIN sec_roles r ON u.id = r.UserId 
-       WHERE u.Email = ? AND u.IsActive = 1`,
-      [email]
+       WHERE (u.Email = ? OR u.PhoneNumber = ?) AND u.IsActive = 1`,
+      [email, email]
     )) as unknown as User[];
+    return users[0];
+  };
+
+  const getUserByInviteToken = async (token: string): Promise<any> => {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const users = await select(
+      `SELECT id, Email, Name, PhoneNumber, club_id, Verified,
+              ManualVerificationRequired, InviteExpiresAt
+       FROM sec_users WHERE InviteTokenHash = ?`,
+      [tokenHash]
+    );
     return users[0];
   };
 
@@ -178,6 +205,160 @@ function authService(db: any) {
           name: user.Name,
         },
         token,
+      };
+    },
+
+    createInvite: async (phone: string) => {
+      const normalisedPhone = normalisePhone(phone);
+      if (!/^\+?[0-9]{7,15}$/.test(normalisedPhone)) {
+        throw new Error('A valid phone number is required');
+      }
+
+      const existing = await select(
+        `SELECT id, Verified FROM sec_users WHERE PhoneNumber = ?`,
+        [normalisedPhone]
+      );
+      if (existing.length && (existing[0] as any).Verified) {
+        throw new Error('A registered user already exists for this phone number');
+      }
+
+      const token = createInviteToken();
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const expiresAt = new Date(Date.now() + INVITE_TTL_SECONDS * 1000);
+
+      if (existing.length) {
+        await update(
+          `UPDATE sec_users SET InviteTokenHash = ?, InviteExpiresAt = ?,
+             ManualVerificationRequired = 0 WHERE id = ?`,
+          [tokenHash, expiresAt, (existing[0] as any).id]
+        );
+      } else {
+        const userId = await insert(
+          `INSERT INTO sec_users
+             (PhoneNumber, IsActive, Verified, ManualVerificationRequired,
+              InviteTokenHash, InviteExpiresAt)
+           VALUES (?, 0, 0, 0, ?, ?)`,
+          [normalisedPhone, tokenHash, expiresAt]
+        );
+        await insert(`INSERT INTO sec_roles (UserId, RoleName) VALUES (?, 'player')`, [userId]);
+      }
+
+      return {
+        token,
+        phone: normalisedPhone,
+        expiresAt: expiresAt.toISOString(),
+        ttl: INVITE_TTL_SECONDS,
+      };
+    },
+
+    getInviteStatus: async (token: string) => {
+      const user = await getUserByInviteToken(token);
+      if (!user) throw new Error('Invite not found');
+
+      const expired = user.InviteExpiresAt && new Date(user.InviteExpiresAt).getTime() < Date.now();
+      if (expired && !user.Verified && !user.ManualVerificationRequired) {
+        await update(
+          `UPDATE sec_users SET ManualVerificationRequired = 1 WHERE id = ?`,
+          [user.id]
+        );
+      }
+
+      return {
+        status: user.Verified
+          ? 'registered'
+          : expired
+            ? 'manual_verification_required'
+            : 'pending',
+        phone: user.PhoneNumber,
+        expiresAt: user.InviteExpiresAt,
+      };
+    },
+
+    registerFromInvite: async (
+      token: string,
+      name: string,
+      password: string,
+      code?: string,
+      clubId?: number,
+      clubName?: string
+    ) => {
+      const user = await getUserByInviteToken(token);
+      if (!user) throw new Error('Invite not found');
+      if (user.Verified) throw new Error('Invite has already been registered');
+      if (user.ManualVerificationRequired || new Date(user.InviteExpiresAt).getTime() < Date.now()) {
+        await update(
+          `UPDATE sec_users SET ManualVerificationRequired = 1 WHERE id = ?`,
+          [user.id]
+        );
+        throw new Error('Registration window expired; manual verification is required');
+      }
+      if (!name?.trim() || !password || password.length < 8) {
+        throw new Error('Name and a password of at least 8 characters are required');
+      }
+      if (code && !/^\d{6}$/.test(code)) {
+        throw new Error('Login code must be exactly 6 digits');
+      }
+
+      let selectedClubId = clubId;
+      if (!selectedClubId && clubName?.trim()) {
+        const matchingClubs = await select(
+          `SELECT clubId FROM clubs WHERE LOWER(clubName) = LOWER(?) LIMIT 1`,
+          [clubName.trim()]
+        );
+        selectedClubId = matchingClubs.length
+          ? Number((matchingClubs[0] as any).clubId)
+          : await insert(
+              `INSERT INTO clubs (clubName, status) VALUES (?, 'active')`,
+              [clubName.trim()]
+            );
+      }
+      if (!selectedClubId) throw new Error('A club is required');
+
+      const loginCode = code || createLoginCode();
+      const [passwordHash, loginCodeHash] = await Promise.all([
+        bcrypt.hash(password, SALT_ROUNDS),
+        bcrypt.hash(loginCode, SALT_ROUNDS),
+      ]);
+
+      await update(
+        `UPDATE sec_users SET Name = ?, Pass = ?, club_id = ?, IsActive = 1,
+           Verified = 1, ManualVerificationRequired = 0,
+           LoginCodeHash = ?, InviteTokenHash = NULL WHERE id = ?`,
+        [name.trim(), passwordHash, selectedClubId, loginCodeHash, user.id]
+      );
+
+      return {
+        message: 'Registration successful',
+        loginCode,
+        user: {
+          id: user.id,
+          phone: user.PhoneNumber,
+          name: name.trim(),
+          clubId: selectedClubId,
+          role: 'player',
+        },
+      };
+    },
+
+    loginWithCode: async (phone: string, code: string) => {
+      const normalisedPhone = normalisePhone(phone);
+      const users = await select(
+        `SELECT u.id, u.Email, u.Name, u.PhoneNumber, u.LoginCodeHash,
+                r.RoleName as Role
+         FROM sec_users u LEFT JOIN sec_roles r ON u.id = r.UserId
+         WHERE u.PhoneNumber = ? AND u.IsActive = 1 AND u.Verified = 1`,
+        [normalisedPhone]
+      );
+      const user = users[0] as any;
+      if (!user || !user.LoginCodeHash || !(await bcrypt.compare(code, user.LoginCodeHash))) {
+        throw new Error('Invalid credentials');
+      }
+      await update(`UPDATE sec_users SET LastAuthenticated = NOW() WHERE id = ?`, [user.id]);
+      const token = generateToken({ ...user, Email: user.Email || user.PhoneNumber });
+      return {
+        message: 'Login successful',
+        token,
+        user: { id: user.id, phone: user.PhoneNumber, name: user.Name, role: user.Role || 'player' },
       };
     },
 

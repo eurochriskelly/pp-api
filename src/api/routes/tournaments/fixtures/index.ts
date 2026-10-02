@@ -29,6 +29,8 @@ export default (dbs: any, useMock: boolean) => {
   router.get('/:fixtureId', validateNumericId('fixtureId'), ctrl.getFixture);
   router.post('/filtered', ctrl.getFilteredFixtures);
   router.post('/copy', auth, ctrl.copyFixtures);
+  router.put('/template-setup', auth, ctrl.updateTemplateSetup);
+  router.patch('/:fixtureId/details', auth, validateNumericId('fixtureId'), ctrl.updateFixtureDetails);
 
   // modify
   router.put('/update-calculated-fixtures', auth, ctrl.updateCalculatedFixtures);

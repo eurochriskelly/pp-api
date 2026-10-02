@@ -107,6 +107,61 @@ test('updateScore rejects malformed score payloads', async () => {
   assert.equal(res.data.error, 'INVALID_REQUEST');
 });
 
+test('updateScore defaults an omitted outcome to in-progress', async () => {
+  const servicePath = require.resolve('../../../../src/api/services/fixtures');
+  const controllerPath = require.resolve(
+    '../../../../src/api/controllers/fixtures'
+  );
+  const originalServiceModule = require.cache[servicePath];
+  const originalControllerModule = require.cache[controllerPath];
+  let capturedArgs = null;
+
+  require.cache[servicePath] = {
+    exports: {
+      __esModule: true,
+      default: () => ({
+        updateScore: async (...args) => {
+          capturedArgs = args;
+          return { updated: true };
+        },
+      }),
+    },
+  };
+  delete require.cache[controllerPath];
+
+  try {
+    const controllerModule = require('../../../../src/api/controllers/fixtures');
+    const controller = (controllerModule.default || controllerModule)(
+      {},
+      false
+    );
+    const res = createMockRes();
+
+    await controller.updateScore(
+      {
+        params: { tournamentId: '38', fixtureId: '380001' },
+        body: {
+          scores: {
+            team1: { goals: 1, points: 4 },
+            team2: { goals: 1, points: 2 },
+          },
+        },
+      },
+      res
+    );
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(capturedArgs[4], 'in-progress');
+  } finally {
+    if (originalServiceModule) {
+      require.cache[servicePath] = originalServiceModule;
+    } else delete require.cache[servicePath];
+    if (originalControllerModule) {
+      require.cache[controllerPath] = originalControllerModule;
+    } else delete require.cache[controllerPath];
+  }
+});
+
 test('reschedule rejects missing placement', async () => {
   const controllerModule = require('../../../../src/api/controllers/fixtures');
   const fixturesControllerFactory =

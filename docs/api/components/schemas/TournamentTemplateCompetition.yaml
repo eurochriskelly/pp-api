@@ -1,0 +1,25 @@
+type: object
+required:
+  - name
+  - fixtureCount
+  - teamCount
+  - groups
+properties:
+  name:
+    type: string
+  fixtureCount:
+    type: integer
+  teamCount:
+    type: integer
+  groups:
+    type: array
+    items:
+      type: object
+      required:
+        - number
+        - teamCount
+      properties:
+        number:
+          type: integer
+        teamCount:
+          type: integer

@@ -74,7 +74,9 @@ export function getMatchStatus(
   score1: number | null,
   score2: number | null
 ): string {
-  if (outcome === 'not played' || outcome === 'skipped') return 'contender';
+  if (!outcome || outcome === 'in-progress' || outcome === 'not played') {
+    return 'contender';
+  }
   if (score1 == null) return 'contender';
   if (score1 > score2!) return 'won';
   if (score2! > score1) return 'lost';

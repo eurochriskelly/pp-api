@@ -354,6 +354,266 @@ paths:
           application/json:
             schema:
               type: object
+  /api/auth/code-login:
+    post:
+      tags:
+        - auth
+      summary: Create code login
+      operationId: post_api_auth_code_login
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /auth/code-login:
+    post:
+      tags:
+        - auth
+      summary: Create code login
+      operationId: post_auth_code_login
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/invites/{token}:
+    get:
+      tags:
+        - auth
+      summary: Get invites
+      operationId: get_api_auth_invites_token
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+  /auth/invites/{token}:
+    get:
+      tags:
+        - auth
+      summary: Get invites
+      operationId: get_auth_invites_token
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/auth/invites/{token}/register:
+    post:
+      tags:
+        - auth
+      summary: Create register
+      operationId: post_api_auth_invites_token_register
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /auth/invites/{token}/register:
+    post:
+      tags:
+        - auth
+      summary: Create register
+      operationId: post_auth_invites_token_register
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/auth/invites:
+    post:
+      tags:
+        - auth
+      summary: Create invites
+      operationId: post_api_auth_invites
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /auth/invites:
+    post:
+      tags:
+        - auth
+      summary: Create invites
+      operationId: post_auth_invites
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /api/auth/logout:
     post:
       tags:
@@ -762,6 +1022,111 @@ paths:
           required: true
           schema:
             type: string
+  /api/championships/{championshipId}/rounds:
+    post:
+      tags:
+        - championships
+      summary: Create rounds
+      operationId: post_api_championships_championshipId_rounds
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChampionshipRound"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: championshipId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChampionshipRoundCreate"
+    get:
+      tags:
+        - championships
+      summary: Get rounds
+      operationId: get_api_championships_championshipId_rounds
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChampionshipRound"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: championshipId
+          in: path
+          required: true
+          schema:
+            type: string
+  /api/championships/{championshipId}/rounds/{roundId}:
+    delete:
+      tags:
+        - championships
+      summary: Delete rounds
+      operationId: delete_api_championships_championshipId_rounds_roundId
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: championshipId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: roundId
+          in: path
+          required: true
+          schema:
+            type: string
   /api/championships/{championshipId}/entrants:
     get:
       tags:
@@ -831,39 +1196,6 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/ChampionshipEntrantCreate"
-  /api/championships/{championshipId}/rounds:
-    get:
-      tags:
-        - championships
-      summary: Get rounds
-      operationId: get_api_championships_championshipId_rounds
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ChampionshipRound"
-        "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "500":
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-      parameters:
-        - name: championshipId
-          in: path
-          required: true
-          schema:
-            type: string
   /api/championships/{championshipId}/standings:
     get:
       tags:
@@ -3661,6 +3993,33 @@ paths:
           required: false
           schema:
             type: string
+  /api/tournaments/templates:
+    get:
+      tags:
+        - tournaments
+      summary: Get templates
+      operationId: get_api_tournaments_templates
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TournamentTemplate"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/tournaments/summary:
     get:
       tags:
@@ -4165,7 +4524,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
         "400":
           description: Bad request
           content:
@@ -4184,6 +4545,43 @@ paths:
           required: true
           schema:
             type: string
+  /api/tournaments/{tournamentId}/competitions:
+    post:
+      tags:
+        - tournaments
+      summary: Create competitions
+      operationId: post_api_tournaments_tournamentId_competitions
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TournamentCompetition"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TournamentCompetitionCreate"
   /api/tournaments/{tournamentId}/group-fixtures:
     get:
       tags:
@@ -6365,24 +6763,35 @@ components:
     ChampionshipRound:
       type: object
       properties:
+        id:
+          type: integer
+        championshipId:
+          type: integer
         roundNumber:
           type: integer
-        tournamentCount:
+        tournamentId:
           type: integer
-        tournaments:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: integer
-              title:
-                type: string
-              date:
-                type: string
-                format: date
-              status:
-                type: string
+        competition:
+          type: string
+        tournamentTitle:
+          type: string
+        tournamentDate:
+          type: string
+          format: date
+    ChampionshipRoundCreate:
+      type: object
+      required:
+        - roundNumber
+        - tournamentId
+        - competition
+      properties:
+        roundNumber:
+          type: integer
+          minimum: 1
+        tournamentId:
+          type: integer
+        competition:
+          type: string
     ChampionshipStanding:
       type: object
       properties:
@@ -6936,6 +7345,26 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Squad"
+    TournamentCompetition:
+      type: object
+      required:
+        - id
+        - tournamentId
+        - name
+      properties:
+        id:
+          type: integer
+        tournamentId:
+          type: integer
+        name:
+          type: string
+    TournamentCompetitionCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
     TournamentCreate:
       type: object
       properties:
@@ -6972,6 +7401,7 @@ components:
           type: string
         location:
           type: string
+    type: object
     YearsSummary:
       type: object
       properties:

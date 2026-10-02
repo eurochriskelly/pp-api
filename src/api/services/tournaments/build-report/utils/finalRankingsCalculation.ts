@@ -160,8 +160,9 @@ export function calculateFinalRankings(
 
         if (
           !fixture ||
+          !fixture.outcome ||
+          fixture.outcome === 'in-progress' ||
           fixture.outcome === 'not played' ||
-          fixture.outcome === 'skipped' ||
           !fixture.team1.name ||
           !fixture.team2.name ||
           !isRealTeam(fixture.team1.name) ||
@@ -202,8 +203,9 @@ export function calculateFinalRankings(
           .filter(
             (f) =>
               (f.team1.name === team || f.team2.name === team) &&
-              f.outcome !== 'not played' &&
-              f.outcome !== 'skipped'
+              !!f.outcome &&
+              f.outcome !== 'in-progress' &&
+              f.outcome !== 'not played'
           )
           .pop();
 

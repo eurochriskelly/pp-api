@@ -22,7 +22,14 @@ const updateScoreSchema = z.object({
     },
     { required_error: 'scores object is required' }
   ),
-  outcome: z.string().optional(),
+  outcome: z
+    .enum([
+      'played',
+      'in-progress',
+      'not played',
+      'skipped',
+    ])
+    .default('in-progress'),
 });
 
 const cardPlayerSchema = z
@@ -45,6 +52,37 @@ const slackSchema = z.object({
     required_error: 'minutes is required',
     invalid_type_error: 'minutes must be a number',
   }),
+});
+
+const templateSetupSchema = z.object({
+  scheduleDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  scheduleTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  competitionRenames: z.array(z.object({ from: z.string(), to: z.string() })).optional(),
+  teamRenames: z.array(z.object({
+    competition: z.string(),
+    groupNumber: z.number().int().nullable().optional(),
+    from: z.string(),
+    to: z.string(),
+  })).optional(),
+  groupRenames: z.array(z.object({
+    competition: z.string(),
+    from: z.number().int(),
+    to: z.number().int().positive(),
+  })).optional(),
+}).refine(
+  (data) => Boolean(
+    data.scheduleDate ||
+    data.scheduleTime ||
+    data.competitionRenames?.length ||
+    data.teamRenames?.length ||
+    data.groupRenames?.length
+  ),
+  { message: 'At least one setup change is required' }
+);
+
+const fixtureDetailsSchema = z.object({
+  field: z.enum(['category', 'team1', 'team2', 'umpireTeam', 'pitch', 'scheduledTime']),
+  value: z.string().min(1),
 });
 
 const rescheduleSchema = z
@@ -114,7 +152,8 @@ function fixturesController(db: any, useMock: boolean) {
           category,
           outcome,
           order,
-        });
+});
+
         res.json({ data: fixtures });
       } catch (err) {
         next(err);
@@ -223,7 +262,8 @@ function fixturesController(db: any, useMock: boolean) {
     ): Promise<void> => {
       try {
         const { fixtureId } = req.params;
-        const result = await dbSvc.endFixture(fixtureId);
+        const outcome = typeof req.body?.outcome === 'string' ? req.body.outcome : undefined;
+        const result = await dbSvc.endFixture(fixtureId, outcome);
         res.json({ data: result });
       } catch (err) {
         next(err);
@@ -313,6 +353,53 @@ function fixturesController(db: any, useMock: boolean) {
           });
           return;
         }
+        next(err);
+      }
+    },
+
+    updateTemplateSetup: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const parsed = templateSetupSchema.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(400).json({
+            error: 'INVALID_TEMPLATE_SETUP',
+            message: 'Invalid schedule or naming setup',
+            details: parsed.error.flatten().fieldErrors,
+          });
+          return;
+        }
+        const result = await dbSvc.updateTemplateSetup(
+          parseInt(req.params.tournamentId, 10),
+          parsed.data
+        );
+        res.json({ data: result });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    updateFixtureDetails: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const parsed = fixtureDetailsSchema.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(400).json({ error: 'INVALID_FIXTURE_DETAILS', message: 'A valid fixture field and value are required' });
+          return;
+        }
+        const result = await dbSvc.updateFixtureDetails(
+          parseInt(req.params.tournamentId, 10),
+          parseInt(req.params.fixtureId, 10),
+          parsed.data
+        );
+        res.json({ data: result });
+      } catch (err) {
         next(err);
       }
     },
@@ -435,7 +522,7 @@ function fixturesController(db: any, useMock: boolean) {
     ): Promise<void> => {
       try {
         const { tournamentId } = req.params;
-        const { sourceTournamentId } = req.body;
+        const { sourceTournamentId, templateTeams = false, timeOffsetMinutes = 0 } = req.body;
 
         if (!sourceTournamentId || isNaN(parseInt(sourceTournamentId, 10))) {
           res.status(400).json({ error: 'sourceTournamentId is required' });
@@ -444,7 +531,11 @@ function fixturesController(db: any, useMock: boolean) {
 
         const result = await dbSvc.copyFixtures(
           parseInt(sourceTournamentId, 10),
-          parseInt(tournamentId, 10)
+          parseInt(tournamentId, 10),
+          {
+            templateTeams: templateTeams === true,
+            timeOffsetMinutes: Number(timeOffsetMinutes) || 0,
+          }
         );
         res.status(200).json({
           message: `Copied ${result.copied} fixtures`,

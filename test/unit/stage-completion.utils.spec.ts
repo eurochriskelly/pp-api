@@ -55,8 +55,24 @@ test('derivePredictiveGroupPlaceholderAssignments resolves an early-clinched lea
       { team: 'C', TotalPoints: 4, PointsDifference: 1, PointsFrom: 18 },
     ],
     fixtures: [
-      { team1: 'A', team2: 'B', goals1: 1, points1: 5, goals2: 0, points2: 4 },
-      { team1: 'A', team2: 'C', goals1: 1, points1: 2, goals2: 0, points2: 3 },
+      {
+        team1: 'A',
+        team2: 'B',
+        goals1: 1,
+        points1: 5,
+        goals2: 0,
+        points2: 4,
+        outcome: 'played',
+      },
+      {
+        team1: 'A',
+        team2: 'C',
+        goals1: 1,
+        points1: 2,
+        goals2: 0,
+        points2: 3,
+        outcome: 'played',
+      },
       {
         team1: 'B',
         team2: 'C',
@@ -109,7 +125,15 @@ test('derivePredictiveGroupPlaceholderAssignments leaves a position unresolved w
       { team: 'C', TotalPoints: 3, PointsDifference: 1, PointsFrom: 12 },
     ],
     fixtures: [
-      { team1: 'A', team2: 'B', goals1: 1, points1: 4, goals2: 1, points2: 2 },
+      {
+        team1: 'A',
+        team2: 'B',
+        goals1: 1,
+        points1: 4,
+        goals2: 1,
+        points2: 2,
+        outcome: 'played',
+      },
       {
         team1: 'A',
         team2: 'C',
@@ -164,8 +188,24 @@ test('derivePredictiveGroupPlaceholderAssignments uses completed head-to-head to
       },
     ],
     fixtures: [
-      { team1: 'A', team2: 'B', goals1: 1, points1: 2, goals2: 0, points2: 4 },
-      { team1: 'A', team2: 'C', goals1: 1, points1: 3, goals2: 0, points2: 1 },
+      {
+        team1: 'A',
+        team2: 'B',
+        goals1: 1,
+        points1: 2,
+        goals2: 0,
+        points2: 4,
+        outcome: 'played',
+      },
+      {
+        team1: 'A',
+        team2: 'C',
+        goals1: 1,
+        points1: 3,
+        goals2: 0,
+        points2: 1,
+        outcome: 'played',
+      },
       {
         team1: 'B',
         team2: 'C',

@@ -83,6 +83,7 @@ const RESPONSE_SCHEMAS = {
   'GET /api/championships/{championshipId}/rounds': {
     array: 'ChampionshipRound',
   },
+  'POST /api/championships/{championshipId}/rounds': 'ChampionshipRound',
   'GET /api/championships/{championshipId}/standings': {
     array: 'ChampionshipStanding',
   },
@@ -93,9 +94,12 @@ const RESPONSE_SCHEMAS = {
   'POST /api/teams/{teamId}/logo': { binary: 'image/png' },
 
   'GET /api/tournaments': { array: 'TournamentSummary' },
+  'GET /api/tournaments/templates': { array: 'TournamentTemplate' },
   'POST /api/tournaments': 'Tournament',
   'GET /api/tournaments/{tournamentId}': 'Tournament',
   'PUT /api/tournaments/{tournamentId}': 'Tournament',
+  'POST /api/tournaments/{tournamentId}/competitions': 'TournamentCompetition',
+  'GET /api/tournaments/{tournamentId}/categories': { array: 'Category' },
   'GET /api/tournaments/{tournamentId}/fixtures': { array: 'Fixture' },
   'POST /api/tournaments/{tournamentId}/fixtures': { array: 'Fixture' },
   'GET /api/tournaments/{tournamentId}/squads': { array: 'Squad' },
@@ -134,6 +138,8 @@ const REQUEST_SCHEMAS = {
   'PUT /api/championships/{championshipId}': 'ChampionshipCreate',
   'POST /api/championships/{championshipId}/entrants':
     'ChampionshipEntrantCreate',
+  'POST /api/championships/{championshipId}/rounds':
+    'ChampionshipRoundCreate',
   'PUT /api/championships/{championshipId}/entrants/{entrantId}':
     'ChampionshipEntrantCreate',
 
@@ -151,6 +157,8 @@ const REQUEST_SCHEMAS = {
 
   'POST /api/tournaments': 'TournamentCreate',
   'PUT /api/tournaments/{tournamentId}': 'TournamentCreate',
+  'POST /api/tournaments/{tournamentId}/competitions':
+    'TournamentCompetitionCreate',
   'POST /api/tournaments/{tournamentId}/squads': 'SquadCreate',
   'PUT /api/tournaments/{tournamentId}/squads/{squadId}': 'SquadCreate',
   'POST /api/tournaments/{tournamentId}/squads/{squadId}/players':

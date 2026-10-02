@@ -579,9 +579,13 @@ export default function mockTournamentsService() {
     getStartedMatchCount: async (..._args: any[]) => {
       throw new Error('Not implemented in mock');
     },
-    getTournamentCategories: async (..._args: any[]) => {
-      throw new Error('Not implemented in mock');
-    },
+    getTournamentCategories: async (..._args: any[]) => [],
+    listTournamentTemplates: async (..._args: any[]) => [],
+    createTournamentCompetition: async (tournamentId: number, name: string) => ({
+      id: 1,
+      tournamentId,
+      name: name.trim(),
+    }),
     getTournamentOverview: async (..._args: any[]) => {
       throw new Error('Not implemented in mock');
     },

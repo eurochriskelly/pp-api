@@ -354,7 +354,13 @@ const extractArchivePayload = (
 };
 
 export default (db: any) => {
-  const { select, insert, update, delete: dbDelete, transaction } = dbHelper(db);
+  const {
+    select,
+    insert,
+    update,
+    delete: dbDelete,
+    transaction,
+  } = dbHelper(db);
   const winAward = 2;
   return {
     codeCheck: async (tournamentId: number, code: string, role: string) => {
@@ -503,7 +509,13 @@ export default (db: any) => {
       const playerId = await insert(
         `INSERT INTO players (firstName, secondName, dateOfBirth, foirreannId, teamId) 
          VALUES (?, ?, ?, ?, ?)`,
-        [firstName, secondName, dateOfBirth || null, foirreannId || null, squadId]
+        [
+          firstName,
+          secondName,
+          dateOfBirth || null,
+          foirreannId || null,
+          squadId,
+        ]
       );
       return playerId;
     },
@@ -550,7 +562,15 @@ export default (db: any) => {
          JOIN squads s ON s.id = p.teamId
          SET p.firstName = ?, p.secondName = ?, p.dateOfBirth = ?, p.foirreannId = ?
          WHERE p.id = ? AND p.teamId = ? AND s.tournamentId = ?`,
-        [firstName, secondName, dateOfBirth || null, foirreannId || null, id, squadId, tournamentId]
+        [
+          firstName,
+          secondName,
+          dateOfBirth || null,
+          foirreannId || null,
+          id,
+          squadId,
+          tournamentId,
+        ]
       );
     },
 
@@ -831,6 +851,87 @@ export default (db: any) => {
           lifecycleStatus: lifecycleStatus,
         };
       });
+    },
+
+    listTournamentTemplates: async () => {
+      const tournaments = await select(
+        `SELECT t.id, t.Title, t.Date, t.Location,
+                COUNT(DISTINCT f.id) AS fixtureCount,
+                COUNT(DISTINCT p.id) AS pitchCount
+         FROM tournaments t
+         JOIN fixtures f ON f.tournamentId = t.id
+         LEFT JOIN pitches p ON p.tournamentId = t.id
+         GROUP BY t.id, t.Title, t.Date, t.Location
+         ORDER BY t.Date DESC, t.Title ASC`
+      ) as any[];
+
+      const fixtureRows = await select(
+        `SELECT tournamentId, category, groupNumber, stage,
+                team1Id, team2Id, umpireTeamId
+         FROM fixtures
+         WHERE category IS NOT NULL AND TRIM(category) != ''`
+      ) as any[];
+
+      const templates = new Map<number, any>();
+      tournaments.forEach((tournament) => {
+        templates.set(tournament.id, {
+          id: tournament.id,
+          title: tournament.Title,
+          date: tournament.Date,
+          location: tournament.Location,
+          fixtureCount: Number(tournament.fixtureCount),
+          pitchCount: Number(tournament.pitchCount),
+          competitions: new Map<string, any>(),
+        });
+      });
+
+      const addTeam = (teams: Set<string>, team: unknown) => {
+        if (typeof team !== 'string' || !team || team.startsWith('~')) return;
+        teams.add(team);
+      };
+
+      fixtureRows.forEach((fixture) => {
+        const template = templates.get(fixture.tournamentId);
+        if (!template) return;
+        const category = String(fixture.category);
+        if (!template.competitions.has(category)) {
+          template.competitions.set(category, {
+            name: category,
+            fixtureCount: 0,
+            teams: new Set<string>(),
+            groups: new Map<number, Set<string>>(),
+          });
+        }
+        const competition = template.competitions.get(category);
+        competition.fixtureCount += 1;
+        addTeam(competition.teams, fixture.team1Id);
+        addTeam(competition.teams, fixture.team2Id);
+
+        if (fixture.stage === 'group' && fixture.groupNumber !== null) {
+          const groupNumber = Number(fixture.groupNumber);
+          if (!competition.groups.has(groupNumber)) {
+            competition.groups.set(groupNumber, new Set<string>());
+          }
+          const groupTeams = competition.groups.get(groupNumber);
+          addTeam(groupTeams, fixture.team1Id);
+          addTeam(groupTeams, fixture.team2Id);
+        }
+      });
+
+      return [...templates.values()].map((template) => ({
+        ...template,
+        competitionCount: template.competitions.size,
+        competitions: [...template.competitions.values()]
+          .map((competition: any) => ({
+            name: competition.name,
+            fixtureCount: competition.fixtureCount,
+            teamCount: competition.teams.size,
+            groups: [...competition.groups.entries()]
+              .map(([number, teams]) => ({ number, teamCount: teams.size }))
+              .sort((a, b) => a.number - b.number),
+          }))
+          .sort((a: any, b: any) => a.name.localeCompare(b.name)),
+      }));
     },
 
     // Squads CRUD (Updated from teams)
@@ -1343,9 +1444,19 @@ export default (db: any) => {
 
     getTournamentCategories: async (id: number) => {
       const rows = await select(
-        `SELECT 
-          f.tournamentId,
-          f.category,
+        `SELECT ? AS tournamentId, c.name AS category,
+          COALESCE(stats.latestStage, 'group') AS latestStage,
+          COALESCE(stats.totalGames, 0) AS totalGames,
+          COALESCE(stats.currentGame, 0) AS currentGame,
+          COALESCE(stats.brackets, '') AS brackets
+        FROM (
+          SELECT name FROM tournament_competitions WHERE tournamentId = ?
+          UNION
+          SELECT TRIM(category) AS name FROM fixtures
+          WHERE tournamentId = ? AND NULLIF(TRIM(category), '') IS NOT NULL
+        ) c
+        LEFT JOIN (
+          SELECT f.tournamentId, f.category,
           COALESCE(MAX(CASE WHEN f.started IS NOT NULL THEN f.stage END), 'group') AS latestStage,
           COUNT(*) AS totalGames,
           SUM(CASE WHEN f.started IS NOT NULL THEN 1 ELSE 0 END) AS currentGame,
@@ -1363,11 +1474,12 @@ export default (db: any) => {
               END 
             SEPARATOR ', '
           ) AS brackets
-        FROM fixtures f
-        WHERE f.tournamentId = ?
-        GROUP BY f.tournamentId, f.category
-        ORDER BY f.category`,
-        [id]
+          FROM fixtures f
+          WHERE f.tournamentId = ?
+          GROUP BY f.tournamentId, f.category
+        ) stats ON stats.category = c.name
+        ORDER BY c.name`,
+        [id, id, id, id]
       );
       return rows.map((row: any) => ({
         ...row,
@@ -1375,6 +1487,22 @@ export default (db: any) => {
           ? row.brackets.split(',').map((x: string) => x.trim())
           : [],
       }));
+    },
+
+    createTournamentCompetition: async (tournamentId: number, name: string) => {
+      const normalizedName = name.trim();
+      if (!normalizedName) throw new Error('Competition name is required');
+      const tournament = await select('SELECT id FROM tournaments WHERE id = ?', [tournamentId]);
+      if (!tournament[0]) throw new Error('Tournament not found');
+      await insert(
+        'INSERT IGNORE INTO tournament_competitions (tournamentId, name) VALUES (?, ?)',
+        [tournamentId, normalizedName]
+      );
+      const rows = await select(
+        'SELECT id, tournamentId, name FROM tournament_competitions WHERE tournamentId = ? AND name = ?',
+        [tournamentId, normalizedName]
+      );
+      return rows[0];
     },
 
     getTournamentsByStatus: async (
@@ -1769,9 +1897,7 @@ export default (db: any) => {
     },
 
     integrityCheck: async (tournamentId: number) => {
-      const {
-        checkIntegrity,
-      } = require('./tournaments/integrity-check');
+      const { checkIntegrity } = require('./tournaments/integrity-check');
       return await checkIntegrity(tournamentId, select);
     },
 

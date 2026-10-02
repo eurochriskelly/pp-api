@@ -53,7 +53,7 @@ CREATE TABLE `fixtures` (
   `umpireTeamPlanned` varchar(255) DEFAULT NULL,
   `umpireTeamId` varchar(255) DEFAULT NULL,
   `notes` varchar(255) DEFAULT NULL,
-  `outcome` enum('played','conceded','not played','forfeit') DEFAULT 'played',
+  `outcome` enum('played','in-progress','not played','skipped') NOT NULL DEFAULT 'not played',
   PRIMARY KEY (`id`),
   KEY `tournamentId` (`tournamentId`),
   CONSTRAINT `fixtures_ibfk_1` FOREIGN KEY (`tournamentId`) REFERENCES `tournaments` (`id`)

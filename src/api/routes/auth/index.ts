@@ -14,6 +14,10 @@ export default (dbs: any, useMock: boolean) => {
   router.post('/verify', ctrl.verify);
   router.post('/register', ctrl.register);
   router.post('/login', ctrl.login);
+  router.post('/code-login', ctrl.loginWithCode);
+  router.get('/invites/:token', ctrl.getInviteStatus);
+  router.post('/invites/:token/register', ctrl.registerFromInvite);
+  router.post('/invites', auth, requireAdmin, ctrl.createInvite);
   router.post('/logout', auth, ctrl.logout);
   router.get('/me', auth, ctrl.getCurrentUser);
   router.get('/users', auth, requireAdmin, ctrl.getUsers);

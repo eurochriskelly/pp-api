@@ -9,12 +9,14 @@ function createFixture({
   team2,
   score1,
   score2,
+  outcome = 'played',
 }: {
   pool: number;
   team1: string;
   team2: string;
   score1: number;
   score2: number;
+  outcome?: string;
 }) {
   let team1Status: 'won' | 'lost' | 'draw' = 'draw';
   let team2Status: 'won' | 'lost' | 'draw' = 'draw';
@@ -28,7 +30,7 @@ function createFixture({
   }
 
   return {
-    outcome: 'played',
+    outcome,
     pool,
     team1: {
       name: team1,
@@ -46,6 +48,55 @@ function createFixture({
     },
   };
 }
+
+test('calculateStandings awards one point for a scored skipped win', () => {
+  const standings = calculateStandings(
+    {
+      stage: {
+        group: [
+          createFixture({
+            pool: 1,
+            team1: 'Amsterdam',
+            team2: 'Groningen',
+            score1: 5,
+            score2: 4,
+            outcome: 'skipped',
+          }),
+        ],
+      },
+    },
+    [{ group: 1, teams: ['Amsterdam', 'Groningen'] }],
+    { win: 3, draw: 1, loss: 0 }
+  );
+
+  assert.equal(standings.byGroup['GP.1'][0].team, 'Amsterdam');
+  assert.equal(standings.byGroup['GP.1'][0].matchesPlayed, 1);
+  assert.equal(standings.byGroup['GP.1'][0].points, 1);
+});
+
+test('calculateStandings excludes an in-progress score', () => {
+  const standings = calculateStandings(
+    {
+      stage: {
+        group: [
+          createFixture({
+            pool: 1,
+            team1: 'Amsterdam',
+            team2: 'Groningen',
+            score1: 5,
+            score2: 4,
+            outcome: 'in-progress',
+          }),
+        ],
+      },
+    },
+    [{ group: 1, teams: ['Amsterdam', 'Groningen'] }],
+    { win: 2, draw: 1, loss: 0 }
+  );
+
+  assert.equal(standings.byGroup['GP.1'][0].matchesPlayed, 0);
+  assert.equal(standings.byGroup['GP.1'][1].matchesPlayed, 0);
+});
 
 test('calculateStandings normalizes overall standings to the smallest group size', () => {
   const standings = calculateStandings(

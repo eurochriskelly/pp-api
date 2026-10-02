@@ -74,6 +74,18 @@ const entrants: MockEntrant[] = [
 let nextChampionshipId = 3;
 let nextEntrantId = 3;
 const amalgamationClubs: Array<{ entrantId: number; clubId: number }> = [];
+let nextRoundId = 2;
+const rounds = [
+  {
+    id: 1,
+    championshipId: 1,
+    roundNumber: 1,
+    tournamentId: 1001,
+    competition: 'Senior Football',
+    tournamentTitle: 'Amsterdam Round 1',
+    tournamentDate: '2026-04-12',
+  },
+];
 
 export default function mockChampionshipsService() {
   II('Championships mock service initialized');
@@ -234,25 +246,33 @@ export default function mockChampionshipsService() {
       return { entrantId, clubId, message: 'Club linked to amalgamation' };
     },
 
-    listRounds: async (championshipId: number) => {
-      if (championshipId !== 1) {
-        return [];
-      }
+    listRounds: async (championshipId: number) =>
+      rounds.filter((row) => row.championshipId === championshipId),
 
-      return [
-        {
-          roundNumber: 1,
-          tournamentCount: 1,
-          tournaments: [
-            {
-              id: 1001,
-              title: 'Amsterdam Round 1',
-              date: '2026-04-12',
-              status: 'published',
-            },
-          ],
-        },
-      ];
+    createRound: async (
+      championshipId: number,
+      data: { roundNumber: number; tournamentId: number; competition: string }
+    ) => {
+      const row = {
+        id: nextRoundId++,
+        championshipId,
+        roundNumber: data.roundNumber,
+        tournamentId: data.tournamentId,
+        competition: data.competition,
+        tournamentTitle: `Tournament ${data.tournamentId}`,
+        tournamentDate: null,
+      };
+      rounds.push(row);
+      return row;
+    },
+
+    deleteRound: async (championshipId: number, roundId: number) => {
+      const index = rounds.findIndex(
+        (row) => row.championshipId === championshipId && row.id === roundId
+      );
+      if (index === -1) throw new Error('Championship round not found');
+      rounds.splice(index, 1);
+      return { id: roundId, championshipId, message: 'Championship round removed' };
     },
 
     getStandings: async (championshipId: number) => {

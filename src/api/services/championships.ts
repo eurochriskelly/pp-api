@@ -30,14 +30,13 @@ interface ChampionshipEntrant {
 }
 
 interface RoundSummary {
+  id: number;
+  championshipId: number;
   roundNumber: number;
-  tournamentCount: number;
-  tournaments: Array<{
-    id: number;
-    title: string;
-    date: string | null;
-    status: string | null;
-  }>;
+  tournamentId: number;
+  competition: string;
+  tournamentTitle: string;
+  tournamentDate: string | null;
 }
 
 interface StandingsRow {
@@ -333,42 +332,60 @@ function championshipsService(db: DbConnection) {
     },
 
     listRounds: async (championshipId: number): Promise<RoundSummary[]> => {
-      const rows = (await select(
-        `SELECT r.roundNumber, t.id, t.Title, t.Date, t.status
-         FROM rounds r
-         JOIN tournaments t ON t.id = r.eventId
+      return (await select(
+        `SELECT r.id, r.championshipId, r.roundNumber, r.tournamentId,
+                r.competition, t.Title AS tournamentTitle, t.Date AS tournamentDate
+         FROM championship_competition_rounds r
+         JOIN tournaments t ON t.id = r.tournamentId
          WHERE r.championshipId = ?
-         ORDER BY r.roundNumber ASC, t.Date ASC`,
+         ORDER BY r.roundNumber ASC, t.Date ASC, r.competition ASC`,
         [championshipId]
-      )) as unknown as Array<{
-        roundNumber: number;
-        id: number;
-        Title: string;
-        Date: string | null;
-        status: string | null;
-      }>;
+      )) as unknown as RoundSummary[];
+    },
 
-      const map: Record<number, RoundSummary> = {};
+    createRound: async (
+      championshipId: number,
+      data: { roundNumber: number; tournamentId: number; competition: string }
+    ): Promise<RoundSummary> => {
+      const championship = await select('SELECT id FROM championships WHERE id = ?', [championshipId]);
+      if (!championship[0]) throw new Error('Championship not found');
 
-      rows.forEach((row) => {
-        if (!map[row.roundNumber]) {
-          map[row.roundNumber] = {
-            roundNumber: row.roundNumber,
-            tournamentCount: 0,
-            tournaments: [],
-          };
-        }
+      const tournament = await select(
+        'SELECT id, Title, Date FROM tournaments WHERE id = ?',
+        [data.tournamentId]
+      ) as unknown as Array<{ id: number; Title: string; Date: string | null }>;
+      if (!tournament[0]) throw new Error('Tournament not found');
 
-        map[row.roundNumber].tournamentCount += 1;
-        map[row.roundNumber].tournaments.push({
-          id: row.id,
-          title: row.Title,
-          date: row.Date,
-          status: row.status,
-        });
-      });
+      const competition = data.competition.trim();
+      if (!competition) throw new Error('Competition is required');
+      await insert(
+        'INSERT IGNORE INTO tournament_competitions (tournamentId, name) VALUES (?, ?)',
+        [data.tournamentId, competition]
+      );
+      const id = await insert(
+        `INSERT INTO championship_competition_rounds
+          (championshipId, roundNumber, tournamentId, competition)
+         VALUES (?, ?, ?, ?)`,
+        [championshipId, data.roundNumber, data.tournamentId, competition]
+      );
+      return {
+        id,
+        championshipId,
+        roundNumber: data.roundNumber,
+        tournamentId: data.tournamentId,
+        competition,
+        tournamentTitle: tournament[0].Title,
+        tournamentDate: tournament[0].Date,
+      };
+    },
 
-      return Object.values(map).sort((a, b) => a.roundNumber - b.roundNumber);
+    deleteRound: async (championshipId: number, roundId: number) => {
+      const count = await dbHelper(db as any).delete(
+        'DELETE FROM championship_competition_rounds WHERE id = ? AND championshipId = ?',
+        [roundId, championshipId]
+      );
+      if (!count) throw new Error('Championship round not found');
+      return { id: roundId, championshipId, message: 'Championship round removed' };
     },
 
     getStandings: async (championshipId: number): Promise<StandingsRow[]> => {

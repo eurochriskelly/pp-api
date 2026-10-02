@@ -15,6 +15,20 @@ export default (dbs: any, useMock: boolean) => {
     validateNumericId('championshipId'),
     ctrl.getChampionshipById
   );
+
+  router.post(
+    '/:championshipId/rounds',
+    auth,
+    validateNumericId('championshipId'),
+    ctrl.createRound
+  );
+  router.delete(
+    '/:championshipId/rounds/:roundId',
+    auth,
+    validateNumericId('championshipId'),
+    validateNumericId('roundId'),
+    ctrl.deleteRound
+  );
   router.get(
     '/:championshipId/entrants',
     validateNumericId('championshipId'),

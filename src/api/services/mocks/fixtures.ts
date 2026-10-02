@@ -14,7 +14,7 @@ export interface MockFixture {
   points1: number | null;
   goals2: number | null;
   points2: number | null;
-  outcome: string | null;
+  outcome: string;
   category: string;
   stage: string;
   groupNumber: number;
@@ -60,7 +60,7 @@ export default function mockFixturesService() {
       points1: 0,
       goals2: 0,
       points2: 0,
-      outcome: null,
+      outcome: 'not played',
       category: 'mens',
       stage: 'group',
       groupNumber: 1,
@@ -79,7 +79,7 @@ export default function mockFixturesService() {
       points1: 0,
       goals2: 0,
       points2: 0,
-      outcome: null,
+      outcome: 'not played',
       category: 'mens',
       stage: 'group',
       groupNumber: 1,
@@ -160,12 +160,16 @@ export default function mockFixturesService() {
       );
       if (filters.pitch && filters.pitch.length) {
         result = result.filter((f) =>
-          filters.pitch!.map((p) => p.toLowerCase()).includes(f.pitch.toLowerCase())
+          filters
+            .pitch!.map((p) => p.toLowerCase())
+            .includes(f.pitch.toLowerCase())
         );
       }
       if (filters.category && filters.category.length) {
         result = result.filter((f) =>
-          filters.category!.map((c) => c.toLowerCase()).includes(f.category.toLowerCase())
+          filters
+            .category!.map((c) => c.toLowerCase())
+            .includes(f.category.toLowerCase())
         );
       }
       DD(`Mock: Returning ${result.length} filtered fixtures`);
@@ -173,7 +177,9 @@ export default function mockFixturesService() {
     },
 
     validateTsv: (tsvEncoded: string) => {
-      II(`Mock: validateTsv called with encoded length [${tsvEncoded?.length ?? 0}]`);
+      II(
+        `Mock: validateTsv called with encoded length [${tsvEncoded?.length ?? 0}]`
+      );
       return {
         rows: [],
         warnings: [],
@@ -223,7 +229,7 @@ export default function mockFixturesService() {
         latestStarted.points1 = 0;
         latestStarted.goals2 = 0;
         latestStarted.points2 = 0;
-        latestStarted.outcome = null;
+        latestStarted.outcome = 'not played';
         return {
           id: latestStarted.id,
           category: latestStarted.category,
@@ -240,6 +246,7 @@ export default function mockFixturesService() {
       const fixture = mockFixtures.find((f) => f.id === fixtureId);
       if (fixture) {
         fixture.started = new Date().toISOString();
+        fixture.outcome = 'in-progress';
         DD('Mock: Started fixture: ' + JSON.stringify(fixture));
         return { started: fixture.started };
       }
@@ -247,11 +254,12 @@ export default function mockFixturesService() {
       return null;
     },
 
-    endFixture: async (fixtureId: number) => {
+    endFixture: async (fixtureId: number, outcome?: string) => {
       II(`Mock: endFixture called for fixture [${fixtureId}]`);
       const fixture = mockFixtures.find((f) => f.id === fixtureId);
       if (fixture && fixture.started) {
         fixture.ended = new Date().toISOString();
+        fixture.outcome = outcome || 'skipped';
         DD('Mock: Ended fixture: ' + JSON.stringify(fixture));
         return { ended: fixture.ended };
       }
@@ -308,7 +316,7 @@ export default function mockFixturesService() {
         fixture.points1 = team1.points;
         fixture.goals2 = team2.goals;
         fixture.points2 = team2.points;
-        fixture.outcome = outcome;
+        fixture.outcome = outcome || 'in-progress';
         if (!fixture.started) fixture.started = new Date().toISOString();
         if (!fixture.ended) fixture.ended = new Date().toISOString();
         DD('Mock: Updated score for fixture: ' + JSON.stringify(fixture));
@@ -459,6 +467,8 @@ export default function mockFixturesService() {
         cards: copiedCards,
       };
     },
+  updateTemplateSetup: async (..._args: any[]) => ({ updatedFixtures: 0 }),
+  updateFixtureDetails: async (..._args: any[]) => ({ updatedFixtures: 0 }),
   };
 }
 

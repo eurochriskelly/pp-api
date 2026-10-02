@@ -42,6 +42,7 @@ const users: { [email: string]: User } = {
 
 const activeTokens: { [token: string]: string } = {};
 const otpStore = new Map<string, OtpData>();
+const invites = new Map<string, { phone: string; expiresAt: number; registered: boolean }>();
 
 export default function mockAuthService() {
   II('Auth mock service initialized with in-memory user store (using emails)');
@@ -106,6 +107,65 @@ export default function mockAuthService() {
       }
       DD(`Mock: Login failed for [${email}] - invalid credentials.`);
       throw new Error('Invalid email or password');
+    },
+
+    createInvite: async (phone: string) => {
+      const token = `mock-invite-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      invites.set(token, { phone, expiresAt: Date.now() + 30 * 60 * 1000, registered: false });
+      return {
+        token,
+        phone,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        ttl: 1800,
+      };
+    },
+
+    getInviteStatus: async (token: string) => {
+      const invite = invites.get(token);
+      if (!invite) throw new Error('Invite not found');
+      return {
+        status: invite.registered
+          ? 'registered'
+          : Date.now() > invite.expiresAt
+            ? 'manual_verification_required'
+            : 'pending',
+        phone: invite.phone,
+        expiresAt: new Date(invite.expiresAt).toISOString(),
+      };
+    },
+
+    registerFromInvite: async (
+      token: string,
+      name: string,
+      _password: string,
+      code?: string,
+      clubId?: number,
+      clubName?: string
+    ) => {
+      const invite = invites.get(token);
+      if (!invite) throw new Error('Invite not found');
+      if (Date.now() > invite.expiresAt) throw new Error('Registration window expired; manual verification is required');
+      const loginCode = code || '123456';
+      const id = `mock-id-${Object.keys(users).length + 1}`;
+      users[invite.phone] = {
+        id,
+        email: invite.phone,
+        name,
+        role: 'player',
+        password: '',
+        club_id: String(clubId || clubName || ''),
+      };
+      invite.registered = true;
+      return { message: 'Registration successful', loginCode, user: { id, phone: invite.phone, name, clubId, clubName, role: 'player' } };
+    },
+
+    loginWithCode: async (phone: string, code: string) => {
+      if (!users[phone] || code !== '123456') throw new Error('Invalid credentials');
+      return {
+        message: 'Login successful',
+        token: `mock-token-for-${phone}-${Date.now()}`,
+        user: { id: users[phone].id, phone, name: users[phone].name, role: 'player' },
+      };
     },
 
     logout: async (token: string) => {

@@ -108,7 +108,13 @@ export function calculateTeamSummary(
 
   allFixtures.forEach((fixture) => {
     if (
+      !fixture.outcome ||
+      fixture.outcome === 'in-progress' ||
       fixture.outcome === 'not played' ||
+      fixture.team1.goals == null ||
+      fixture.team1.points == null ||
+      fixture.team2.goals == null ||
+      fixture.team2.points == null ||
       !fixture.team1.name ||
       !fixture.team2.name
     ) {
@@ -121,12 +127,6 @@ export function calculateTeamSummary(
     const team2Summary = summaryMap.get(team2Name);
 
     if (!team1Summary || !team2Summary) {
-      return;
-    }
-
-    if (fixture.outcome === 'skipped') {
-      team1Summary.matchesSkipped++;
-      team2Summary.matchesSkipped++;
       return;
     }
 

@@ -186,7 +186,14 @@ export default function stageCompletionFactory({
     );
     const [result] = await select(
       `SELECT count(*) as remaining FROM fixtures
-       WHERE tournamentId = ? AND stage = ? AND groupNumber = ? AND category = ? AND goals1 IS NULL`,
+       WHERE tournamentId = ? AND stage = ? AND groupNumber = ? AND category = ?
+         AND (
+           outcome IN ('in-progress', 'not played')
+           OR outcome IS NULL
+           OR (outcome NOT IN ('in-progress', 'not played') AND (
+             goals1 IS NULL OR points1 IS NULL OR goals2 IS NULL OR points2 IS NULL
+           ))
+         )`,
       [tournamentId, stage, groupNumber, category]
     );
     const remaining = result?.remaining ?? 0;
@@ -281,7 +288,13 @@ export default function stageCompletionFactory({
          WHERE tournamentId = ?
            AND category = ?
            AND stage = 'group'
-           AND goals1 IS NULL`,
+           AND (
+             outcome IN ('in-progress', 'not played')
+             OR outcome IS NULL
+             OR (outcome NOT IN ('in-progress', 'not played') AND (
+               goals1 IS NULL OR points1 IS NULL OR goals2 IS NULL OR points2 IS NULL
+             ))
+           )`,
       [tournamentId, category]
     );
     const remaining = result?.remaining ?? 0;

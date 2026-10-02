@@ -1,0 +1,13 @@
+TournamentCompetition:
+  type: object
+  required:
+    - id
+    - tournamentId
+    - name
+  properties:
+    id:
+      type: integer
+    tournamentId:
+      type: integer
+    name:
+      type: string

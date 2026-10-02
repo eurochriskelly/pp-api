@@ -1,0 +1,14 @@
+ChampionshipRoundCreate:
+  type: object
+  required:
+    - roundNumber
+    - tournamentId
+    - competition
+  properties:
+    roundNumber:
+      type: integer
+      minimum: 1
+    tournamentId:
+      type: integer
+    competition:
+      type: string

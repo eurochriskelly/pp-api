@@ -59,13 +59,17 @@ export function sqlGroupStandings(
             SUM(${t1Score} - ${t2Score}) AS PointsDifference,
             SUM(
                 CASE 
-                    WHEN ${t1Score} > ${t2Score} THEN ${winAward}
+                    WHEN ${t1Score} > ${t2Score}
+                      THEN CASE WHEN f.outcome = 'skipped' THEN 1 ELSE ${winAward} END
                     WHEN ${t1Score} = ${t2Score} THEN ${drawAward} 
                     ELSE ${lossAward} 
                 END
             ) AS TotalPoints
         FROM fixtures f
         WHERE f.stage = 'group'
+          AND f.outcome NOT IN ('in-progress', 'not played')
+          AND f.goals1 IS NOT NULL AND f.points1 IS NOT NULL
+          AND f.goals2 IS NOT NULL AND f.points2 IS NOT NULL
         GROUP BY f.category, f.groupNumber, f.team1Id, f.tournamentId
 
         UNION ALL
@@ -84,13 +88,17 @@ export function sqlGroupStandings(
             SUM(${t2Score} - ${t1Score}) AS PointsDifference,
             SUM(
                 CASE 
-                    WHEN ${t2Score} > ${t1Score} THEN ${winAward}
+                    WHEN ${t2Score} > ${t1Score}
+                      THEN CASE WHEN f.outcome = 'skipped' THEN 1 ELSE ${winAward} END
                     WHEN ${t2Score} = ${t1Score} THEN ${drawAward} 
                     ELSE ${lossAward} 
                 END
             ) AS TotalPoints
         FROM fixtures f
         WHERE f.stage = 'group'
+          AND f.outcome NOT IN ('in-progress', 'not played')
+          AND f.goals1 IS NOT NULL AND f.points1 IS NOT NULL
+          AND f.goals2 IS NOT NULL AND f.points2 IS NOT NULL
         GROUP BY f.category, f.groupNumber, f.team2Id, f.tournamentId
     ) AS c
     GROUP BY c.category, c.grp, c.team, c.tournamentId
@@ -152,6 +160,7 @@ export function sqlGroupStandingsWithH2H(
     HeadToHeadMatches AS (
       -- Get all matches between teams in the same group/category/tournament
       SELECT 
+        f.tournamentId,
         f.category,
         f.groupNumber AS grp,
         f.team1Id AS teamA,
@@ -160,9 +169,9 @@ export function sqlGroupStandingsWithH2H(
         ${t2Score} AS scoreB
       FROM fixtures f
       WHERE f.stage = 'group'
-        AND f.goals1 IS NOT NULL 
-        AND f.goals2 IS NOT NULL
-        AND f.outcome NOT IN ('conceded', 'forfeit', 'not played')
+        AND f.goals1 IS NOT NULL AND f.points1 IS NOT NULL
+        AND f.goals2 IS NOT NULL AND f.points2 IS NOT NULL
+        AND f.outcome NOT IN ('in-progress', 'not played')
     )
     SELECT 
       bs.category,
@@ -183,6 +192,7 @@ export function sqlGroupStandingsWithH2H(
     FROM BaseStandings bs
     LEFT JOIN HeadToHeadMatches hhm 
       ON (bs.team = hhm.teamA OR bs.team = hhm.teamB)
+      AND bs.tournamentId = hhm.tournamentId
       AND bs.category = hhm.category 
       AND bs.grp = hhm.grp
     ORDER BY bs.category DESC, bs.grp, bs.TotalPoints DESC, bs.PointsDifference DESC, bs.PointsFrom DESC`;

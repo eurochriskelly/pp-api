@@ -136,6 +136,32 @@ test('listRounds returns round summaries', async () => {
   assert.equal(res.statusCode, 200);
   assert.ok(Array.isArray(res.data.data));
   assert.equal(res.data.data[0].roundNumber, 1);
+  assert.equal(typeof res.data.data[0].competition, 'string');
+});
+
+test('createRound assigns one tournament competition to a championship round', async () => {
+  const req = {
+    params: { championshipId: '1' },
+    body: { roundNumber: 2, tournamentId: 1002, competition: 'Senior Football' },
+  };
+  const res = createMockRes();
+
+  await controller.createRound(req, res, mockNext);
+
+  assert.equal(res.statusCode, 201);
+  assert.equal(res.data.data.roundNumber, 2);
+  assert.equal(res.data.data.tournamentId, 1002);
+  assert.equal(res.data.data.competition, 'Senior Football');
+});
+
+test('deleteRound removes a championship round assignment', async () => {
+  const req = { params: { championshipId: '1', roundId: '2' } };
+  const res = createMockRes();
+
+  await controller.deleteRound(req, res, mockNext);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.data.data.message, 'Championship round removed');
 });
 
 test('getStandings returns standings rows', async () => {

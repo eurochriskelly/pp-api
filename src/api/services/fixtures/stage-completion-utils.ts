@@ -279,6 +279,9 @@ function sortGroupStandingsForResolution(
 }
 
 function isCompletedFixture(fixture: GroupFixtureRow): boolean {
+  const outcome = String(fixture?.outcome || '').toLowerCase();
+  if (!outcome || ['in-progress', 'not played'].includes(outcome)) return false;
+
   if (
     fixture?.goals1 === null ||
     fixture?.goals1 === undefined ||
@@ -292,9 +295,7 @@ function isCompletedFixture(fixture: GroupFixtureRow): boolean {
     return false;
   }
 
-  return !['conceded', 'forfeit', 'not played'].includes(
-    String(fixture?.outcome || '').toLowerCase()
-  );
+  return true;
 }
 
 function createPairKey(teamA: string, teamB: string): string {
@@ -717,7 +718,7 @@ function orderCategoryStandingsForOverallGroupOrder(
     }
 
     if (
-      ['conceded', 'forfeit', 'not played'].includes(
+      ['in-progress', 'not played'].includes(
         String(fixture?.outcome || '').toLowerCase()
       )
     ) {

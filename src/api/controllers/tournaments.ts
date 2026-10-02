@@ -472,6 +472,18 @@ function tournamentsController(db: any, useMock: boolean) {
         next(err);
       }
     },
+    listTournamentTemplates: async (
+      _req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const templates = await dbSvc.listTournamentTemplates();
+        res.json({ data: templates });
+      } catch (err) {
+        next(err);
+      }
+    },
 
     getTournamentReport: async (
       req: Request,
@@ -752,6 +764,24 @@ function tournamentsController(db: any, useMock: boolean) {
         const { tournamentId } = req.params as TournamentParams;
         const data = await dbSvc.getTournamentCategories(tournamentId);
         res.json({ data });
+      } catch (err) {
+        next(err);
+      }
+    },
+    createTournamentCompetition: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => {
+      try {
+        const tournamentId = Number(req.params.tournamentId);
+        const name = typeof req.body.name === 'string' ? req.body.name : '';
+        if (!Number.isInteger(tournamentId) || !name.trim()) {
+          res.status(400).json({ error: 'Competition name is required' });
+          return;
+        }
+        const data = await dbSvc.createTournamentCompetition(tournamentId, name);
+        res.status(201).json({ data });
       } catch (err) {
         next(err);
       }

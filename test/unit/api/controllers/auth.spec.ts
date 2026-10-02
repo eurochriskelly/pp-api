@@ -134,4 +134,35 @@ describe('auth controller', () => {
     assert.strictEqual(res.statusCode, 404);
     assert.strictEqual(res.body.exists, false);
   });
+
+  it('supports invite registration and code login', async () => {
+    const inviteReq: any = { body: { phone: '+31612345678' } };
+    const inviteRes: any = createMockRes();
+    await controller.createInvite(inviteReq, inviteRes);
+    assert.strictEqual(inviteRes.statusCode, 201);
+
+    const token = inviteRes.body.token;
+    const statusRes: any = createMockRes();
+    await controller.getInviteStatus({ params: { token } } as any, statusRes);
+    assert.strictEqual(statusRes.body.status, 'pending');
+
+    const registerRes: any = createMockRes();
+    await controller.registerFromInvite(
+      {
+        params: { token },
+        body: { name: 'Invited Player', password: 'password123', clubName: 'New Club' },
+      } as any,
+      registerRes
+    );
+    assert.strictEqual(registerRes.statusCode, 201);
+    assert.strictEqual(registerRes.body.loginCode, '123456');
+
+    const loginRes: any = createMockRes();
+    await controller.loginWithCode(
+      { body: { phone: '+31612345678', code: '123456' } } as any,
+      loginRes
+    );
+    assert.strictEqual(loginRes.statusCode, 200);
+    assert.ok(loginRes.body.token);
+  });
 });
