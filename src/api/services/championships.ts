@@ -27,6 +27,8 @@ interface ChampionshipEntrant {
   clubId?: number | null;
   displayName: string;
   status: 'registered' | 'withdrawn' | 'active';
+  clubIds?: number[];
+  memberClubNames?: string | null;
 }
 
 interface RoundSummary {
@@ -58,7 +60,21 @@ interface DbConnection {
 }
 
 function championshipsService(db: DbConnection) {
-  const { select, insert, update } = dbHelper(db as any);
+  const { select, insert, update, transaction } = dbHelper(db as any);
+
+  const eligibleClub = async (championshipId: number, clubId: number) => {
+    const rows = (await select(
+      `SELECT c.clubId, c.clubName
+       FROM championships championship
+       JOIN series_regions sr ON sr.seriesId = championship.seriesId
+       JOIN clubs c ON c.region = sr.region
+        AND COALESCE(c.subregion, '') = sr.subregion
+       JOIN gge_import_clubs g ON g.clubId = c.clubId
+       WHERE championship.id = ? AND c.clubId = ? AND c.status = 'active'`,
+      [championshipId, clubId]
+    )) as unknown as Array<{ clubId: number; clubName: string }>;
+    return rows[0] || null;
+  };
 
   return {
     listChampionships: async ({
@@ -114,6 +130,15 @@ function championshipsService(db: DbConnection) {
     },
 
     createChampionship: async (data: Partial<Championship>) => {
+      const configuredRegions = (await select(
+        'SELECT COUNT(*) AS count FROM series_regions WHERE seriesId = ?',
+        [data.seriesId]
+      )) as unknown as Array<{ count: number }>;
+      if (!Number(configuredRegions[0]?.count)) {
+        throw new Error(
+          'Configure at least one series region before creating a championship'
+        );
+      }
       const id = await insert(
         `INSERT INTO championships (
           seriesId, name, year, numRounds, squadSize, playersPerTeam, status
@@ -187,10 +212,17 @@ function championshipsService(db: DbConnection) {
       championshipId: number
     ): Promise<ChampionshipEntrant[]> => {
       return (await select(
-        `SELECT id, championshipId, entrantType, clubId, displayName, status
-         FROM championship_entrants
-         WHERE championshipId = ?
-         ORDER BY displayName ASC`,
+        `SELECT entrant.id, entrant.championshipId, entrant.entrantType,
+                entrant.clubId, entrant.displayName, entrant.status,
+                GROUP_CONCAT(member.clubName ORDER BY member.clubName SEPARATOR ', ') AS memberClubNames,
+                GROUP_CONCAT(member.clubId ORDER BY member.clubId) AS memberClubIds
+         FROM championship_entrants entrant
+         LEFT JOIN amalgamation_clubs membership ON membership.entrantId = entrant.id
+         LEFT JOIN clubs member ON member.clubId = membership.clubId
+         WHERE entrant.championshipId = ?
+         GROUP BY entrant.id, entrant.championshipId, entrant.entrantType,
+                  entrant.clubId, entrant.displayName, entrant.status
+         ORDER BY entrant.displayName ASC`,
         [championshipId]
       )) as unknown as ChampionshipEntrant[];
     },
@@ -199,26 +231,64 @@ function championshipsService(db: DbConnection) {
       championshipId: number,
       data: Partial<ChampionshipEntrant>
     ): Promise<ChampionshipEntrant> => {
-      const entrantId = await insert(
-        `INSERT INTO championship_entrants (
+      let clubId = data.clubId || null;
+      let displayName = data.displayName;
+      if (data.entrantType === 'club') {
+        if (!clubId) throw new Error('Select a club from this series’ regions');
+        const club = await eligibleClub(championshipId, Number(clubId));
+        if (!club) throw new Error('Club is not in a selected series region');
+        clubId = club.clubId;
+        displayName = club.clubName;
+      }
+      const amalgamationClubIds = [
+        ...new Set(
+          (data.clubIds || [])
+            .map((id) => Number(id))
+            .filter(Number.isSafeInteger)
+        ),
+      ];
+      if (data.entrantType === 'amalgamation') {
+        if (amalgamationClubIds.length < 2) {
+          throw new Error('An amalgamation must include at least two clubs');
+        }
+        for (const memberClubId of amalgamationClubIds) {
+          if (!(await eligibleClub(championshipId, memberClubId))) {
+            throw new Error(
+              'Every amalgamation club must be in a selected series region'
+            );
+          }
+        }
+      }
+      const entrantId = await transaction(async (helper) => {
+        const id = await helper.insert(
+          `INSERT INTO championship_entrants (
           championshipId, entrantType, clubId, displayName, status
         ) VALUES (?, ?, ?, ?, ?)`,
-        [
-          championshipId,
-          data.entrantType,
-          data.clubId || null,
-          data.displayName,
-          data.status || 'registered',
-        ]
-      );
+          [
+            championshipId,
+            data.entrantType,
+            clubId,
+            displayName,
+            data.status || 'registered',
+          ]
+        );
+        for (const memberClubId of amalgamationClubIds) {
+          await helper.insert(
+            'INSERT INTO amalgamation_clubs (entrantId, clubId) VALUES (?, ?)',
+            [id, memberClubId]
+          );
+        }
+        return id;
+      });
 
       return {
         id: entrantId,
         championshipId,
         entrantType: data.entrantType as EntrantType,
-        clubId: data.clubId || null,
-        displayName: data.displayName as string,
+        clubId,
+        displayName: displayName as string,
         status: data.status || 'registered',
+        clubIds: amalgamationClubIds,
       };
     },
 
@@ -240,6 +310,26 @@ function championshipsService(db: DbConnection) {
       entrantId: number,
       data: Partial<ChampionshipEntrant>
     ) => {
+      const amalgamationClubIds = [
+        ...new Set(
+          (data.clubIds || [])
+            .map((id) => Number(id))
+            .filter(Number.isSafeInteger)
+        ),
+      ];
+      if (data.entrantType === 'amalgamation') {
+        if (amalgamationClubIds.length < 2) {
+          throw new Error('An amalgamation must include at least two clubs');
+        }
+        for (const memberClubId of amalgamationClubIds) {
+          if (!(await eligibleClub(championshipId, memberClubId))) {
+            throw new Error(
+              'Every amalgamation club must be in a selected series region'
+            );
+          }
+        }
+        data.clubId = null;
+      }
       const fields: string[] = [];
       const params: Array<string | number | null> = [];
 
@@ -267,12 +357,31 @@ function championshipsService(db: DbConnection) {
 
       params.push(championshipId);
       params.push(entrantId);
-      const affected = await update(
-        `UPDATE championship_entrants
+      const updateEntrant = async (helper: ReturnType<typeof dbHelper>) => {
+        const affected = await helper.update(
+          `UPDATE championship_entrants
          SET ${fields.join(', ')}
          WHERE championshipId = ? AND id = ?`,
-        params
-      );
+          params
+        );
+        if (data.entrantType === 'amalgamation') {
+          await helper.delete(
+            'DELETE FROM amalgamation_clubs WHERE entrantId = ?',
+            [entrantId]
+          );
+          for (const memberClubId of amalgamationClubIds) {
+            await helper.insert(
+              'INSERT INTO amalgamation_clubs (entrantId, clubId) VALUES (?, ?)',
+              [entrantId, memberClubId]
+            );
+          }
+        }
+        return affected;
+      };
+      const affected =
+        data.entrantType === 'amalgamation'
+          ? await transaction(updateEntrant)
+          : await updateEntrant(dbHelper(db as any));
 
       if (affected === 0) {
         throw new Error('Entrant not found');
@@ -322,6 +431,10 @@ function championshipsService(db: DbConnection) {
         );
       }
 
+      if (!(await eligibleClub(championshipId, clubId))) {
+        throw new Error('Club is not in a selected series region');
+      }
+
       await insert(
         `INSERT INTO amalgamation_clubs (entrantId, clubId)
          VALUES (?, ?)`,
@@ -347,13 +460,20 @@ function championshipsService(db: DbConnection) {
       championshipId: number,
       data: { roundNumber: number; tournamentId: number; competition: string }
     ): Promise<RoundSummary> => {
-      const championship = await select('SELECT id FROM championships WHERE id = ?', [championshipId]);
+      const championship = await select(
+        'SELECT id FROM championships WHERE id = ?',
+        [championshipId]
+      );
       if (!championship[0]) throw new Error('Championship not found');
 
-      const tournament = await select(
+      const tournament = (await select(
         'SELECT id, Title, Date FROM tournaments WHERE id = ?',
         [data.tournamentId]
-      ) as unknown as Array<{ id: number; Title: string; Date: string | null }>;
+      )) as unknown as Array<{
+        id: number;
+        Title: string;
+        Date: string | null;
+      }>;
       if (!tournament[0]) throw new Error('Tournament not found');
 
       const competition = data.competition.trim();
@@ -385,7 +505,11 @@ function championshipsService(db: DbConnection) {
         [roundId, championshipId]
       );
       if (!count) throw new Error('Championship round not found');
-      return { id: roundId, championshipId, message: 'Championship round removed' };
+      return {
+        id: roundId,
+        championshipId,
+        message: 'Championship round removed',
+      };
     },
 
     getStandings: async (championshipId: number): Promise<StandingsRow[]> => {

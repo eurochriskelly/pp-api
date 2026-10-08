@@ -33,7 +33,9 @@ function readJson(filename) {
 }
 
 function normalize(value) {
-  return String(value || '').trim().toLocaleLowerCase();
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase();
 }
 
 function cityFromLocation(location) {
@@ -52,7 +54,10 @@ function imageBuffer(relativePath) {
 }
 
 function sourceUuid(sourceId) {
-  const hex = crypto.createHash('sha256').update(`gge:${sourceId}`).digest('hex');
+  const hex = crypto
+    .createHash('sha256')
+    .update(`gge:${sourceId}`)
+    .digest('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
@@ -74,6 +79,84 @@ function primarySport(sports) {
   return mapped[String(first || '').replace(/ /g, '_')] || 'Gaelic Games';
 }
 
+const organizationSourceIds = new Set([
+  'cmmnzdgwx0005r3frpmy6d3ms',
+  'cmlf83xyz0001r396unaj9j7n',
+  'cmmnzdguc0001r3fr4vc9ae9h',
+  'cmmnzdgwd0003r3fr0cffa7r1',
+]);
+
+function resolveRegion(club, sourceRegions) {
+  if (organizationSourceIds.has(club.source_id)) return null;
+  const regions = new Set(sourceRegions || []);
+  const location = normalize(club.location);
+  if (regions.has('galicia')) return { region: 'Iberia', subregion: 'Galicia' };
+  if (regions.has('benelux')) return { region: 'Benelux', subregion: null };
+  if (regions.has('central-east') || regions.has('germany'))
+    return { region: 'Central/East', subregion: null };
+  if (regions.has('iberia')) return { region: 'Iberia', subregion: null };
+  if (regions.has('nordic')) return { region: 'Nordics', subregion: null };
+  if (regions.has('brittany') || location.includes('brittany'))
+    return { region: 'North/West', subregion: 'Bretagne' };
+  if (regions.has('france')) return { region: 'North/West', subregion: null };
+  const byCountry = {
+    NL: ['Benelux', null],
+    BE: ['Benelux', null],
+    LU: ['Benelux', null],
+    ES: ['Iberia', null],
+    PT: ['Iberia', null],
+    GI: ['Iberia', null],
+    DK: ['Nordics', null],
+    FI: ['Nordics', null],
+    IS: ['Nordics', null],
+    NO: ['Nordics', null],
+    SE: ['Nordics', null],
+    DE: ['Central/East', null],
+    AT: ['Central/East', null],
+    CH: ['Central/East', null],
+    CZ: ['Central/East', null],
+    PL: ['Central/East', null],
+    HU: ['Central/East', null],
+    SK: ['Central/East', null],
+    HR: ['Central/East', null],
+    EE: ['Central/East', null],
+    IT: ['Central/East', null],
+    UA: ['Central/East', null],
+    RU: ['Central/East', null],
+    FR: ['North/West', null],
+    GB: ['North/West', 'Non-FFG'],
+  };
+  const locationCountry = [
+    ['spain', 'ES'],
+    ['portugal', 'PT'],
+    ['gibraltar', 'GI'],
+    ['netherlands', 'NL'],
+    ['belgium', 'BE'],
+    ['luxembourg', 'LU'],
+    ['denmark', 'DK'],
+    ['finland', 'FI'],
+    ['iceland', 'IS'],
+    ['norway', 'NO'],
+    ['sweden', 'SE'],
+    ['germany', 'DE'],
+    ['austria', 'AT'],
+    ['switzerland', 'CH'],
+    ['czech republic', 'CZ'],
+    ['poland', 'PL'],
+    ['hungary', 'HU'],
+    ['slovakia', 'SK'],
+    ['croatia', 'HR'],
+    ['estonia', 'EE'],
+    ['italy', 'IT'],
+    ['ukraine', 'UA'],
+    ['russia', 'RU'],
+    ['france', 'FR'],
+    ['brittany', 'FR'],
+  ].find(([needle]) => location.includes(needle));
+  const target = byCountry[club.country_code_iso2 || locationCountry?.[1]];
+  return target ? { region: target[0], subregion: target[1] } : null;
+}
+
 function explicitRound(event) {
   const text = `${event.title || ''}\n${event.description || ''}`;
   const numeric = text.match(/\b(?:round|manche|journ[ée]e)\s*(\d+)\b/i);
@@ -90,11 +173,16 @@ function buildHierarchy(events) {
   for (const event of events) {
     const description = String(event.description || '').trim();
     if (event.event_type === 'FIXTURE' && description) {
-      fixtureDescriptions.set(description, (fixtureDescriptions.get(description) || 0) + 1);
+      fixtureDescriptions.set(
+        description,
+        (fixtureDescriptions.get(description) || 0) + 1
+      );
     }
   }
-  const competitionEvents = events.filter((event) =>
-    event.event_type === 'FIXTURE' && fixtureDescriptions.get(String(event.description || '').trim()) >= 2
+  const competitionEvents = events.filter(
+    (event) =>
+      event.event_type === 'FIXTURE' &&
+      fixtureDescriptions.get(String(event.description || '').trim()) >= 2
   );
   const bySeries = new Map();
   for (const event of competitionEvents) {
@@ -104,23 +192,37 @@ function buildHierarchy(events) {
   }
   const result = new Map();
   for (const [seriesName, groupedEvents] of bySeries) {
-    const dates = [...new Set(groupedEvents.map((event) => event.start_date.slice(0, 10)))].sort();
+    const dates = [
+      ...new Set(groupedEvents.map((event) => event.start_date.slice(0, 10))),
+    ].sort();
     const dateRound = new Map(dates.map((date, index) => [date, index + 1]));
     const season = /\b(20\d{2})(?:\/(\d{2}))?\b/.exec(seriesName);
-    const championshipName = season ? `${seriesName} season` : `${seriesName} 2026`;
-    const normalizedSports = [...new Set(groupedEvents.flatMap((event) => event.sports || []).map(primarySport))];
+    const championshipName = season
+      ? `${seriesName} season`
+      : `${seriesName} 2026`;
+    const normalizedSports = [
+      ...new Set(
+        groupedEvents.flatMap((event) => event.sports || []).map(primarySport)
+      ),
+    ];
     const series = {
       sourceKey: `fixture-description:${seriesName}`,
       name: seriesName,
       championshipName,
       year: season ? Number(season[1]) : 2026,
       sport: normalizedSports.length === 1 ? normalizedSports[0] : null,
-      numRounds: Math.max(...groupedEvents.map((event) => explicitRound(event) || dateRound.get(event.start_date.slice(0, 10)))),
+      numRounds: Math.max(
+        ...groupedEvents.map(
+          (event) =>
+            explicitRound(event) || dateRound.get(event.start_date.slice(0, 10))
+        )
+      ),
     };
     for (const event of groupedEvents) {
       result.set(event.source_id, {
         series,
-        roundNumber: explicitRound(event) || dateRound.get(event.start_date.slice(0, 10)),
+        roundNumber:
+          explicitRound(event) || dateRound.get(event.start_date.slice(0, 10)),
         competition: primarySport(event.sports),
       });
     }
@@ -200,8 +302,11 @@ async function ensureSchema(connection) {
       CONSTRAINT fk_gge_import_events_run FOREIGN KEY (runId) REFERENCES gge_import_runs(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
-  const [columns] = await connection.query("SHOW COLUMNS FROM clubs LIKE 'clubLogo'");
-  if (!columns.length) throw new Error('EuroTourno.clubs.clubLogo is required.');
+  const [columns] = await connection.query(
+    "SHOW COLUMNS FROM clubs LIKE 'clubLogo'"
+  );
+  if (!columns.length)
+    throw new Error('EuroTourno.clubs.clubLogo is required.');
   if (String(columns[0].Type).toLowerCase() === 'blob') {
     await connection.query('ALTER TABLE clubs MODIFY clubLogo MEDIUMBLOB NULL');
   }
@@ -215,13 +320,20 @@ async function findOrCreateRun(connection, manifest) {
   if (existing[0]) return existing[0].id;
   const [result] = await connection.query(
     'INSERT INTO gge_import_runs (sourceSha256, sourceUrl, fetchedAtUtc) VALUES (?, ?, ?)',
-    [manifest.source_sha256, manifest.source_url, manifest.fetched_at_utc.replace('T', ' ').replace('+00:00', '')]
+    [
+      manifest.source_sha256,
+      manifest.source_url,
+      manifest.fetched_at_utc.replace('T', ' ').replace('+00:00', ''),
+    ]
   );
   return result.insertId;
 }
 
 async function importClub(connection, club, runId, summary) {
-  const [mapped] = await connection.query('SELECT clubId FROM gge_import_clubs WHERE sourceId = ?', [club.source_id]);
+  const [mapped] = await connection.query(
+    'SELECT clubId FROM gge_import_clubs WHERE sourceId = ?',
+    [club.source_id]
+  );
   if (mapped[0]) return mapped[0].clubId;
   const [candidates] = await connection.query(
     'SELECT clubId, clubName, country, city, clubLogo FROM clubs WHERE LOWER(clubName) = LOWER(?)',
@@ -229,15 +341,29 @@ async function importClub(connection, club, runId, summary) {
   );
   const country = club.country_code_iso2 || null;
   const city = cityFromLocation(club.location);
-  const exactCountry = candidates.filter((candidate) => country && candidate.country === country);
-  const exactCity = exactCountry.filter((candidate) => city && normalize(candidate.city) === normalize(city));
-  const candidate = exactCity.length === 1 ? exactCity[0] : exactCountry.length === 1 ? exactCountry[0] : candidates.length === 1 ? candidates[0] : null;
+  const exactCountry = candidates.filter(
+    (candidate) => country && candidate.country === country
+  );
+  const exactCity = exactCountry.filter(
+    (candidate) => city && normalize(candidate.city) === normalize(city)
+  );
+  const candidate =
+    exactCity.length === 1
+      ? exactCity[0]
+      : exactCountry.length === 1
+        ? exactCountry[0]
+        : candidates.length === 1
+          ? candidates[0]
+          : null;
   const logo = imageBuffer(club.logo_path);
   let clubId;
   if (candidate) {
     clubId = candidate.clubId;
     if (!candidate.clubLogo && logo) {
-      await connection.query('UPDATE clubs SET clubLogo = ? WHERE clubId = ?', [logo, clubId]);
+      await connection.query('UPDATE clubs SET clubLogo = ? WHERE clubId = ?', [
+        logo,
+        clubId,
+      ]);
       summary.logosLoaded += 1;
     }
     summary.clubsMatched += 1;
@@ -258,53 +384,140 @@ async function importClub(connection, club, runId, summary) {
   return clubId;
 }
 
-async function findOrCreateHierarchy(connection, definition, runId, cache, summary) {
+async function assignClubRegions(connection, clubs, events, summary) {
+  const sourceRegions = new Map();
+  for (const event of events) {
+    if (!event.club_source_id || !event.region) continue;
+    if (!sourceRegions.has(event.club_source_id))
+      sourceRegions.set(event.club_source_id, new Set());
+    sourceRegions.get(event.club_source_id).add(event.region);
+  }
+  for (const club of clubs) {
+    const target = resolveRegion(club, sourceRegions.get(club.source_id));
+    const [mapped] = await connection.query(
+      'SELECT clubId FROM gge_import_clubs WHERE sourceId = ?',
+      [club.source_id]
+    );
+    if (!mapped[0])
+      throw new Error(`Missing imported club mapping: ${club.source_id}`);
+    if (!target) {
+      if (organizationSourceIds.has(club.source_id)) {
+        await connection.query(
+          "UPDATE clubs SET status = 'inactive' WHERE clubId = ?",
+          [mapped[0].clubId]
+        );
+        summary.organizationsHidden += 1;
+      } else {
+        summary.clubsWithoutRegion += 1;
+      }
+      continue;
+    }
+    await connection.query(
+      "UPDATE clubs SET region = ?, subregion = ?, status = 'active' WHERE clubId = ?",
+      [target.region, target.subregion, mapped[0].clubId]
+    );
+    summary.clubsRegionalized += 1;
+  }
+}
+
+async function findOrCreateHierarchy(
+  connection,
+  definition,
+  runId,
+  cache,
+  summary
+) {
   if (!definition) return { seriesId: null, championshipId: null };
-  if (cache.has(definition.series.sourceKey)) return cache.get(definition.series.sourceKey);
+  if (cache.has(definition.series.sourceKey))
+    return cache.get(definition.series.sourceKey);
   const seriesKey = definition.series.sourceKey;
   const championshipKey = `${seriesKey}:championship:${definition.series.year}:${definition.series.championshipName}`;
-  const [mappedSeries] = await connection.query('SELECT seriesId FROM gge_import_series WHERE sourceKey = ?', [seriesKey]);
+  const [mappedSeries] = await connection.query(
+    'SELECT seriesId FROM gge_import_series WHERE sourceKey = ?',
+    [seriesKey]
+  );
   let seriesId = mappedSeries[0] && mappedSeries[0].seriesId;
   if (seriesId) {
-    const [current] = await connection.query('SELECT sport FROM series WHERE id = ?', [seriesId]);
-    if (current[0] && current[0].sport === 'Gaelic Games' && definition.series.sport) {
-      await connection.query('UPDATE series SET sport = ? WHERE id = ?', [definition.series.sport, seriesId]);
+    const [current] = await connection.query(
+      'SELECT sport FROM series WHERE id = ?',
+      [seriesId]
+    );
+    if (
+      current[0] &&
+      current[0].sport === 'Gaelic Games' &&
+      definition.series.sport
+    ) {
+      await connection.query('UPDATE series SET sport = ? WHERE id = ?', [
+        definition.series.sport,
+        seriesId,
+      ]);
     }
   }
   if (!seriesId) {
-    const [existing] = await connection.query('SELECT id FROM series WHERE name = ? ORDER BY id LIMIT 2', [definition.series.name]);
-    if (existing.length > 1) throw new Error(`Ambiguous existing series: ${definition.series.name}`);
+    const [existing] = await connection.query(
+      'SELECT id FROM series WHERE name = ? ORDER BY id LIMIT 2',
+      [definition.series.name]
+    );
+    if (existing.length > 1)
+      throw new Error(`Ambiguous existing series: ${definition.series.name}`);
     if (existing[0]) seriesId = existing[0].id;
     else {
       const [inserted] = await connection.query(
         `INSERT INTO series (name, description, sport, defaultSquadSize, defaultPlayersPerTeam, status)
          VALUES (?, ?, ?, 15, 15, 'active')`,
-        [definition.series.name, `Imported from GGE public calendar (${seriesKey})`, definition.series.sport]
+        [
+          definition.series.name,
+          `Imported from GGE public calendar (${seriesKey})`,
+          definition.series.sport,
+        ]
       );
       seriesId = inserted.insertId;
       summary.seriesCreated += 1;
     }
-    await connection.query('INSERT INTO gge_import_series (sourceKey, seriesId, runId, payload) VALUES (?, ?, ?, ?)', [seriesKey, seriesId, runId, JSON.stringify(definition.series)]);
+    await connection.query(
+      'INSERT INTO gge_import_series (sourceKey, seriesId, runId, payload) VALUES (?, ?, ?, ?)',
+      [seriesKey, seriesId, runId, JSON.stringify(definition.series)]
+    );
   }
-  const [mappedChampionship] = await connection.query('SELECT championshipId FROM gge_import_championships WHERE sourceKey = ?', [championshipKey]);
-  let championshipId = mappedChampionship[0] && mappedChampionship[0].championshipId;
+  const [mappedChampionship] = await connection.query(
+    'SELECT championshipId FROM gge_import_championships WHERE sourceKey = ?',
+    [championshipKey]
+  );
+  let championshipId =
+    mappedChampionship[0] && mappedChampionship[0].championshipId;
   if (!championshipId) {
     const [existing] = await connection.query(
       'SELECT id FROM championships WHERE seriesId = ? AND year = ? AND name = ?',
       [seriesId, definition.series.year, definition.series.championshipName]
     );
-    if (existing.length > 1) throw new Error(`Ambiguous existing championship: ${definition.series.championshipName}`);
+    if (existing.length > 1)
+      throw new Error(
+        `Ambiguous existing championship: ${definition.series.championshipName}`
+      );
     if (existing[0]) championshipId = existing[0].id;
     else {
       const [inserted] = await connection.query(
         `INSERT INTO championships (seriesId, name, year, numRounds, status)
          VALUES (?, ?, ?, ?, 'open')`,
-        [seriesId, definition.series.championshipName, definition.series.year, definition.series.numRounds]
+        [
+          seriesId,
+          definition.series.championshipName,
+          definition.series.year,
+          definition.series.numRounds,
+        ]
       );
       championshipId = inserted.insertId;
       summary.championshipsCreated += 1;
     }
-    await connection.query('INSERT INTO gge_import_championships (sourceKey, championshipId, runId, payload) VALUES (?, ?, ?, ?)', [championshipKey, championshipId, runId, JSON.stringify(definition.series)]);
+    await connection.query(
+      'INSERT INTO gge_import_championships (sourceKey, championshipId, runId, payload) VALUES (?, ?, ?, ?)',
+      [
+        championshipKey,
+        championshipId,
+        runId,
+        JSON.stringify(definition.series),
+      ]
+    );
   }
   const value = { seriesId, championshipId };
   cache.set(seriesKey, value);
@@ -312,51 +525,126 @@ async function findOrCreateHierarchy(connection, definition, runId, cache, summa
 }
 
 async function runImport(connection, data) {
-  const summary = { clubsCreated: 0, clubsMatched: 0, logosLoaded: 0, seriesCreated: 0, championshipsCreated: 0, tournamentsCreated: 0, roundsCreated: 0, skippedEvents: 0 };
+  const summary = {
+    clubsCreated: 0,
+    clubsMatched: 0,
+    logosLoaded: 0,
+    clubsRegionalized: 0,
+    clubsWithoutRegion: 0,
+    organizationsHidden: 0,
+    seriesCreated: 0,
+    championshipsCreated: 0,
+    tournamentsCreated: 0,
+    roundsCreated: 0,
+    skippedEvents: 0,
+  };
   const hierarchy = buildHierarchy(data.events);
   const competitionEvents = [...hierarchy.keys()].length;
   if (!apply) {
-    return { ...summary, sourceClubs: data.clubs.length, sourceEvents: data.events.length, competitionEvents, mode: 'dry-run' };
+    return {
+      ...summary,
+      sourceClubs: data.clubs.length,
+      sourceEvents: data.events.length,
+      competitionEvents,
+      mode: 'dry-run',
+    };
   }
   await ensureSchema(connection);
   await connection.beginTransaction();
   try {
     const runId = await findOrCreateRun(connection, data.manifest);
     const clubs = new Map();
-    for (const club of data.clubs) clubs.set(club.source_id, await importClub(connection, club, runId, summary));
+    for (const club of data.clubs)
+      clubs.set(
+        club.source_id,
+        await importClub(connection, club, runId, summary)
+      );
+    await assignClubRegions(connection, data.clubs, data.events, summary);
     const hierarchyCache = new Map();
-    for (const definition of new Map([...hierarchy.values()].map((value) => [value.series.sourceKey, value])).values()) {
-      await findOrCreateHierarchy(connection, definition, runId, hierarchyCache, summary);
+    for (const definition of new Map(
+      [...hierarchy.values()].map((value) => [value.series.sourceKey, value])
+    ).values()) {
+      await findOrCreateHierarchy(
+        connection,
+        definition,
+        runId,
+        hierarchyCache,
+        summary
+      );
     }
     for (const event of data.events) {
-      const [mapped] = await connection.query('SELECT tournamentId FROM gge_import_events WHERE sourceId = ?', [event.source_id]);
-      if (mapped[0]) { summary.skippedEvents += 1; continue; }
+      const [mapped] = await connection.query(
+        'SELECT tournamentId FROM gge_import_events WHERE sourceId = ?',
+        [event.source_id]
+      );
+      if (mapped[0]) {
+        summary.skippedEvents += 1;
+        continue;
+      }
       const definition = hierarchy.get(event.source_id);
-      const { seriesId, championshipId } = await findOrCreateHierarchy(connection, definition, runId, hierarchyCache, summary);
+      const { seriesId, championshipId } = await findOrCreateHierarchy(
+        connection,
+        definition,
+        runId,
+        hierarchyCache,
+        summary
+      );
       const [inserted] = await connection.query(
         `INSERT INTO tournaments (Date, endDate, Title, Location, sport, region, season, eventUuid, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'published')`,
-        [event.start_date.slice(0, 10), event.end_date && event.end_date.slice(0, 10), event.title, event.location, primarySport(event.sports), event.region, Number(event.start_date.slice(0, 4)), sourceUuid(event.source_id)]
+        [
+          event.start_date.slice(0, 10),
+          event.end_date && event.end_date.slice(0, 10),
+          event.title,
+          event.location,
+          primarySport(event.sports),
+          event.region,
+          Number(event.start_date.slice(0, 4)),
+          sourceUuid(event.source_id),
+        ]
       );
       const tournamentId = inserted.insertId;
       await connection.query(
         `INSERT INTO gge_import_events (sourceId, tournamentId, clubId, seriesId, championshipId, runId, payload)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [event.source_id, tournamentId, clubs.get(event.club_source_id) || null, seriesId, championshipId, runId, JSON.stringify(event)]
+        [
+          event.source_id,
+          tournamentId,
+          clubs.get(event.club_source_id) || null,
+          seriesId,
+          championshipId,
+          runId,
+          JSON.stringify(event),
+        ]
       );
       summary.tournamentsCreated += 1;
       if (definition) {
-        await connection.query('INSERT IGNORE INTO tournament_competitions (tournamentId, name) VALUES (?, ?)', [tournamentId, definition.competition]);
+        await connection.query(
+          'INSERT IGNORE INTO tournament_competitions (tournamentId, name) VALUES (?, ?)',
+          [tournamentId, definition.competition]
+        );
         const [round] = await connection.query(
           `INSERT IGNORE INTO championship_competition_rounds
            (championshipId, roundNumber, tournamentId, competition) VALUES (?, ?, ?, ?)`,
-          [championshipId, definition.roundNumber, tournamentId, definition.competition]
+          [
+            championshipId,
+            definition.roundNumber,
+            tournamentId,
+            definition.competition,
+          ]
         );
         summary.roundsCreated += round.affectedRows;
       }
     }
     await connection.commit();
-    return { ...summary, sourceClubs: data.clubs.length, sourceEvents: data.events.length, competitionEvents, runId, mode: 'applied' };
+    return {
+      ...summary,
+      sourceClubs: data.clubs.length,
+      sourceEvents: data.events.length,
+      competitionEvents,
+      runId,
+      mode: 'applied',
+    };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -372,11 +660,37 @@ async function main() {
   };
   const hierarchy = buildHierarchy(data.events);
   if (!apply) {
-    console.log(JSON.stringify({ mode: 'dry-run', sourceClubs: data.clubs.length, sourceEvents: data.events.length, competitionEvents: hierarchy.size, series: new Set([...hierarchy.values()].map((value) => value.series.sourceKey)).size, note: 'Run with --apply --local-docker to import only into the local Docker MySQL database.' }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          mode: 'dry-run',
+          sourceClubs: data.clubs.length,
+          sourceEvents: data.events.length,
+          competitionEvents: hierarchy.size,
+          series: new Set(
+            [...hierarchy.values()].map((value) => value.series.sourceKey)
+          ).size,
+          note: 'Run with --apply --local-docker to import only into the local Docker MySQL database.',
+        },
+        null,
+        2
+      )
+    );
     return;
   }
-  const password = childProcess.execFileSync('docker', ['exec', 'mysql', 'sh', '-lc', 'printf %s "$MYSQL_ROOT_PASSWORD"'], { encoding: 'utf8' });
-  const connection = await mysql.createConnection({ host: '127.0.0.1', port: 3306, user: 'root', password, database: 'EuroTourno', charset: 'utf8mb4' });
+  const password = childProcess.execFileSync(
+    'docker',
+    ['exec', 'mysql', 'sh', '-lc', 'printf %s "$MYSQL_ROOT_PASSWORD"'],
+    { encoding: 'utf8' }
+  );
+  const connection = await mysql.createConnection({
+    host: '127.0.0.1',
+    port: 3306,
+    user: 'root',
+    password,
+    database: 'EuroTourno',
+    charset: 'utf8mb4',
+  });
   try {
     const summary = await runImport(connection, data);
     const [counts] = await connection.query(`
@@ -387,7 +701,9 @@ async function main() {
         (SELECT COUNT(*) FROM gge_import_championships) AS mappedChampionships,
         (SELECT COUNT(*) FROM championship_competition_rounds r JOIN gge_import_events e ON e.tournamentId = r.tournamentId) AS mappedRounds
     `);
-    console.log(JSON.stringify({ ...summary, verification: counts[0] }, null, 2));
+    console.log(
+      JSON.stringify({ ...summary, verification: counts[0] }, null, 2)
+    );
   } finally {
     await connection.end();
   }

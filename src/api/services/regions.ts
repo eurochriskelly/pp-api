@@ -4,19 +4,25 @@ import dbHelper = require('../../lib/db-helper');
 interface Region {
   id: string;
   name: string;
+  region: string;
+  subregion: string | null;
   activeClubsCount: number;
-  activeTeamsCount: number;
+  supportedSportsCount: number;
 }
 
 interface RegionInfoHeader {
   region: string;
+  subregion: string | null;
+  count: number;
   activeClubsCount: number;
-  activeTeamsCount: number;
+  supportedSportsCount: number;
 }
 
 interface ClubTeam {
   [key: string]: unknown;
 }
+
+type ClubDataSource = 'gge' | 'local';
 
 interface RegionInfo {
   header: RegionInfoHeader;
@@ -33,6 +39,15 @@ interface RegionClub {
   status: string;
 }
 
+interface ImportedClubPayload {
+  sports_supported?: string[];
+  source_record?: { sportsSupported?: string[] };
+}
+
+interface ImportedClub extends RegionClub {
+  payload: string | ImportedClubPayload;
+}
+
 interface DbConnection {
   query: (
     sql: string,
@@ -45,7 +60,12 @@ interface RegionsService {
   listRegions: () => Promise<Region[]>;
   listRegionInfo: (
     regionString: string,
-    options: { sex?: string; sport?: string; level?: string }
+    options: {
+      sex?: string;
+      sport?: string;
+      level?: string;
+      subregion?: string;
+    }
   ) => Promise<RegionInfo>;
   listRegionClubs: (regionString: string) => Promise<RegionClub[]>;
 }
@@ -53,30 +73,84 @@ interface RegionsService {
 function regionsService(db: DbConnection): RegionsService {
   const { select } = dbHelper(db as any);
 
+  const importedSportCategories = (payload: ImportedClub['payload']) => {
+    const source: ImportedClubPayload =
+      typeof payload === 'string' ? JSON.parse(payload) : payload;
+    const mapping: Record<string, string> = {
+      Mens_Football: 'gaa',
+      mensFootball: 'gaa',
+      LGFA: 'lgfa',
+      lgfa: 'lgfa',
+      Hurling: 'hurling',
+      hurling: 'hurling',
+      Camogie: 'camogie',
+      camogie: 'camogie',
+      Handball: 'handball',
+      handball: 'handball',
+      Youth: 'youthfootball',
+      youth: 'youthfootball',
+    };
+    return [
+      ...new Set(
+        (source.sports_supported || source.source_record?.sportsSupported || [])
+          .map((sport) => mapping[sport])
+          .filter((sport): sport is string => Boolean(sport))
+      ),
+    ];
+  };
+
   return {
     listRegions: async (): Promise<Region[]> => {
       const rows = (await select(
         `SELECT
            c.region,
            c.subregion,
-           COUNT(DISTINCT CASE WHEN c.status = 'active' THEN c.clubId END) as activeClubsCount,
-           COUNT(DISTINCT t.teamId) as activeTeamsCount
+           g.payload
          FROM clubs c
-         LEFT JOIN clubTeams t ON t.clubId = c.clubId AND t.status = 'active'
-         GROUP BY c.region, c.subregion
+         INNER JOIN gge_import_clubs g ON g.clubId = c.clubId
+         WHERE c.status = 'active'
          ORDER BY c.region, c.subregion`
       )) as unknown as {
         region: string;
         subregion: string;
-        activeClubsCount: string;
-        activeTeamsCount: string;
+        payload: ImportedClub['payload'];
       }[];
-      return rows
+      const grouped = new Map<
+        string,
+        {
+          region: string;
+          subregion: string | null;
+          activeClubsCount: number;
+          supportedSportsCount: number;
+        }
+      >();
+      rows
         .filter((row) => row.region != null)
+        .forEach((row) => {
+          const subregion = row.subregion || null;
+          const key = `${row.region}::${subregion || ''}`;
+          const existing = grouped.get(key) || {
+            region: row.region,
+            subregion,
+            activeClubsCount: 0,
+            supportedSportsCount: 0,
+          };
+          existing.activeClubsCount += 1;
+          existing.supportedSportsCount += importedSportCategories(
+            row.payload
+          ).length;
+          grouped.set(key, existing);
+        });
+      return [...grouped.values()]
+        .sort((left, right) =>
+          `${left.region}/${left.subregion || ''}`.localeCompare(
+            `${right.region}/${right.subregion || ''}`
+          )
+        )
         .map((row) => {
           const regionName =
             row.subregion && row.subregion !== ''
-              ? `${row.region}%${row.subregion}`
+              ? `${row.region} / ${row.subregion}`
               : row.region;
           const hash = crypto
             .createHash('md5')
@@ -84,70 +158,69 @@ function regionsService(db: DbConnection): RegionsService {
             .digest('hex');
           return {
             id: hash,
-            name: encodeURI(regionName),
-            activeClubsCount: parseInt(row.activeClubsCount, 10) || 0,
-            activeTeamsCount: parseInt(row.activeTeamsCount, 10) || 0,
+            name: regionName,
+            region: row.region,
+            subregion: row.subregion || null,
+            activeClubsCount: row.activeClubsCount,
+            supportedSportsCount: row.supportedSportsCount,
           };
         });
     },
 
-    // FIXME: this should handle sub regions too
     listRegionInfo: async (
       regionString: string,
-      { sex, sport, level }: { sex?: string; sport?: string; level?: string }
+      {
+        sex,
+        sport,
+        level,
+        subregion,
+      }: { sex?: string; sport?: string; level?: string; subregion?: string }
     ): Promise<RegionInfo> => {
-      // Constraints for fetching team data from v_club_teams
-      // Assumes v_club_teams has columns: region, subregion, status, team_status, category
-      const teamSelectionConstraints: string[] = [`region = ?`];
-      const teamSelectionParams: (string | number)[] = [regionString];
-
-      teamSelectionConstraints.push(`clubStatus = 'active'`); // Filter for active clubs associated with teams
-      teamSelectionConstraints.push(`teamStatus = 'active'`); // Filter for active teams
-
-      if (sex)
-        teamSelectionConstraints.push(
-          sex === 'male'
-            ? `category IN ('gaa', 'hurling')`
-            : `category IN ('lgfa', 'camogie')`
+      const clubSelectionConstraints = [`c.region = ?`, `c.status = 'active'`];
+      const clubSelectionParams: string[] = [regionString];
+      if (subregion) {
+        clubSelectionConstraints.push(`c.subregion = ?`);
+        clubSelectionParams.push(subregion);
+      } else {
+        clubSelectionConstraints.push(
+          `(c.subregion IS NULL OR c.subregion = '')`
         );
-      if (sport) {
-        const sportMap: { [key: string]: string } = {
-          hurling: `'hurling', 'camogie', 'youthhurling'`,
-          football: `'gaa', 'lgfa', 'youthfootball'`,
-          handball: `'handball'`,
-          rounders: `'rounders'`,
-        };
-        if (sportMap[sport])
-          teamSelectionConstraints.push(`category IN (${sportMap[sport]})`);
       }
-      if (level)
-        teamSelectionConstraints.push(
-          level === 'youth'
-            ? `category IN ('youthhurling', 'youthfootball')`
-            : `category IN ('gaa', 'lgfa', 'hurling', 'camogie', 'handball', 'rounders')`
+      const clubs = (await select(
+        `SELECT c.clubId, c.clubName, c.country, c.city, c.region, c.subregion, c.status, g.payload
+         FROM clubs c
+         INNER JOIN gge_import_clubs g ON g.clubId = c.clubId
+         WHERE ${clubSelectionConstraints.join(' AND ')}
+         ORDER BY c.clubName`,
+        clubSelectionParams
+      )) as unknown as ImportedClub[];
+      const clubData = clubs.flatMap((club) => {
+        const categories = importedSportCategories(club.payload);
+        const { payload, ...clubDetails } = club;
+        return (categories.length ? categories : ['__unregistered__']).map(
+          (category) => ({
+            ...clubDetails,
+            category,
+            teamId: null,
+            teamName: null,
+            teamStatus: category === '__unregistered__' ? null : 'supported',
+            clubStatus: club.status,
+            dataSource: 'gge' as ClubDataSource,
+          })
         );
-
-      const teamDataRows = (await select(
-        `SELECT * FROM v_club_teams WHERE ${teamSelectionConstraints.join(' AND ')}`,
-        teamSelectionParams
-      )) as unknown as ClubTeam[];
-
-      // Assuming 'clubs' table has 'status' and 'clubId'
-      const clubCountConstraints = [`region = ?`, `status = 'active'`];
-      const clubCountParams: (string | number)[] = [regionString];
-
-      const [activeClubsStats] = (await select(
-        `SELECT COUNT(DISTINCT clubId) as count FROM clubs WHERE ${clubCountConstraints.join(' AND ')}`,
-        clubCountParams
-      )) as unknown as { count: string }[];
+      });
 
       return {
         header: {
           region: regionString,
-          activeClubsCount: parseInt(activeClubsStats.count, 10) || 0,
-          activeTeamsCount: teamDataRows.length,
+          subregion: subregion || null,
+          count: clubs.length,
+          activeClubsCount: clubs.length,
+          supportedSportsCount: clubData.filter(
+            (club) => club.category !== '__unregistered__'
+          ).length,
         },
-        data: teamDataRows,
+        data: clubData,
       };
     },
 

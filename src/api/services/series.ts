@@ -9,6 +9,20 @@ interface Series {
   defaultPlayersPerTeam?: number;
   rulesetId?: number | null;
   status?: 'active' | 'inactive';
+  regions?: SeriesRegion[];
+}
+
+interface SeriesRegion {
+  region: string;
+  subregion?: string | null;
+}
+
+interface EligibleClub {
+  clubId: number;
+  clubName: string;
+  city: string | null;
+  region: string;
+  subregion: string | null;
 }
 
 interface Championship {
@@ -28,7 +42,41 @@ interface DbConnection {
 }
 
 function seriesService(db: DbConnection) {
-  const { select, insert, update } = dbHelper(db as any);
+  const { select, insert, update, transaction } = dbHelper(db as any);
+
+  const listRegions = async (seriesId: number): Promise<SeriesRegion[]> =>
+    (await select(
+      `SELECT region, NULLIF(subregion, '') AS subregion
+       FROM series_regions WHERE seriesId = ? ORDER BY region, subregion`,
+      [seriesId]
+    )) as unknown as SeriesRegion[];
+
+  const replaceRegions = async (
+    helper: ReturnType<typeof dbHelper>,
+    seriesId: number,
+    regions: SeriesRegion[]
+  ) => {
+    const unique = new Map<string, SeriesRegion>();
+    regions.forEach(({ region, subregion }) => {
+      const cleanRegion = String(region || '').trim();
+      const cleanSubregion = String(subregion || '').trim();
+      if (cleanRegion)
+        unique.set(`${cleanRegion}:${cleanSubregion}`, {
+          region: cleanRegion,
+          subregion: cleanSubregion || null,
+        });
+    });
+    await helper.delete('DELETE FROM series_regions WHERE seriesId = ?', [
+      seriesId,
+    ]);
+    for (const assignment of unique.values()) {
+      await helper.insert(
+        'INSERT INTO series_regions (seriesId, region, subregion) VALUES (?, ?, ?)',
+        [seriesId, assignment.region, assignment.subregion || '']
+      );
+    }
+    return [...unique.values()];
+  };
 
   return {
     listSeries: async (status?: string): Promise<Series[]> => {
@@ -42,7 +90,13 @@ function seriesService(db: DbConnection) {
       }
 
       sql += ' ORDER BY name';
-      return (await select(sql, params)) as unknown as Series[];
+      const rows = (await select(sql, params)) as unknown as Series[];
+      return Promise.all(
+        rows.map(async (series) => ({
+          ...series,
+          regions: await listRegions(series.id),
+        }))
+      );
     },
 
     getSeriesById: async (
@@ -67,25 +121,31 @@ function seriesService(db: DbConnection) {
 
       return {
         ...rows[0],
+        regions: await listRegions(id),
         championshipIds: championshipRows.map((row) => row.id),
       };
     },
 
     createSeries: async (data: Partial<Series>): Promise<Series> => {
-      const id = await insert(
-        `INSERT INTO series (
+      const regions = Array.isArray(data.regions) ? data.regions : [];
+      const id = await transaction(async (helper) => {
+        const seriesId = await helper.insert(
+          `INSERT INTO series (
           name, description, sport, defaultSquadSize, defaultPlayersPerTeam, rulesetId, status
         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          data.name,
-          data.description || null,
-          data.sport || null,
-          data.defaultSquadSize || 15,
-          data.defaultPlayersPerTeam || 15,
-          data.rulesetId || null,
-          data.status || 'active',
-        ]
-      );
+          [
+            data.name,
+            data.description || null,
+            data.sport || null,
+            data.defaultSquadSize || 15,
+            data.defaultPlayersPerTeam || 15,
+            data.rulesetId || null,
+            data.status || 'active',
+          ]
+        );
+        await replaceRegions(helper, seriesId, regions);
+        return seriesId;
+      });
 
       return {
         id,
@@ -96,6 +156,7 @@ function seriesService(db: DbConnection) {
         defaultPlayersPerTeam: data.defaultPlayersPerTeam || 15,
         rulesetId: data.rulesetId || null,
         status: (data.status as 'active' | 'inactive') || 'active',
+        regions,
       };
     },
 
@@ -120,17 +181,20 @@ function seriesService(db: DbConnection) {
         }
       });
 
-      if (fields.length === 0) {
-        return { id, message: 'No changes provided' };
+      if (fields.length > 0) {
+        params.push(id);
+        await update(
+          `UPDATE series SET ${fields.join(', ')} WHERE id = ?`,
+          params
+        );
       }
+      const regions = Array.isArray(data.regions)
+        ? await replaceRegions(dbHelper(db as any), id, data.regions)
+        : await listRegions(id);
+      if (fields.length === 0 && data.regions === undefined)
+        return { id, message: 'No changes provided' };
 
-      params.push(id);
-      await update(
-        `UPDATE series SET ${fields.join(', ')} WHERE id = ?`,
-        params
-      );
-
-      return { id, ...data };
+      return { id, ...data, regions };
     },
 
     deleteSeries: async (id: number, hard: boolean = false) => {
@@ -228,6 +292,20 @@ function seriesService(db: DbConnection) {
          ORDER BY year DESC, name ASC`,
         [seriesId]
       )) as unknown as Championship[];
+    },
+
+    listEligibleClubs: async (seriesId: number): Promise<EligibleClub[]> => {
+      return (await select(
+        `SELECT DISTINCT c.clubId, c.clubName, c.city, c.region,
+                NULLIF(c.subregion, '') AS subregion
+         FROM series_regions sr
+         JOIN clubs c ON c.region = sr.region
+          AND COALESCE(c.subregion, '') = sr.subregion
+         JOIN gge_import_clubs g ON g.clubId = c.clubId
+         WHERE sr.seriesId = ? AND c.status = 'active'
+         ORDER BY c.clubName`,
+        [seriesId]
+      )) as unknown as EligibleClub[];
     },
   };
 }

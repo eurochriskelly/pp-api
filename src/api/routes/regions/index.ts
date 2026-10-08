@@ -1,6 +1,5 @@
 import express from 'express';
 import regionController from '../../controllers/regions';
-import { validateNumericId } from '../../middleware/validation';
 
 export default (dbs: any, useMock: boolean) => {
   const router = express.Router({ mergeParams: true });
@@ -8,12 +7,8 @@ export default (dbs: any, useMock: boolean) => {
   const ctrl = regionController(dbMain, useMock);
 
   router.get('/', ctrl.listRegions);
-  router.get('/:regionId', validateNumericId('regionId'), ctrl.listRegionInfo);
-  router.get(
-    '/:regionId/clubs',
-    validateNumericId('regionId'),
-    ctrl.listRegionClubs
-  );
+  router.get('/:regionId', ctrl.listRegionInfo);
+  router.get('/:regionId/clubs', ctrl.listRegionClubs);
 
   return router;
 };

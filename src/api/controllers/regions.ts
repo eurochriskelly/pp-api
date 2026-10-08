@@ -26,7 +26,12 @@ function regionsController(db: any, useMock: boolean) {
       next: NextFunction
     ): Promise<void> => {
       try {
-        const info = await dbSvc.listRegionInfo(req.params.regionId, req.query);
+        const info = await dbSvc.listRegionInfo(req.params.regionId, {
+          sex: req.query.sex as string | undefined,
+          sport: req.query.sport as string | undefined,
+          level: req.query.level as string | undefined,
+          subregion: req.query.subregion as string | undefined,
+        });
         res.json(info);
       } catch (err) {
         next(err);

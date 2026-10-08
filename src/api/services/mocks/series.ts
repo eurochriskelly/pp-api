@@ -9,6 +9,7 @@ interface MockSeries {
   defaultPlayersPerTeam: number;
   rulesetId: number | null;
   status: 'active' | 'inactive';
+  regions?: Array<{ region: string; subregion: string | null }>;
 }
 
 interface MockChampionship {
@@ -153,5 +154,7 @@ export default function mockSeriesService() {
     listSeriesChampionships: async (seriesId: number) => {
       return championships.filter((c) => c.seriesId === seriesId);
     },
+
+    listEligibleClubs: async (_seriesId: number) => [],
   };
 }

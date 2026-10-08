@@ -16,6 +16,11 @@ export default (dbs: any, useMock: boolean) => {
     validateNumericId('seriesId'),
     ctrl.listSeriesChampionships
   );
+  router.get(
+    '/:seriesId/eligible-clubs',
+    validateNumericId('seriesId'),
+    ctrl.listEligibleClubs
+  );
 
   router.post('/', auth, ctrl.createSeries);
   router.put(

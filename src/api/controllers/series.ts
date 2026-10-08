@@ -124,6 +124,23 @@ function seriesController(db: any, useMock: boolean) {
         next(err);
       }
     },
+
+    listEligibleClubs: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
+      try {
+        const id = parseInt(req.params.seriesId, 10);
+        if (isNaN(id)) {
+          res.status(400).json({ error: 'Invalid series ID' });
+          return;
+        }
+        res.json({ data: await dbSvc.listEligibleClubs(id) });
+      } catch (err) {
+        next(err);
+      }
+    },
   };
 }
 

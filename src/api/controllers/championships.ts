@@ -144,10 +144,12 @@ function championshipsController(db: any, useMock: boolean) {
         }
 
         const { entrantType, displayName } = req.body;
-        if (!entrantType || !displayName) {
+        if (!entrantType || (entrantType === 'amalgamation' && !displayName)) {
           res
             .status(400)
-            .json({ error: 'entrantType and displayName are required' });
+            .json({
+              error: 'entrantType and a name for amalgamations are required',
+            });
           return;
         }
 
@@ -283,29 +285,56 @@ function championshipsController(db: any, useMock: boolean) {
       }
     },
 
-    createRound: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    createRound: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
         const championshipId = parseId(req.params.championshipId);
         const tournamentId = parseId(String(req.body.tournamentId));
         const roundNumber = Number(req.body.roundNumber);
-        const competition = typeof req.body.competition === 'string' ? req.body.competition.trim() : '';
-        if (championshipId === null || tournamentId === null || !Number.isInteger(roundNumber) || roundNumber < 1 || !competition) {
-          res.status(400).json({ error: 'roundNumber, tournamentId and competition are required' });
+        const competition =
+          typeof req.body.competition === 'string'
+            ? req.body.competition.trim()
+            : '';
+        if (
+          championshipId === null ||
+          tournamentId === null ||
+          !Number.isInteger(roundNumber) ||
+          roundNumber < 1 ||
+          !competition
+        ) {
+          res
+            .status(400)
+            .json({
+              error: 'roundNumber, tournamentId and competition are required',
+            });
           return;
         }
-        const row = await dbSvc.createRound(championshipId, { roundNumber, tournamentId, competition });
+        const row = await dbSvc.createRound(championshipId, {
+          roundNumber,
+          tournamentId,
+          competition,
+        });
         res.status(201).json({ data: row });
       } catch (err) {
         next(err);
       }
     },
 
-    deleteRound: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    deleteRound: async (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ): Promise<void> => {
       try {
         const championshipId = parseId(req.params.championshipId);
         const roundId = parseId(req.params.roundId);
         if (championshipId === null || roundId === null) {
-          res.status(400).json({ error: 'Invalid championship ID or round ID' });
+          res
+            .status(400)
+            .json({ error: 'Invalid championship ID or round ID' });
           return;
         }
         const row = await dbSvc.deleteRound(championshipId, roundId);
