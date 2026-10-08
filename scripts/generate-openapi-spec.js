@@ -129,17 +129,18 @@ const RESPONSE_SCHEMAS = {
     array: 'FinalsResult',
   },
 
-  'GET /api/users': { array: 'Error' },
+  'GET /api/users': { array: 'UserSearchResult' },
   'GET /api/users/{userId}': 'Error',
 };
 
 const REQUEST_SCHEMAS = {
+  'POST /api/tournaments/{tournamentId}/calculated-fixtures/refresh':
+    'CalculatedFixtureRefresh',
   'POST /api/championships': 'ChampionshipCreate',
   'PUT /api/championships/{championshipId}': 'ChampionshipCreate',
   'POST /api/championships/{championshipId}/entrants':
     'ChampionshipEntrantCreate',
-  'POST /api/championships/{championshipId}/rounds':
-    'ChampionshipRoundCreate',
+  'POST /api/championships/{championshipId}/rounds': 'ChampionshipRoundCreate',
   'PUT /api/championships/{championshipId}/entrants/{entrantId}':
     'ChampionshipEntrantCreate',
 

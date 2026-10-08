@@ -261,6 +261,7 @@ export function calculateStandings(
     teamB: string;
     scoreA: number;
     scoreB: number;
+    outcome: string;
   }> = [];
 
   groupFixtures.forEach((fixture) => {
@@ -320,6 +321,7 @@ export function calculateStandings(
       teamB: team2Name,
       scoreA: fixture.team1.total,
       scoreB: fixture.team2.total,
+      outcome: fixture.outcome,
     });
     applyFixtureToStats(fixture, team1Stats, team2Stats, pointsConfig);
   });
@@ -354,12 +356,14 @@ export function calculateStandings(
       teamB: match.teamB,
       scoreA: match.scoreA,
       scoreB: match.scoreB,
+      outcome: match.outcome,
     }));
 
     const sortedWithH2H = applyHeadToHeadTiebreaker(
       transformedStandings,
       transformedMatches,
-      true
+      true,
+      pointsConfig
     );
 
     const sortedGroupStandings: TeamStats[] = sortedWithH2H.map((team) => ({

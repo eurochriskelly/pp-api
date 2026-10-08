@@ -66,7 +66,8 @@ export class FixtureInfringementManager {
   isPlaceholderTeam(name: string | undefined | null): boolean {
     return (
       typeof name === 'string' &&
-      (name.startsWith('~') || name.toLowerCase() === 'bye')
+      (name.startsWith('~') ||
+        ['bye', 'pending', 'contested'].includes(name.toLowerCase()))
     );
   }
 

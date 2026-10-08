@@ -5,7 +5,9 @@ type TeamType = 'primary' | 'secondary' | 'combination';
 interface TournamentTeam {
   id: number;
   tournamentId: number;
-  entrantId: number;
+  entrantId: number | null;
+  competitionId?: number | null;
+  teamSuffix?: string | null;
   teamName: string;
   teamType: TeamType;
   squadSizeSubmitted?: number | null;
@@ -42,7 +44,7 @@ function tournamentTeamsService(db: DbConnection) {
   const getTeamById = async (tournamentId: number, teamId: number) => {
     const rows = (await select(
       `SELECT id, tournamentId, entrantId, teamName, teamType,
-              squadSizeSubmitted, createdAt
+              squadSizeSubmitted, createdAt, competitionId, teamSuffix
        FROM tournament_teams
        WHERE tournamentId = ? AND id = ?`,
       [tournamentId, teamId]
@@ -85,7 +87,7 @@ function tournamentTeamsService(db: DbConnection) {
     listTeams: async (tournamentId: number) => {
       const rows = (await select(
         `SELECT id, tournamentId, entrantId, teamName, teamType,
-                squadSizeSubmitted, createdAt
+                squadSizeSubmitted, createdAt, competitionId, teamSuffix
          FROM tournament_teams
          WHERE tournamentId = ?
          ORDER BY id ASC`,
@@ -213,7 +215,11 @@ function tournamentTeamsService(db: DbConnection) {
       return { id: teamId, tournamentId, message: 'Team deleted' };
     },
 
-    createSquad: async (tournamentId: number, teamId: number, squadSize: number) => {
+    createSquad: async (
+      tournamentId: number,
+      teamId: number,
+      squadSize: number
+    ) => {
       const team = await getTeamById(tournamentId, teamId);
       if (!team) {
         throw new Error('Team not found');
@@ -277,7 +283,10 @@ function tournamentTeamsService(db: DbConnection) {
         throw new Error('Player not found in source team');
       }
 
-      await update(`UPDATE players SET teamId = ? WHERE id = ?`, [toSquadId, playerId]);
+      await update(`UPDATE players SET teamId = ? WHERE id = ?`, [
+        toSquadId,
+        playerId,
+      ]);
 
       return {
         tournamentId,

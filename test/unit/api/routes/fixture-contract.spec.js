@@ -32,6 +32,11 @@ test('routes registered for advertised fixture import and match-day capabilities
   assertRoute(tournamentRouteList, 'POST', '/:tournamentId/fixtures');
   assertRoute(tournamentRouteList, 'PUT', '/:tournamentId/status');
   assertRoute(tournamentRouteList, 'POST', '/:tournamentId/reset');
+  assertRoute(
+    tournamentRouteList,
+    'POST',
+    '/:tournamentId/calculated-fixtures/refresh'
+  );
   assertRoute(tournamentRouteList, 'POST', '/:tournamentId/squads');
   assertRoute(tournamentRouteList, 'PUT', '/:tournamentId/squads/:squadId');
   assertRoute(tournamentRouteList, 'DELETE', '/:tournamentId/squads/:squadId');

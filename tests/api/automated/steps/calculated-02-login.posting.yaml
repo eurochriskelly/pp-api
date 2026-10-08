@@ -1,0 +1,10 @@
+name: Login to local mock API
+method: POST
+path: /api/auth/login
+body:
+  email: o@pp.com
+  password: o
+expect:
+  status: 200
+capture:
+  TOKEN: token

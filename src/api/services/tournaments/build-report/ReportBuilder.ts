@@ -1,3 +1,8 @@
+import {
+  CompetitionSettings,
+  competitionRules,
+  getCompetitionSettings,
+} from '../competition-settings';
 import { friendlyTeamLabel } from './utils/teamFormatting';
 import {
   calcBracket,
@@ -18,6 +23,8 @@ export interface SelectFunction {
 export interface TournamentInfo {
   eventUuid: string;
   status: string;
+  verifyGroupStages?: boolean;
+  competitionSettings?: CompetitionSettings;
   date: string;
   title: string;
   season: string;
@@ -112,7 +119,15 @@ export class ReportBuilder {
         const standings = calculateStandings(
           fixtures,
           catInfo.byGroup,
-          tournament!.pointsFor
+          competitionRules(
+            {
+              ...tournament,
+              pointsForWin: tournament!.pointsFor.win,
+              pointsForDraw: tournament!.pointsFor.draw,
+              pointsForLoss: tournament!.pointsFor.loss,
+            },
+            catInfo.category
+          ).points
         );
         const teamSummary = calculateTeamSummary(
           catInfo.allTeams,
@@ -203,10 +218,10 @@ export class ReportBuilder {
         `
         SELECT DISTINCT team FROM (
           SELECT team1Id as team FROM fixtures 
-          WHERE tournamentId=? AND category=? AND team1Id IS NOT NULL AND team1Id NOT LIKE '~%'
+          WHERE tournamentId=? AND category=? AND team1Id IS NOT NULL AND team1Id NOT LIKE '~%' AND team1Id NOT IN ('PENDING', 'CONTESTED')
           UNION 
           SELECT team2Id as team FROM fixtures 
-          WHERE tournamentId=? AND category=? AND team2Id IS NOT NULL AND team2Id NOT LIKE '~%'
+          WHERE tournamentId=? AND category=? AND team2Id IS NOT NULL AND team2Id NOT LIKE '~%' AND team2Id NOT IN ('PENDING', 'CONTESTED')
         ) AS combined_teams ORDER BY team
       `,
         [tournamentId, category, tournamentId, category]
@@ -228,10 +243,10 @@ export class ReportBuilder {
           `
           SELECT DISTINCT team FROM (
             SELECT team1Id as team FROM fixtures 
-            WHERE tournamentId=? AND category=? AND stage='group' AND groupNumber=? AND team1Id IS NOT NULL AND team1Id NOT LIKE '~%'
+            WHERE tournamentId=? AND category=? AND stage='group' AND groupNumber=? AND team1Id IS NOT NULL AND team1Id NOT LIKE '~%' AND team1Id NOT IN ('PENDING', 'CONTESTED')
             UNION 
             SELECT team2Id as team FROM fixtures 
-            WHERE tournamentId=? AND category=? AND stage='group' AND groupNumber=? AND team2Id IS NOT NULL AND team2Id NOT LIKE '~%'
+            WHERE tournamentId=? AND category=? AND stage='group' AND groupNumber=? AND team2Id IS NOT NULL AND team2Id NOT LIKE '~%' AND team2Id NOT IN ('PENDING', 'CONTESTED')
           ) AS group_teams ORDER BY team
         `,
           [
@@ -273,11 +288,19 @@ export class ReportBuilder {
         }
         const bracketTeamsSet = teamsByBracketMap.get(bracketName)!;
 
-        if (fixture.team1Id && !fixture.team1Id.startsWith('~')) {
+        if (
+          fixture.team1Id &&
+          !fixture.team1Id.startsWith('~') &&
+          !['PENDING', 'CONTESTED'].includes(fixture.team1Id)
+        ) {
           bracketTeamsSet.add(fixture.team1Id);
           teamsInAnyBracket.add(fixture.team1Id);
         }
-        if (fixture.team2Id && !fixture.team2Id.startsWith('~')) {
+        if (
+          fixture.team2Id &&
+          !fixture.team2Id.startsWith('~') &&
+          !['PENDING', 'CONTESTED'].includes(fixture.team2Id)
+        ) {
           bracketTeamsSet.add(fixture.team2Id);
           teamsInAnyBracket.add(fixture.team2Id);
         }
@@ -468,7 +491,7 @@ export class ReportBuilder {
       `SELECT 
        Date as startDate, endDate, Title, Location,
        region, season, Lat, Lon, eventUuid, status,
-       pointsForWin, pointsForDraw, pointsForLoss
+       pointsForWin, pointsForDraw, pointsForLoss, verifyGroupStages, competitionSettings
        FROM tournaments where id=?`,
       [tournamentId]
     );
@@ -480,8 +503,10 @@ export class ReportBuilder {
     const res = results[0];
 
     return {
+      competitionSettings: getCompetitionSettings(res),
       eventUuid: res.eventUuid,
       status: res.status,
+      verifyGroupStages: Boolean(res.verifyGroupStages),
       date: res.startDate,
       title: res.Title,
       season: res.season,

@@ -1,6 +1,46 @@
 TournamentCreate:
   type: object
   properties:
+    competitionSettings:
+      type: array
+      description: Rules for each competition category; categories must be unique.
+      items:
+        type: object
+        required:
+          [category, winPoints, drawPoints, losePoints, verifyGroupStages]
+        properties:
+          category:
+            type: string
+          winPoints:
+            type: integer
+            minimum: 0
+          drawPoints:
+            type: integer
+            minimum: 0
+          losePoints:
+            type: integer
+            minimum: 0
+          verifyGroupStages:
+            type: boolean
+    endDate:
+      type: string
+      format: date
+      nullable: true
+    codeOrganizer:
+      type: string
+      pattern: '^[A-Za-z0-9]{4}$'
+    codeCoordinator:
+      type: string
+      pattern: '^[A-Za-z0-9]{4}$'
+    codeReferee:
+      type: string
+      pattern: '^[A-Za-z0-9]{4}$'
+    codeTeam:
+      type: string
+      pattern: '^[A-Za-z0-9]{4}$'
+    verifyGroupStages:
+      type: boolean
+      default: false
     title:
       type: string
     date:
@@ -22,4 +62,3 @@ TournamentCreate:
     - title
     - date
     - location
-

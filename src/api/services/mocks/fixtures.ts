@@ -41,6 +41,7 @@ export interface RescheduleData {
   fixtureId: number;
   relativeFixtureId?: number;
   placement?: string;
+  plannedTime?: string;
 }
 
 export default function mockFixturesService() {
@@ -276,7 +277,7 @@ export default function mockFixturesService() {
       );
       if (fixture) {
         fixture.pitch = data.targetPitch || fixture.pitch;
-        fixture.scheduledTime =
+        fixture.scheduledTime = data.plannedTime ||
           'Rescheduled Mock Time @ ' + new Date().toLocaleTimeString();
         DD('Mock: Rescheduled fixture: ' + JSON.stringify(fixture));
         return {

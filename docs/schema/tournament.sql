@@ -8,6 +8,9 @@ CREATE TABLE `tournaments` (
   `Lon` float DEFAULT NULL,
   `code` varchar(4) DEFAULT '0000',
   `eventUuid` char(36) DEFAULT NULL,
+  `competitionSettings` json DEFAULT NULL,
+  `verifyGroupStages` boolean NOT NULL DEFAULT FALSE,
+  `groupStageVerificationHashes` json DEFAULT NULL,
    `status` enum('new','in-design','published','started','on-hold','closed') DEFAULT 'new',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB;

@@ -14,7 +14,7 @@ test('group standings award one point for a skipped win', () => {
 
   assert.match(
     query,
-    /CASE WHEN f\.outcome = 'skipped' THEN 1 ELSE 3 END/
+    /CASE WHEN f\.outcome = 'skipped' THEN 1 ELSE COALESCE\(cs\.winPoints, t\.pointsForWin, 3\) END/
   );
 });
 

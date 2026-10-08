@@ -1,0 +1,11 @@
+CalculatedFixtureRefresh:
+  type: object
+  properties:
+    category:
+      type: string
+      description: Optional category scope, such as CAMOGIE. Omit for all categories.
+    mode:
+      type: string
+      enum: [resolve, pending, contested]
+      default: resolve
+      description: Resolve current results and approve completed groups, or set all editable calculated slots to a marker.

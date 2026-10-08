@@ -1,0 +1,7 @@
+name: Calculated refresh requires authentication
+method: POST
+path: /api/tournaments/68/calculated-fixtures/refresh
+body:
+  category: CAMOGIE
+expect:
+  status: 401

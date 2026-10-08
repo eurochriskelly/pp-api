@@ -2,6 +2,7 @@ import express from 'express';
 import tournamentController from '../../controllers/tournaments';
 import generalController from '../../controllers/general';
 import tournamentReportsRoutes from './reports';
+import calculatedFixturesController from '../../controllers/calculated-fixtures';
 import {
   validateNumericId,
   validateTournamentIdentifier,
@@ -41,6 +42,7 @@ export default (dbs: any, useMock: boolean) => {
   const ctrl = tournamentController(dbMain, useMock);
   const generalCtrl = generalController(dbMain, useMock);
   const auth = authMiddlewareFactory(dbMain, useMock);
+  const calculated = calculatedFixturesController(dbMain, useMock);
   const validateTournamentId = validateTournamentIdentifier(dbMain, useMock);
 
   router.post(
@@ -77,6 +79,12 @@ export default (dbs: any, useMock: boolean) => {
   );
 
   router.get('/:tournamentId', validateTournamentId, ctrl.getTournament);
+  router.post(
+    '/:tournamentId/calculated-fixtures/refresh',
+    auth,
+    validateTournamentId,
+    calculated.refresh
+  );
   router.get(
     '/:tournamentId/report',
     validateTournamentId,
@@ -100,14 +108,24 @@ export default (dbs: any, useMock: boolean) => {
     tournamentReportsRoutes(dbs, useMock)
   );
 
-  router.put('/:tournamentId', auth, validateTournamentId, ctrl.updateTournament);
+  router.put(
+    '/:tournamentId',
+    auth,
+    validateTournamentId,
+    ctrl.updateTournament
+  );
   router.put(
     '/:tournamentId/status',
     auth,
     validateTournamentId,
     ctrl.updateTournamentStatus
   );
-  router.delete('/:tournamentId', auth, validateTournamentId, ctrl.deleteTournament);
+  router.delete(
+    '/:tournamentId',
+    auth,
+    validateTournamentId,
+    ctrl.deleteTournament
+  );
   router.get('/by-uuid/:uuid', validateUUID('uuid'), ctrl.getTournament);
   router.post(
     '/:tournamentId/reset',
@@ -188,7 +206,12 @@ export default (dbs: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.getCardedPlayers
   );
-  router.post('/:tournamentId/squads', auth, validateTournamentId, ctrl.createSquad);
+  router.post(
+    '/:tournamentId/squads',
+    auth,
+    validateTournamentId,
+    ctrl.createSquad
+  );
   router.get('/:tournamentId/squads', validateTournamentId, ctrl.getSquads);
   router.get(
     '/:tournamentId/squads/:squadId',
@@ -258,7 +281,12 @@ export default (dbs: any, useMock: boolean) => {
     validateTournamentId,
     ctrl.deletePitches
   );
-  router.delete('/:tournamentId/cards', auth, validateTournamentId, ctrl.deleteCards);
+  router.delete(
+    '/:tournamentId/cards',
+    auth,
+    validateTournamentId,
+    ctrl.deleteCards
+  );
   router.post(
     '/:tournamentId/pitches',
     auth,

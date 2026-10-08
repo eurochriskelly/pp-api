@@ -1,0 +1,7 @@
+# Run against disposable tournament/entrant records; see test/api/team-allocations/README.md.
+allocation-01-read.posting.yaml
+allocation-02-auth-required.posting.yaml
+allocation-03-coordinator-denied.posting.yaml
+allocation-04-invalid-count.posting.yaml
+allocation-05-save.posting.yaml
+allocation-06-reread.posting.yaml

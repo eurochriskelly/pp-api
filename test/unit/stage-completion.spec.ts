@@ -78,6 +78,8 @@ test('processStageCompletion assigns head-to-head winners, including corrected r
   const processor = stageCompletionFactory({
     dbHelpers: {
       select: async (sql: string) => {
+        if (sql === 'SELECT * FROM tournaments WHERE id = ?')
+          return [{ pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0 }];
         if (sql.includes('FROM fixtures WHERE id = ?')) {
           return [
             {
@@ -163,6 +165,8 @@ test('processStageCompletion restores planned ~best placeholders and skips resol
   const processor = stageCompletionFactory({
     dbHelpers: {
       select: async (sql: string, params: any[]) => {
+        if (sql === 'SELECT * FROM tournaments WHERE id = ?')
+          return [{ pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0 }];
         if (sql.includes('FROM fixtures WHERE id = ?')) {
           return [
             {
@@ -299,6 +303,8 @@ test('processStageCompletion restores planned ~worst placeholders and skips reso
   const processor = stageCompletionFactory({
     dbHelpers: {
       select: async (sql: string, params: any[]) => {
+        if (sql === 'SELECT * FROM tournaments WHERE id = ?')
+          return [{ pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0 }];
         if (sql.includes('FROM fixtures WHERE id = ?')) {
           return [
             {
@@ -435,6 +441,8 @@ test('processStageCompletion restores planned ~worst placeholders and skips reso
   const processor = stageCompletionFactory({
     dbHelpers: {
       select: async (sql: string, params: any[]) => {
+        if (sql === 'SELECT * FROM tournaments WHERE id = ?')
+          return [{ pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0 }];
         if (sql.includes('FROM fixtures WHERE id = ?')) {
           return [
             {
@@ -574,6 +582,8 @@ test('processStageCompletion restores planned ~worst:/p:0 placeholders and skips
   const processor = stageCompletionFactory({
     dbHelpers: {
       select: async (sql: string, params: any[]) => {
+        if (sql === 'SELECT * FROM tournaments WHERE id = ?')
+          return [{ pointsForWin: 3, pointsForDraw: 1, pointsForLoss: 0 }];
         if (sql.includes('FROM fixtures WHERE id = ?')) {
           return [
             {

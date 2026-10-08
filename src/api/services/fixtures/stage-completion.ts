@@ -1,3 +1,4 @@
+import { competitionRules } from '../tournaments/competition-settings';
 import {
   deriveGroupPlaceholderAssignments,
   derivePredictiveGroupPlaceholderAssignments,
@@ -212,6 +213,10 @@ export default function stageCompletionFactory({
        ORDER BY TotalPoints DESC, PointsDifference DESC, PointsFrom DESC`,
       [tournamentId, groupNumber, category]
     );
+    const [tournament] = await select(
+      'SELECT * FROM tournaments WHERE id = ?',
+      [tournamentId]
+    );
     const h2hMatches = extractH2HMatches(rawRows);
     const cleanRows = cleanStandingsData(rawRows);
     const uniqueTeams = new Map<string, any>();
@@ -225,7 +230,8 @@ export default function stageCompletionFactory({
     const standings = applyHeadToHeadTiebreaker(
       Array.from(uniqueTeams.values()),
       h2hMatches,
-      true
+      true,
+      competitionRules(tournament || {}, category).points
     );
     DD(`Fetched ${standings.length} standings rows.`);
     return standings;
@@ -446,6 +452,11 @@ export default function stageCompletionFactory({
     remainingCount: number
   ): Promise<number> {
     const { tournamentId, stage, groupNumber, category } = fixture;
+    const [tournament] = await select(
+      'SELECT * FROM tournaments WHERE id = ?',
+      [tournamentId]
+    );
+    const winAward = competitionRules(tournament || {}, category).points.win;
     let totalUpdated = 0;
     let remainingCategoryMatches: number | null = null;
 

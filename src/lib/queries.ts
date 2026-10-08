@@ -30,6 +30,10 @@ export function sqlGroupStandings(
 ): string {
   const t1Score = `((f.goals1 * ${goalsPoints}) + (f.points1 * ${pointsPoints}))`;
   const t2Score = `((f.goals2 * ${goalsPoints}) + (f.points2 * ${pointsPoints}))`;
+  // Tournament rules take precedence over caller defaults, including explicit zeroes.
+  const winValue = `COALESCE(cs.winPoints, t.pointsForWin, ${winAward})`;
+  const drawValue = `COALESCE(cs.drawPoints, t.pointsForDraw, ${drawAward})`;
+  const lossValue = `COALESCE(cs.losePoints, t.pointsForLoss, ${lossAward})`;
   const query = `
     (
     SELECT 
@@ -60,12 +64,19 @@ export function sqlGroupStandings(
             SUM(
                 CASE 
                     WHEN ${t1Score} > ${t2Score}
-                      THEN CASE WHEN f.outcome = 'skipped' THEN 1 ELSE ${winAward} END
-                    WHEN ${t1Score} = ${t2Score} THEN ${drawAward} 
-                    ELSE ${lossAward} 
+                      THEN CASE WHEN f.outcome = 'skipped' THEN 1 ELSE ${winValue} END
+                    WHEN ${t1Score} = ${t2Score} THEN ${drawValue}
+                    ELSE ${lossValue}
                 END
             ) AS TotalPoints
         FROM fixtures f
+        LEFT JOIN tournaments t ON t.id = f.tournamentId
+        LEFT JOIN JSON_TABLE(COALESCE(t.competitionSettings, JSON_ARRAY()), '$[*]' COLUMNS (
+          category VARCHAR(255) PATH '$.category',
+          winPoints DOUBLE PATH '$.winPoints',
+          drawPoints DOUBLE PATH '$.drawPoints',
+          losePoints DOUBLE PATH '$.losePoints'
+        )) cs ON cs.category COLLATE utf8mb4_unicode_ci = CONVERT(f.category USING utf8mb4) COLLATE utf8mb4_unicode_ci
         WHERE f.stage = 'group'
           AND f.outcome NOT IN ('in-progress', 'not played')
           AND f.goals1 IS NOT NULL AND f.points1 IS NOT NULL
@@ -89,12 +100,19 @@ export function sqlGroupStandings(
             SUM(
                 CASE 
                     WHEN ${t2Score} > ${t1Score}
-                      THEN CASE WHEN f.outcome = 'skipped' THEN 1 ELSE ${winAward} END
-                    WHEN ${t2Score} = ${t1Score} THEN ${drawAward} 
-                    ELSE ${lossAward} 
+                      THEN CASE WHEN f.outcome = 'skipped' THEN 1 ELSE ${winValue} END
+                    WHEN ${t2Score} = ${t1Score} THEN ${drawValue}
+                    ELSE ${lossValue}
                 END
             ) AS TotalPoints
         FROM fixtures f
+        LEFT JOIN tournaments t ON t.id = f.tournamentId
+        LEFT JOIN JSON_TABLE(COALESCE(t.competitionSettings, JSON_ARRAY()), '$[*]' COLUMNS (
+          category VARCHAR(255) PATH '$.category',
+          winPoints DOUBLE PATH '$.winPoints',
+          drawPoints DOUBLE PATH '$.drawPoints',
+          losePoints DOUBLE PATH '$.losePoints'
+        )) cs ON cs.category COLLATE utf8mb4_unicode_ci = CONVERT(f.category USING utf8mb4) COLLATE utf8mb4_unicode_ci
         WHERE f.stage = 'group'
           AND f.outcome NOT IN ('in-progress', 'not played')
           AND f.goals1 IS NOT NULL AND f.points1 IS NOT NULL
@@ -165,6 +183,7 @@ export function sqlGroupStandingsWithH2H(
         f.groupNumber AS grp,
         f.team1Id AS teamA,
         f.team2Id AS teamB,
+        f.outcome,
         ${t1Score} AS scoreA,
         ${t2Score} AS scoreB
       FROM fixtures f
@@ -188,7 +207,8 @@ export function sqlGroupStandingsWithH2H(
       hhm.teamA AS h2hTeamA,
       hhm.teamB AS h2hTeamB,
       hhm.scoreA AS h2hScoreA,
-      hhm.scoreB AS h2hScoreB
+      hhm.scoreB AS h2hScoreB,
+      hhm.outcome AS h2hOutcome
     FROM BaseStandings bs
     LEFT JOIN HeadToHeadMatches hhm 
       ON (bs.team = hhm.teamA OR bs.team = hhm.teamB)

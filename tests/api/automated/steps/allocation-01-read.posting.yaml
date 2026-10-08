@@ -1,0 +1,8 @@
+name: Read competition team allocations without editor credentials
+method: GET
+path: /api/tournaments/$ALLOCATION_TOURNAMENT_ID/team-allocations
+expect:
+  status: 200
+  json:
+    - path: data.competitions.0.teams.0.id
+      exists: true

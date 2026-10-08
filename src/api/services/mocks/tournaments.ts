@@ -187,13 +187,14 @@ function calculateMockLifecycleStatus(
 
 export default function mockTournamentsService() {
   return {
-    createTournament: async (tournament: any) => {
+    createTournament: async (_userId: any, tournament: any) => {
       const newTournament = {
         ...tournament,
-        id: mockTournaments.length + 1,
+        id: String(mockTournaments.length + 1),
+        startDate: tournament.date,
       };
       mockTournaments.push(newTournament as MockTournament);
-      return newTournament.id;
+      return newTournament;
     },
 
     publishTournamentArchive: async ({
@@ -252,9 +253,15 @@ export default function mockTournamentsService() {
     },
 
     updateTournament: async (id: string | number, updates: any) => {
-      const index = mockTournaments.findIndex((t) => t.id === String(id));
+      const index = mockTournaments.findIndex(
+        (t) => String(t.id) === String(id)
+      );
       if (index >= 0) {
-        mockTournaments[index] = { ...mockTournaments[index], ...updates };
+        mockTournaments[index] = {
+          ...mockTournaments[index],
+          ...updates,
+          ...(updates.date !== undefined ? { startDate: updates.date } : {}),
+        };
       }
     },
 
@@ -276,7 +283,9 @@ export default function mockTournamentsService() {
     },
 
     deleteTournament: async (id: string | number) => {
-      const index = mockTournaments.findIndex((t) => t.id === String(id));
+      const index = mockTournaments.findIndex(
+        (t) => String(t.id) === String(id)
+      );
       if (index >= 0) {
         mockTournaments.splice(index, 1);
       }
@@ -581,7 +590,10 @@ export default function mockTournamentsService() {
     },
     getTournamentCategories: async (..._args: any[]) => [],
     listTournamentTemplates: async (..._args: any[]) => [],
-    createTournamentCompetition: async (tournamentId: number, name: string) => ({
+    createTournamentCompetition: async (
+      tournamentId: number,
+      name: string
+    ) => ({
       id: 1,
       tournamentId,
       name: name.trim(),

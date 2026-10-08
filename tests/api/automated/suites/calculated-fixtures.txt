@@ -1,0 +1,5 @@
+calculated-01-auth-required.posting.yaml
+calculated-02-login.posting.yaml
+calculated-03-resolve.posting.yaml
+calculated-04-invalid-mode.posting.yaml
+calculated-05-invalid-id.posting.yaml

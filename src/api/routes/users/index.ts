@@ -14,7 +14,21 @@ export default (dbs: any, useMock: boolean) => {
   const requireAdmin = requireRole(['admin']);
 
   // Users
-  router.get('/users', auth, requireAdmin, generalCtrl.getUsers);
+  router.get(
+    '/users',
+    auth,
+    (req, res, next) => {
+      if (
+        typeof req.query.filter === 'string' &&
+        req.query.filter.trim().length >= 2
+      ) {
+        next();
+        return;
+      }
+      requireAdmin(req, res, next);
+    },
+    generalCtrl.getUsers
+  );
   router.post('/users', auth, requireAdmin, ctrl.createUser);
   router.put(
     '/users/:userId',

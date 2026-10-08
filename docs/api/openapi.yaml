@@ -3538,6 +3538,85 @@ paths:
           application/json:
             schema:
               type: object
+  /api/tournaments/{tournamentId}/fixtures/template-setup:
+    put:
+      tags:
+        - fixtures
+      summary: Update template setup
+      operationId: put_api_tournaments_tournamentId_fixtures_template_setup
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+  /api/tournaments/{tournamentId}/fixtures/{fixtureId}/details:
+    patch:
+      tags:
+        - fixtures
+      summary: Patch details
+      operationId: patch_api_tournaments_tournamentId_fixtures_fixtureId_details
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: fixtureId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
   /api/tournaments/{tournamentId}/fixtures/update-calculated-fixtures:
     put:
       tags:
@@ -4204,6 +4283,43 @@ paths:
           required: true
           schema:
             type: string
+  /api/tournaments/{tournamentId}/calculated-fixtures/refresh:
+    post:
+      tags:
+        - tournaments
+      summary: Create refresh
+      operationId: post_api_tournaments_tournamentId_calculated_fixtures_refresh
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculatedFixtureRefresh"
   /api/tournaments/{tournamentId}/report:
     get:
       tags:
@@ -6283,7 +6399,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Error"
+                  $ref: "#/components/schemas/UserSearchResult"
         "400":
           description: Bad request
           content:
@@ -6633,6 +6749,20 @@ components:
                 format: date
               sport:
                 type: string
+    CalculatedFixtureRefresh:
+      type: object
+      properties:
+        category:
+          type: string
+          description: Optional category scope, such as CAMOGIE. Omit for all categories.
+        mode:
+          type: string
+          enum:
+            - resolve
+            - pending
+            - contested
+          default: resolve
+          description: Resolve current results and approve completed groups, or set all editable calculated slots to a marker.
     CardedPlayer:
       type: object
       properties:
@@ -7326,6 +7456,51 @@ components:
     Tournament:
       type: object
       properties:
+        competitionSettings:
+          type: array
+          description: Rules for each competition category; categories must be unique.
+          items:
+            type: object
+            required:
+              - category
+              - winPoints
+              - drawPoints
+              - losePoints
+              - verifyGroupStages
+            properties:
+              category:
+                type: string
+              winPoints:
+                type: integer
+                minimum: 0
+              drawPoints:
+                type: integer
+                minimum: 0
+              losePoints:
+                type: integer
+                minimum: 0
+              verifyGroupStages:
+                type: boolean
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        codeOrganizer:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        codeCoordinator:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        codeReferee:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        codeTeam:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        verifyGroupStages:
+          type: boolean
+          default: false
+          description: Hold calculated group-stage assignments as PENDING until manually refreshed and approved.
         id:
           type: integer
         date:
@@ -7368,6 +7543,50 @@ components:
     TournamentCreate:
       type: object
       properties:
+        competitionSettings:
+          type: array
+          description: Rules for each competition category; categories must be unique.
+          items:
+            type: object
+            required:
+              - category
+              - winPoints
+              - drawPoints
+              - losePoints
+              - verifyGroupStages
+            properties:
+              category:
+                type: string
+              winPoints:
+                type: integer
+                minimum: 0
+              drawPoints:
+                type: integer
+                minimum: 0
+              losePoints:
+                type: integer
+                minimum: 0
+              verifyGroupStages:
+                type: boolean
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        codeOrganizer:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        codeCoordinator:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        codeReferee:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        codeTeam:
+          type: string
+          pattern: ^[A-Za-z0-9]{4}$
+        verifyGroupStages:
+          type: boolean
+          default: false
         title:
           type: string
         date:
@@ -7402,6 +7621,16 @@ components:
         location:
           type: string
     type: object
+    UserSearchResult:
+      type: object
+      required:
+        - userId
+        - name
+      properties:
+        userId:
+          type: integer
+        name:
+          type: string
     YearsSummary:
       type: object
       properties:

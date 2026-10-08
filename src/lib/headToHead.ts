@@ -1,3 +1,9 @@
+export interface H2HPointsConfig {
+  win: number;
+  draw: number;
+  loss: number;
+}
+const defaultPoints: H2HPointsConfig = { win: 2, draw: 1, loss: 0 };
 /**
  * Head-to-Head Tiebreaker Calculation for Gaelic Games Europe
  *
@@ -35,6 +41,7 @@ export interface H2HMatch {
   teamB: string;
   scoreA: number;
   scoreB: number;
+  outcome?: string;
 }
 
 /**
@@ -77,6 +84,7 @@ export interface RawStandingResult extends TeamStanding {
   h2hTeamB?: string;
   h2hScoreA?: number;
   h2hScoreB?: number;
+  h2hOutcome?: string;
 }
 
 /**
@@ -87,7 +95,8 @@ export interface RawStandingResult extends TeamStanding {
  */
 export function calculateHeadToHeadStats(
   tiedTeams: TeamStanding[],
-  h2hMatches: H2HMatch[]
+  h2hMatches: H2HMatch[],
+  pointsConfig: H2HPointsConfig = defaultPoints
 ): H2HStats[] {
   const teamIds = new Set(tiedTeams.map((t) => t.team));
   const stats: Record<string, H2HStats> = {};
@@ -132,17 +141,19 @@ export function calculateHeadToHeadStats(
     // Determine result and update points
     if (match.scoreA > match.scoreB) {
       teamA.h2hWins++;
-      teamA.h2hPoints += 2; // GGE uses 2 points for a win
+      teamA.h2hPoints += match.outcome === 'skipped' ? 1 : pointsConfig.win;
       teamB.h2hLosses++;
+      teamB.h2hPoints += pointsConfig.loss;
     } else if (match.scoreA < match.scoreB) {
       teamB.h2hWins++;
-      teamB.h2hPoints += 2;
+      teamB.h2hPoints += match.outcome === 'skipped' ? 1 : pointsConfig.win;
       teamA.h2hLosses++;
+      teamA.h2hPoints += pointsConfig.loss;
     } else {
       teamA.h2hDraws++;
-      teamA.h2hPoints += 1;
+      teamA.h2hPoints += pointsConfig.draw;
       teamB.h2hDraws++;
-      teamB.h2hPoints += 1;
+      teamB.h2hPoints += pointsConfig.draw;
     }
   });
 
@@ -261,10 +272,15 @@ export function applyOverallTiebreaker(teams: H2HStats[]): H2HStats[] {
 export function resolveTieGroup(
   tiedTeams: TeamStanding[],
   h2hMatches: H2HMatch[],
-  allowJointPositions = true
+  allowJointPositions = true,
+  pointsConfig: H2HPointsConfig = defaultPoints
 ): H2HStats[] {
   // Calculate head-to-head stats
-  const h2hSorted = calculateHeadToHeadStats(tiedTeams, h2hMatches);
+  const h2hSorted = calculateHeadToHeadStats(
+    tiedTeams,
+    h2hMatches,
+    pointsConfig
+  );
 
   // Group by H2H stats to identify sub-ties
   const h2hGroups = groupByH2HStats(h2hSorted);
@@ -307,7 +323,8 @@ export function resolveTieGroup(
 export function applyHeadToHeadTiebreaker(
   standings: TeamStanding[],
   h2hMatches: H2HMatch[],
-  allowJointPositions = true
+  allowJointPositions = true,
+  pointsConfig: H2HPointsConfig = defaultPoints
 ): ResolvedStanding[] {
   if (!standings || standings.length === 0) {
     return [];
@@ -354,7 +371,8 @@ export function applyHeadToHeadTiebreaker(
       const resolvedTeams = resolveTieGroup(
         tiedTeams,
         h2hMatches,
-        allowJointPositions
+        allowJointPositions,
+        pointsConfig
       );
 
       // Assign positions
@@ -376,7 +394,7 @@ export function applyHeadToHeadTiebreaker(
             team.PointsDifference === prev.PointsDifference &&
             team.PointsFrom === prev.PointsFrom;
 
-          if (sameH2H && (allowJointPositions || sameOverall)) {
+          if (allowJointPositions && sameH2H && sameOverall) {
             isJoint = true;
             jointCount++;
           } else {
@@ -451,6 +469,7 @@ export function extractH2HMatches(rawResults: RawStandingResult[]): H2HMatch[] {
           teamB: row.h2hTeamB,
           scoreA: row.h2hScoreA,
           scoreB: row.h2hScoreB,
+          ...(row.h2hOutcome ? { outcome: row.h2hOutcome } : {}),
         });
       }
     }

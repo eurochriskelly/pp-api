@@ -1,0 +1,15 @@
+name: Save the mixed team player breakdown
+method: PUT
+path: /api/tournaments/$ALLOCATION_TOURNAMENT_ID/team-allocations/teams/$ALLOCATION_TEAM_ID
+headers:
+  X-Tournament-Organizer-Code: $ALLOCATION_ORGANIZER_CODE
+body:
+  content: '{"allocations":[{"entrantId":$ALLOCATION_ENTRANT_1,"numPlayers":8},{"entrantId":$ALLOCATION_ENTRANT_2,"numPlayers":5},{"entrantId":$ALLOCATION_ENTRANT_3,"numPlayers":2}]}'
+  content_type: application/json
+expect:
+  status: 200
+  json:
+    - path: data.competitions.0.teams.0.totalPlayers
+      equals: 15
+    - path: data.competitions.0.teams.0.needsAllocation
+      equals: false

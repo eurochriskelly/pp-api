@@ -29,12 +29,22 @@ export default (dbs: any, useMock: boolean) => {
   router.post('/filtered', ctrl.getFilteredFixtures);
   router.post('/copy', auth, ctrl.copyFixtures);
   router.put('/template-setup', auth, ctrl.updateTemplateSetup);
-  router.patch('/:fixtureId/details', auth, validateNumericId('fixtureId'), ctrl.updateFixtureDetails);
+  router.patch(
+    '/:fixtureId/details',
+    auth,
+    validateNumericId('fixtureId'),
+    ctrl.updateFixtureDetails
+  );
 
   // modify
-  router.put('/update-calculated-fixtures', ctrl.updateCalculatedFixtures);
+  router.put(
+    '/update-calculated-fixtures',
+    auth,
+    ctrl.updateCalculatedFixtures
+  );
   router.put(
     '/:fixtureId/update-calculated-fixtures',
+    auth,
     validateNumericId('fixtureId'),
     ctrl.updateCalculatedFixtures
   );

@@ -1,6 +1,7 @@
 import express from 'express';
 import tournamentTeamsController from '../../../controllers/tournament-teams';
 import authMiddlewareFactory from '../../../middleware/auth';
+import requireRole from '../../../middleware/authorization';
 import { validateNumericId } from '../../../middleware/validation';
 
 export default (dbs: any, useMock: boolean) => {
@@ -12,9 +13,21 @@ export default (dbs: any, useMock: boolean) => {
   router.get('/', ctrl.listTeams);
   router.get('/:id', validateNumericId('id'), ctrl.getTeamById);
 
-  router.post('/', auth, ctrl.createTeam);
-  router.put('/:id', auth, validateNumericId('id'), ctrl.updateTeam);
-  router.delete('/:id', auth, validateNumericId('id'), ctrl.deleteTeam);
+  router.post('/', auth, requireRole(['organizer', 'admin']), ctrl.createTeam);
+  router.put(
+    '/:id',
+    auth,
+    requireRole(['organizer', 'admin']),
+    validateNumericId('id'),
+    ctrl.updateTeam
+  );
+  router.delete(
+    '/:id',
+    auth,
+    requireRole(['organizer', 'admin']),
+    validateNumericId('id'),
+    ctrl.deleteTeam
+  );
 
   router.post('/:id/squad', auth, validateNumericId('id'), ctrl.createSquad);
   router.put(

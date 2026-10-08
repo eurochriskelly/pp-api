@@ -5,6 +5,7 @@ import cors from 'cors';
 import tournamentRoutes from './routes/tournaments';
 import fixtureRoutes from './routes/tournaments/fixtures';
 import tournamentTeamsRoutes from './routes/tournaments/teams';
+import teamAllocationRoutes from './routes/tournaments/team-allocations';
 import regionRoutes from './routes/regions';
 import authRoutes from './routes/auth';
 import systemRoutes from './routes/system';
@@ -116,6 +117,11 @@ function setupApi(dbs: Dbs, ARGS: Args) {
     tournamentTeamsRoutes(dbs, ARGS.useMock)
   );
   app.use('/api/regions', regionRoutes(dbs, ARGS.useMock));
+  app.use(
+    '/api/tournaments/:tournamentId/team-allocations',
+    validateTournamentId,
+    teamAllocationRoutes(dbs, ARGS.useMock)
+  );
   app.use('/api/auth', authLimiter, authRoutes(dbs, ARGS.useMock));
   app.use('/api/system', systemRoutes(dbs, ARGS.useMock));
   app.use('/api/clubs', clubsRoutes(dbs, ARGS.useMock));

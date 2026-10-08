@@ -1,15 +1,11 @@
 import dbHelper from '../../lib/db-helper';
 import { mysqlCurrentTime } from '../../lib/utils';
-import stageCompletionFactory from './fixtures/stage-completion';
+import calculatedFixturesService, {
+  refreshCalculatedFixtures,
+} from './fixtures/calculated-fixtures';
 import enhanceFixtureFactory from './fixtures/enhance-fixture';
 import TSVValidator from './fixtures/validate-tsv';
-import { II, DD } from '../../lib/logging';
-import {
-  sqlGroupStandings,
-  sqlGroupStandingsWithH2H,
-  sqlGroupRankings,
-} from '../../lib/queries';
-import { calculateAggregateMatchScore } from '../../lib/match-score';
+import { DD } from '../../lib/logging';
 
 export interface TeamScore {
   goals: number;
@@ -34,6 +30,7 @@ export interface RescheduleInput {
   relativeFixtureId: number;
   placement?: 'before' | 'after';
   targetPitch?: string;
+  plannedTime?: string;
   action: 'move';
 }
 
@@ -67,29 +64,6 @@ export default function fixturesService(db: any) {
     transaction,
     delete: dbDelete,
   } = dbHelper(db);
-
-  const loggers = { II, DD };
-  const createStageCompletionProcessor = (stageDbHelpers: any) =>
-    stageCompletionFactory({
-      dbHelpers: stageDbHelpers,
-      loggers,
-      sqlGroupStandings,
-      sqlGroupStandingsWithH2H,
-      sqlGroupRankings,
-    });
-
-  let stageCompletionProcessor: ReturnType<
-    typeof stageCompletionFactory
-  > | null;
-  try {
-    stageCompletionProcessor = createStageCompletionProcessor({
-      select,
-      update,
-    });
-  } catch (error) {
-    console.error('Error creating stageCompletionProcessor:', error);
-    stageCompletionProcessor = null;
-  }
 
   const fixtureEnhancer = enhanceFixtureFactory({
     dbHelpers: { select },
@@ -331,11 +305,23 @@ export default function fixturesService(db: any) {
 
     endFixture: async (fixtureId: number, outcome?: 'played' | 'skipped') => {
       const timestamp = mysqlCurrentTime();
-      await update(`UPDATE fixtures SET ended = ?, outcome = ? WHERE id = ?`, [
-        timestamp,
-        outcome || 'played',
-        fixtureId,
-      ]);
+      const [source] = await select(
+        'SELECT tournamentId, category FROM fixtures WHERE id = ?',
+        [fixtureId]
+      );
+      if (!source) throw new Error('Fixture not found');
+      await transaction(async (tx) => {
+        await tx.select('SELECT id FROM tournaments WHERE id = ? FOR UPDATE', [
+          source.tournamentId,
+        ]);
+        await tx.update(
+          'UPDATE fixtures SET ended = ?, outcome = ? WHERE id = ?',
+          [timestamp, outcome || 'played', fixtureId]
+        );
+        await refreshCalculatedFixtures(tx, Number(source.tournamentId), {
+          category: String(source.category),
+        });
+      });
       return { ended: timestamp };
     },
 
@@ -386,85 +372,14 @@ export default function fixturesService(db: any) {
         );
 
         const [fixture] = await tx.select(
-          `SELECT tournamentId, category, team1Id, team2Id FROM fixtures WHERE id = ? AND tournamentId = ?`,
+          'SELECT category FROM fixtures WHERE id = ? AND tournamentId = ?',
           [fixtureId, tournamentId]
         );
         if (fixture) {
-          const category = String(fixture.category || '');
-          const team1Id = fixture.team1Id ? String(fixture.team1Id) : null;
-          const team2Id = fixture.team2Id ? String(fixture.team2Id) : null;
-          const team1Aggregate = calculateAggregateMatchScore(team1);
-          const team2Aggregate = calculateAggregateMatchScore(team2);
-
-          let winner: string | null = null;
-          let loser: string | null = null;
-
-          if (team1Aggregate > team2Aggregate) {
-            winner = team1Id;
-            loser = team2Id;
-          } else if (team1Aggregate < team2Aggregate) {
-            winner = team2Id;
-            loser = team1Id;
-          }
-
-          const syncMatchPlaceholder = async (
-            plannedField: 'team1Planned' | 'team2Planned' | 'umpireTeamPlanned',
-            idField: 'team1Id' | 'team2Id' | 'umpireTeamId',
-            placeholder: string,
-            value: string | null
-          ) => {
-            await tx.update(
-              `UPDATE fixtures SET ${idField} = ? WHERE ${plannedField} = ? AND tournamentId = ? AND category = ?`,
-              [value, placeholder, tournamentId, category]
-            );
-          };
-
-          await syncMatchPlaceholder(
-            'team1Planned',
-            'team1Id',
-            `~match:${fixtureId}/p:1`,
-            winner
-          );
-          await syncMatchPlaceholder(
-            'team2Planned',
-            'team2Id',
-            `~match:${fixtureId}/p:1`,
-            winner
-          );
-          await syncMatchPlaceholder(
-            'umpireTeamPlanned',
-            'umpireTeamId',
-            `~match:${fixtureId}/p:1`,
-            winner
-          );
-          await syncMatchPlaceholder(
-            'team1Planned',
-            'team1Id',
-            `~match:${fixtureId}/p:2`,
-            loser
-          );
-          await syncMatchPlaceholder(
-            'team2Planned',
-            'team2Id',
-            `~match:${fixtureId}/p:2`,
-            loser
-          );
-          await syncMatchPlaceholder(
-            'umpireTeamPlanned',
-            'umpireTeamId',
-            `~match:${fixtureId}/p:2`,
-            loser
-          );
-        }
-
-        const transactionStageCompletionProcessor =
-          createStageCompletionProcessor({
-            select: tx.select,
-            update: tx.update,
+          await refreshCalculatedFixtures(tx, tournamentId, {
+            category: String(fixture.category),
           });
-        await transactionStageCompletionProcessor.processStageCompletion(
-          fixtureId
-        );
+        }
         return { updated: true };
       });
     },
@@ -540,10 +455,11 @@ export default function fixturesService(db: any) {
       relativeFixtureId,
       placement,
       targetPitch,
+      plannedTime,
     }: RescheduleInput): Promise<RescheduleResult> => {
       // 1. Load fixture to move
       const [fixtureToMove] = await select(
-        `SELECT id, scheduled, pitch, durationPlanned FROM fixtures
+        `SELECT id, scheduled, pitch, durationPlanned, started, ended FROM fixtures
          WHERE id = ? AND tournamentId = ?`,
         [fixtureId, tournamentId]
       );
@@ -557,9 +473,42 @@ export default function fixturesService(db: any) {
         throw error;
       }
 
+      const sourcePitch: string = String(fixtureToMove.pitch);
+      const isLocked = (fixture: any) =>
+        Boolean(fixture.started || fixture.ended);
+
+      if (isLocked(fixtureToMove)) {
+        const error = new Error(
+          'Played fixtures are fixed and cannot be rescheduled'
+        ) as Error & { statusCode?: number; code?: string };
+        error.statusCode = 409;
+        error.code = 'FIXTURE_LOCKED';
+        throw error;
+      }
+
+      // The reorder dialog sends its reviewed draft as exact fixture changes.
+      // Persist it verbatim instead of running a second, potentially different
+      // scheduling calculation after the operator has confirmed the preview.
+      if (plannedTime) {
+        const scheduled = new Date(String(fixtureToMove.scheduled));
+        const [hours, minutes] = plannedTime.split(':').map(Number);
+        if (!Number.isFinite(scheduled.getTime()) || hours > 23 || minutes > 59) {
+          throw new Error('Invalid planned fixture time');
+        }
+        scheduled.setHours(hours, minutes, 0, 0);
+        const pad = (value: number) => String(value).padStart(2, '0');
+        const newScheduled = `${scheduled.getFullYear()}-${pad(scheduled.getMonth() + 1)}-${pad(scheduled.getDate())} ${pad(scheduled.getHours())}:${pad(scheduled.getMinutes())}:${pad(scheduled.getSeconds())}`;
+        const destPitch = targetPitch || sourcePitch;
+        await update(
+          `UPDATE fixtures SET pitch = ?, scheduled = ? WHERE id = ? AND tournamentId = ?`,
+          [destPitch, newScheduled, fixtureId, tournamentId]
+        );
+        return { fixtureId, action: 'move', newScheduled, pitch: destPitch };
+      }
+
       // 2. Load target fixture
       const [targetFixture] = await select(
-        `SELECT id, scheduled, pitch, durationPlanned FROM fixtures
+        `SELECT id, scheduled, pitch, durationPlanned, started, ended FROM fixtures
          WHERE id = ? AND tournamentId = ?`,
         [relativeFixtureId, tournamentId]
       );
@@ -572,20 +521,33 @@ export default function fixturesService(db: any) {
         throw error;
       }
 
-      const sourcePitch: string = String(fixtureToMove.pitch);
       const destPitch: string = targetPitch || String(targetFixture.pitch);
+
+      if (isLocked(targetFixture)) {
+        const error = new Error(
+          'Played fixtures are fixed and cannot be rescheduled'
+        ) as Error & {
+          statusCode?: number;
+          code?: string;
+        };
+        error.statusCode = 409;
+        error.code = 'FIXTURE_LOCKED';
+        throw error;
+      }
 
       if (sourcePitch === destPitch) {
         // SAME PITCH: Rotate time slots
         const fixtures = await select(
-          `SELECT id, scheduled, durationPlanned FROM fixtures
+          `SELECT id, scheduled, durationPlanned, started, ended FROM fixtures
            WHERE tournamentId = ? AND pitch = ?
            ORDER BY scheduled ASC, id ASC`,
           [tournamentId, sourcePitch]
         );
 
         // Save original time slots
-        const timeSlots = fixtures.map((f: any) => f.scheduled);
+        const timeSlots = fixtures
+          .filter((f: any) => !isLocked(f))
+          .map((f: any) => f.scheduled);
 
         // Find and remove moved fixture
         const movedIndex = fixtures.findIndex((f: any) => f.id === fixtureId);
@@ -595,14 +557,31 @@ export default function fixturesService(db: any) {
         const targetIndex = fixtures.findIndex(
           (f: any) => f.id === relativeFixtureId
         );
+        if (
+          fixtures
+            .slice(
+              Math.min(movedIndex, targetIndex),
+              Math.max(movedIndex, targetIndex) + 1
+            )
+            .some((fixture: any) => isLocked(fixture))
+        ) {
+          const error = new Error(
+            'Played fixtures are fixed and cannot be crossed'
+          ) as Error & { statusCode?: number; code?: string };
+          error.statusCode = 409;
+          error.code = 'FIXTURE_LOCKED';
+          throw error;
+        }
         const insertIndex =
           placement === 'after' ? targetIndex + 1 : targetIndex;
 
         // Insert moved fixture at new position
         fixtures.splice(insertIndex, 0, fixtureToMove);
 
-        fixtures.forEach((fixture: any, index: number) => {
-          fixture.newScheduled = timeSlots[index];
+        let movableIndex = 0;
+        fixtures.forEach((fixture: any) => {
+          if (!isLocked(fixture))
+            fixture.newScheduled = timeSlots[movableIndex++];
         });
 
         // Assign saved time slots to fixtures by position
@@ -625,60 +604,57 @@ export default function fixturesService(db: any) {
           pitch: destPitch,
         };
       } else {
-        // CROSS PITCH: Remove from source, insert into dest, recalculate using durations
-        const sourceFixtures = await select(
-          `SELECT id, scheduled, durationPlanned FROM fixtures
-           WHERE tournamentId = ? AND pitch = ?
-           ORDER BY scheduled ASC, id ASC`,
-          [tournamentId, sourcePitch]
-        );
-
+        // CROSS PITCH: preserve the published timing. Moving one fixture must
+        // never rebuild either pitch into minimum-duration slots; that destroys
+        // intentional gaps in the schedule. The source simply gains an opening.
+        // On the destination, only a real overlap pushes later fixtures forward.
         const destFixtures = await select(
-          `SELECT id, scheduled, durationPlanned FROM fixtures
+          `SELECT id, scheduled, durationPlanned, started, ended FROM fixtures
            WHERE tournamentId = ? AND pitch = ?
            ORDER BY scheduled ASC, id ASC`,
           [tournamentId, destPitch]
         );
 
-        // Save original start times
-        const sourceStartTime =
-          sourceFixtures.length > 0
-            ? new Date(String(sourceFixtures[0].scheduled)).getTime()
-            : new Date(String(fixtureToMove.scheduled)).getTime();
-        const destStartTime =
-          destFixtures.length > 0
-            ? new Date(String(destFixtures[0].scheduled)).getTime()
-            : new Date(String(fixtureToMove.scheduled)).getTime();
-
-        // Remove from source
-        const sourceIndex = sourceFixtures.findIndex(
-          (f: any) => f.id === fixtureId
-        );
-        sourceFixtures.splice(sourceIndex, 1);
-
-        // Insert into dest
-        const targetIndex = destFixtures.findIndex(
-          (f: any) => f.id === relativeFixtureId
-        );
-        const insertIndex =
-          placement === 'after' ? targetIndex + 1 : targetIndex;
-        destFixtures.splice(insertIndex, 0, fixtureToMove);
-
-        // Recalculate: sequential from start time using actual durations
-        const recalculate = (list: any[], startTime: number) => {
-          let currentTime = startTime;
-          for (const f of list) {
-            f.newScheduled = new Date(currentTime)
-              .toISOString()
-              .slice(0, 19)
-              .replace('T', ' ');
-            const duration = Number(f.durationPlanned) || 20;
-            currentTime += duration * 60000;
-          }
+        const formatDateTime = (time: number) => {
+          const date = new Date(time);
+          const pad = (value: number) => String(value).padStart(2, '0');
+          return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
         };
 
-        recalculate(sourceFixtures, sourceStartTime);
-        recalculate(destFixtures, destStartTime);
+        const destinationSchedule = [...destFixtures, fixtureToMove].sort(
+          (a: any, b: any) => {
+            const timeDifference =
+              new Date(String(a.scheduled)).getTime() -
+              new Date(String(b.scheduled)).getTime();
+            if (timeDifference !== 0) return timeDifference;
+            if (a.id === fixtureId) return placement === 'before' && b.id === relativeFixtureId ? -1 : 1;
+            if (b.id === fixtureId) return placement === 'before' && a.id === relativeFixtureId ? 1 : -1;
+            return a.id - b.id;
+          }
+        );
+
+        let occupiedUntil: number | null = null;
+        for (const fixture of destinationSchedule) {
+          const originalTime = new Date(String(fixture.scheduled)).getTime();
+          const scheduledTime = occupiedUntil === null
+            ? originalTime
+            : Math.max(originalTime, occupiedUntil);
+
+          if (isLocked(fixture) && scheduledTime !== originalTime) {
+            const error = new Error(
+              'Played fixtures are fixed and cannot be moved to make room'
+            ) as Error & { statusCode?: number; code?: string };
+            error.statusCode = 409;
+            error.code = 'FIXTURE_LOCKED';
+            throw error;
+          }
+
+          fixture.newScheduled = scheduledTime === originalTime
+            ? fixture.scheduled
+            : formatDateTime(scheduledTime);
+          occupiedUntil = scheduledTime +
+            (Number(fixture.durationPlanned) || 20) * 60000;
+        }
 
         // Update all in transaction
         await transaction(async (tx) => {
@@ -687,14 +663,7 @@ export default function fixturesService(db: any) {
             [destPitch, fixtureId, tournamentId]
           );
 
-          for (const f of sourceFixtures) {
-            await tx.update(
-              `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
-              [f.newScheduled, f.id, tournamentId]
-            );
-          }
-
-          for (const f of destFixtures) {
+          for (const f of destinationSchedule) {
             await tx.update(
               `UPDATE fixtures SET scheduled = ? WHERE id = ? AND tournamentId = ?`,
               [f.newScheduled, f.id, tournamentId]
@@ -702,7 +671,7 @@ export default function fixturesService(db: any) {
           }
         });
 
-        const movedFixture = destFixtures.find((f: any) => f.id === fixtureId);
+        const movedFixture = destinationSchedule.find((f: any) => f.id === fixtureId);
         return {
           fixtureId,
           action: 'move',
@@ -809,12 +778,23 @@ export default function fixturesService(db: any) {
         (rename) => rename.from.trim() && rename.to.trim()
       );
       const teamRenames = (setup.teamRenames || []).filter(
-        (rename) => rename.competition.trim() && rename.from.trim() && rename.to.trim()
+        (rename) =>
+          rename.competition.trim() && rename.from.trim() && rename.to.trim()
       );
       const groupRenames = (setup.groupRenames || []).filter(
-        (rename) => rename.competition.trim() && Number.isInteger(rename.from) && Number.isInteger(rename.to) && rename.to > 0
+        (rename) =>
+          rename.competition.trim() &&
+          Number.isInteger(rename.from) &&
+          Number.isInteger(rename.to) &&
+          rename.to > 0
       );
-      if (!setup.scheduleDate && !setup.scheduleTime && !competitionRenames.length && !teamRenames.length && !groupRenames.length) {
+      if (
+        !setup.scheduleDate &&
+        !setup.scheduleTime &&
+        !competitionRenames.length &&
+        !teamRenames.length &&
+        !groupRenames.length
+      ) {
         return { updatedFixtures: 0, scheduleDate: null, scheduleTime: null };
       }
       const fixtures = (await select(
@@ -825,21 +805,31 @@ export default function fixturesService(db: any) {
 
       let scheduleOffsetMs: number | null = null;
       if (setup.scheduleDate || setup.scheduleTime) {
-        if (!setup.scheduleDate || !setup.scheduleTime ||
-            !/^\d{4}-\d{2}-\d{2}$/.test(setup.scheduleDate) ||
-            !/^\d{2}:\d{2}$/.test(setup.scheduleTime)) {
-          throw new Error('A valid schedule date and time are required together');
+        if (
+          !setup.scheduleDate ||
+          !setup.scheduleTime ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(setup.scheduleDate) ||
+          !/^\d{2}:\d{2}$/.test(setup.scheduleTime)
+        ) {
+          throw new Error(
+            'A valid schedule date and time are required together'
+          );
         }
         const sourceTimes = fixtures
           .flatMap((fixture) => [fixture.scheduledPlanned, fixture.scheduled])
           .map((value) => (value ? new Date(String(value)).getTime() : NaN))
           .filter((value) => Number.isFinite(value));
         if (!sourceTimes.length) {
-          throw new Error('The copied fixtures do not contain a valid schedule to shift');
+          throw new Error(
+            'The copied fixtures do not contain a valid schedule to shift'
+          );
         }
         const sourceAnchor = Math.min(...sourceTimes);
-        const targetAnchor = new Date(`${setup.scheduleDate}T${setup.scheduleTime}:00`).getTime();
-        if (!Number.isFinite(targetAnchor)) throw new Error('Invalid schedule date or time');
+        const targetAnchor = new Date(
+          `${setup.scheduleDate}T${setup.scheduleTime}:00`
+        ).getTime();
+        if (!Number.isFinite(targetAnchor))
+          throw new Error('Invalid schedule date or time');
         scheduleOffsetMs = targetAnchor - sourceAnchor;
       }
 
@@ -852,17 +842,26 @@ export default function fixturesService(db: any) {
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
       };
       const renamedCompetition = new Map(
-        competitionRenames.map((rename) => [rename.from.trim(), rename.to.trim()])
+        competitionRenames.map((rename) => [
+          rename.from.trim(),
+          rename.to.trim(),
+        ])
       );
       const renamedGroup = new Map(
-        groupRenames.map((rename) => [`${rename.competition.trim()}\u0000${rename.from}`, rename.to])
+        groupRenames.map((rename) => [
+          `${rename.competition.trim()}\u0000${rename.from}`,
+          rename.to,
+        ])
       );
       const renameTeam = (value: any, category: string, groupNumber: any) => {
         if (typeof value !== 'string') return value;
-        const rename = teamRenames.find((candidate) =>
-          (candidate.competition === category || candidate.competition === renamedCompetition.get(category)) &&
-          (candidate.groupNumber == null || Number(candidate.groupNumber) === Number(groupNumber)) &&
-          candidate.from === value
+        const rename = teamRenames.find(
+          (candidate) =>
+            (candidate.competition === category ||
+              candidate.competition === renamedCompetition.get(category)) &&
+            (candidate.groupNumber == null ||
+              Number(candidate.groupNumber) === Number(groupNumber)) &&
+            candidate.from === value
         );
         return rename ? rename.to.trim() : value;
       };
@@ -870,7 +869,9 @@ export default function fixturesService(db: any) {
       for (const rename of teamRenames) {
         const key = `${rename.competition.toLocaleLowerCase()}\u0000${rename.to.trim().toLocaleLowerCase()}`;
         if (renamedTeamNames.has(key)) {
-          const error = new Error(`Team names must be unique within ${rename.competition}`) as Error & { statusCode?: number; code?: string };
+          const error = new Error(
+            `Team names must be unique within ${rename.competition}`
+          ) as Error & { statusCode?: number; code?: string };
           error.statusCode = 400;
           error.code = 'DUPLICATE_TEAM_NAME';
           throw error;
@@ -881,14 +882,30 @@ export default function fixturesService(db: any) {
       for (const fixture of fixtures) {
         const category = String(fixture.category || '');
         const competition = renamedCompetition.get(category) || category;
-        const names = [fixture.team1Planned, fixture.team2Planned, fixture.umpireTeamPlanned];
+        const names = [
+          fixture.team1Planned,
+          fixture.team2Planned,
+          fixture.umpireTeamPlanned,
+        ];
         for (const original of names) {
-          if (typeof original !== 'string' || original.startsWith('~')) continue;
-          const finalName = String(renameTeam(original, category, fixture.groupNumber) || '').trim();
-          if (!finalName || (/^TEAM_[A-Z]+$/.test(finalName) && finalName === original)) continue;
-          const competitionNames = finalTeamNames.get(competition) || new Map<string, Set<string>>();
-          const identities = competitionNames.get(finalName.toLocaleLowerCase()) || new Set<string>();
-          identities.add(`${category}\u0000${fixture.groupNumber ?? 'all'}\u0000${original}`);
+          if (typeof original !== 'string' || original.startsWith('~'))
+            continue;
+          const finalName = String(
+            renameTeam(original, category, fixture.groupNumber) || ''
+          ).trim();
+          if (
+            !finalName ||
+            (/^TEAM_[A-Z]+$/.test(finalName) && finalName === original)
+          )
+            continue;
+          const competitionNames =
+            finalTeamNames.get(competition) || new Map<string, Set<string>>();
+          const identities =
+            competitionNames.get(finalName.toLocaleLowerCase()) ||
+            new Set<string>();
+          identities.add(
+            `${category}\u0000${fixture.groupNumber ?? 'all'}\u0000${original}`
+          );
           competitionNames.set(finalName.toLocaleLowerCase(), identities);
           finalTeamNames.set(competition, competitionNames);
         }
@@ -896,7 +913,9 @@ export default function fixturesService(db: any) {
       for (const [competition, names] of finalTeamNames) {
         for (const identities of names.values()) {
           if (identities.size > 1) {
-            const error = new Error(`Team names must be unique within ${competition}`) as Error & { statusCode?: number; code?: string };
+            const error = new Error(
+              `Team names must be unique within ${competition}`
+            ) as Error & { statusCode?: number; code?: string };
             error.statusCode = 400;
             error.code = 'DUPLICATE_TEAM_NAME';
             throw error;
@@ -914,9 +933,11 @@ export default function fixturesService(db: any) {
         for (const fixture of fixtures) {
           const category = String(fixture.category || '');
           const updatedCategory = renamedCompetition.get(category) || category;
-          const updatedGroupNumber = fixture.groupNumber == null
-            ? fixture.groupNumber
-            : (renamedGroup.get(`${category}\u0000${fixture.groupNumber}`) ?? fixture.groupNumber);
+          const updatedGroupNumber =
+            fixture.groupNumber == null
+              ? fixture.groupNumber
+              : (renamedGroup.get(`${category}\u0000${fixture.groupNumber}`) ??
+                fixture.groupNumber);
           await tx.update(
             `UPDATE fixtures SET category = ?, groupNumber = ?, scheduledPlanned = ?, scheduled = ?,
               team1Planned = ?, team1Id = ?, team2Planned = ?, team2Id = ?,
@@ -931,7 +952,11 @@ export default function fixturesService(db: any) {
               renameTeam(fixture.team1Id, category, fixture.groupNumber),
               renameTeam(fixture.team2Planned, category, fixture.groupNumber),
               renameTeam(fixture.team2Id, category, fixture.groupNumber),
-              renameTeam(fixture.umpireTeamPlanned, category, fixture.groupNumber),
+              renameTeam(
+                fixture.umpireTeamPlanned,
+                category,
+                fixture.groupNumber
+              ),
               renameTeam(fixture.umpireTeamId, category, fixture.groupNumber),
               fixture.id,
               tournamentId,
@@ -950,28 +975,54 @@ export default function fixturesService(db: any) {
     updateFixtureDetails: async (
       tournamentId: number,
       fixtureId: number,
-      details: { field: 'category' | 'team1' | 'team2' | 'umpireTeam' | 'pitch' | 'scheduledTime'; value: string }
+      details: {
+        field:
+          | 'category'
+          | 'team1'
+          | 'team2'
+          | 'umpireTeam'
+          | 'pitch'
+          | 'scheduledTime';
+        value: string;
+      }
     ) => {
-      const [fixture] = await select(`SELECT * FROM fixtures WHERE id = ? AND tournamentId = ?`, [fixtureId, tournamentId]);
+      const [fixture] = await select(
+        `SELECT * FROM fixtures WHERE id = ? AND tournamentId = ?`,
+        [fixtureId, tournamentId]
+      );
       if (!fixture) {
-        const error = new Error('Fixture not found') as Error & { statusCode?: number; code?: string };
+        const error = new Error('Fixture not found') as Error & {
+          statusCode?: number;
+          code?: string;
+        };
         error.statusCode = 404;
         error.code = 'FIXTURE_NOT_FOUND';
         throw error;
       }
-      if (fixture.started || String(fixture.outcome || '').toLowerCase() === 'played') {
-        const error = new Error('Played fixtures cannot be changed') as Error & { statusCode?: number; code?: string };
+      if (
+        fixture.started ||
+        String(fixture.outcome || '').toLowerCase() === 'played'
+      ) {
+        const error = new Error(
+          'Played fixtures cannot be changed'
+        ) as Error & { statusCode?: number; code?: string };
         error.statusCode = 409;
         error.code = 'PLAYED_FIXTURE_READ_ONLY';
         throw error;
       }
       const value = details.value.trim();
       if (details.field === 'scheduledTime') {
-        const oldTime = new Date(String(fixture.scheduled || fixture.scheduledTime)).getTime();
+        const oldTime = new Date(
+          String(fixture.scheduled || fixture.scheduledTime)
+        ).getTime();
         const newTime = new Date(value).getTime();
-        if (!Number.isFinite(oldTime) || !Number.isFinite(newTime)) throw new Error('Invalid fixture time');
+        if (!Number.isFinite(oldTime) || !Number.isFinite(newTime))
+          throw new Error('Invalid fixture time');
         const delta = newTime - oldTime;
-        const allFixtures = await select(`SELECT id, scheduled, scheduledPlanned FROM fixtures WHERE tournamentId = ?`, [tournamentId]);
+        const allFixtures = await select(
+          `SELECT id, scheduled, scheduledPlanned FROM fixtures WHERE tournamentId = ?`,
+          [tournamentId]
+        );
         const shift = (raw: any) => {
           if (!raw) return raw;
           const date = new Date(String(raw));
@@ -982,36 +1033,113 @@ export default function fixturesService(db: any) {
         };
         await transaction(async (tx) => {
           for (const candidate of allFixtures) {
-            if (new Date(String(candidate.scheduled || candidate.scheduledPlanned)).getTime() < oldTime) continue;
-            await tx.update(`UPDATE fixtures SET scheduled = ?, scheduledPlanned = ? WHERE id = ? AND tournamentId = ?`, [shift(candidate.scheduled), shift(candidate.scheduledPlanned), candidate.id, tournamentId]);
+            if (
+              new Date(
+                String(candidate.scheduled || candidate.scheduledPlanned)
+              ).getTime() < oldTime
+            )
+              continue;
+            await tx.update(
+              `UPDATE fixtures SET scheduled = ?, scheduledPlanned = ? WHERE id = ? AND tournamentId = ?`,
+              [
+                shift(candidate.scheduled),
+                shift(candidate.scheduledPlanned),
+                candidate.id,
+                tournamentId,
+              ]
+            );
           }
         });
-        return { updatedFixtures: allFixtures.filter((candidate: any) => new Date(String(candidate.scheduled || candidate.scheduledPlanned)).getTime() >= oldTime).length, timeShiftMinutes: Math.round(delta / 60000) };
+        return {
+          updatedFixtures: allFixtures.filter(
+            (candidate: any) =>
+              new Date(
+                String(candidate.scheduled || candidate.scheduledPlanned)
+              ).getTime() >= oldTime
+          ).length,
+          timeShiftMinutes: Math.round(delta / 60000),
+        };
       }
 
       const category = String(fixture.category || '');
       if (details.field === 'category') {
         await transaction(async (tx) => {
-          await tx.update(`UPDATE fixtures SET category = ? WHERE tournamentId = ? AND category = ?`, [value, tournamentId, category]);
+          await tx.update(
+            `UPDATE fixtures SET category = ? WHERE tournamentId = ? AND category = ?`,
+            [value, tournamentId, category]
+          );
         });
-        return { updatedFixtures: (await select(`SELECT COUNT(*) AS count FROM fixtures WHERE tournamentId = ? AND category = ?`, [tournamentId, value]))[0]?.count || 0 };
+        return {
+          updatedFixtures:
+            (
+              await select(
+                `SELECT COUNT(*) AS count FROM fixtures WHERE tournamentId = ? AND category = ?`,
+                [tournamentId, value]
+              )
+            )[0]?.count || 0,
+        };
       }
       if (details.field === 'pitch') {
         const oldPitch = String(fixture.pitch || '');
         await transaction(async (tx) => {
-          await tx.update(`UPDATE fixtures SET pitch = ?, pitchPlanned = ? WHERE tournamentId = ? AND pitch = ?`, [value, value, tournamentId, oldPitch]);
+          await tx.update(
+            `UPDATE fixtures SET pitch = ?, pitchPlanned = ? WHERE tournamentId = ? AND pitch = ?`,
+            [value, value, tournamentId, oldPitch]
+          );
         });
-        return { updatedFixtures: (await select(`SELECT COUNT(*) AS count FROM fixtures WHERE tournamentId = ? AND pitch = ?`, [tournamentId, value]))[0]?.count || 0 };
+        return {
+          updatedFixtures:
+            (
+              await select(
+                `SELECT COUNT(*) AS count FROM fixtures WHERE tournamentId = ? AND pitch = ?`,
+                [tournamentId, value]
+              )
+            )[0]?.count || 0,
+        };
       }
 
-      const fieldMap = { team1: ['team1Id', 'team1Planned'], team2: ['team2Id', 'team2Planned'], umpireTeam: ['umpireTeamId', 'umpireTeamPlanned'] } as const;
-      const [idField, plannedField] = fieldMap[details.field as 'team1' | 'team2' | 'umpireTeam'];
+      const fieldMap = {
+        team1: ['team1Id', 'team1Planned'],
+        team2: ['team2Id', 'team2Planned'],
+        umpireTeam: ['umpireTeamId', 'umpireTeamPlanned'],
+      } as const;
+      const [idField, plannedField] =
+        fieldMap[details.field as 'team1' | 'team2' | 'umpireTeam'];
       const oldValue = String(fixture[idField] || fixture[plannedField] || '');
-      if (!oldValue || oldValue.startsWith('~')) throw new Error('Placeholder participants must be edited from their planned source');
+      if (!oldValue || oldValue.startsWith('~'))
+        throw new Error(
+          'Placeholder participants must be edited from their planned source'
+        );
       await transaction(async (tx) => {
-        await tx.update(`UPDATE fixtures SET team1Id = CASE WHEN team1Id = ? THEN ? ELSE team1Id END, team2Id = CASE WHEN team2Id = ? THEN ? ELSE team2Id END, umpireTeamId = CASE WHEN umpireTeamId = ? THEN ? ELSE umpireTeamId END, team1Planned = CASE WHEN team1Planned = ? THEN ? ELSE team1Planned END, team2Planned = CASE WHEN team2Planned = ? THEN ? ELSE team2Planned END, umpireTeamPlanned = CASE WHEN umpireTeamPlanned = ? THEN ? ELSE umpireTeamPlanned END WHERE tournamentId = ? AND category = ?`, [oldValue, value, oldValue, value, oldValue, value, oldValue, value, oldValue, value, oldValue, value, tournamentId, category]);
+        await tx.update(
+          `UPDATE fixtures SET team1Id = CASE WHEN team1Id = ? THEN ? ELSE team1Id END, team2Id = CASE WHEN team2Id = ? THEN ? ELSE team2Id END, umpireTeamId = CASE WHEN umpireTeamId = ? THEN ? ELSE umpireTeamId END, team1Planned = CASE WHEN team1Planned = ? THEN ? ELSE team1Planned END, team2Planned = CASE WHEN team2Planned = ? THEN ? ELSE team2Planned END, umpireTeamPlanned = CASE WHEN umpireTeamPlanned = ? THEN ? ELSE umpireTeamPlanned END WHERE tournamentId = ? AND category = ?`,
+          [
+            oldValue,
+            value,
+            oldValue,
+            value,
+            oldValue,
+            value,
+            oldValue,
+            value,
+            oldValue,
+            value,
+            oldValue,
+            value,
+            tournamentId,
+            category,
+          ]
+        );
       });
-      return { updatedFixtures: (await select(`SELECT COUNT(*) AS count FROM fixtures WHERE tournamentId = ? AND category = ? AND (team1Id = ? OR team2Id = ? OR umpireTeamId = ?)`, [tournamentId, category, value, value, value]))[0]?.count || 0 };
+      return {
+        updatedFixtures:
+          (
+            await select(
+              `SELECT COUNT(*) AS count FROM fixtures WHERE tournamentId = ? AND category = ? AND (team1Id = ? OR team2Id = ? OR umpireTeamId = ?)`,
+              [tournamentId, category, value, value, value]
+            )
+          )[0]?.count || 0,
+      };
     },
 
     copyFixtures: async (
@@ -1059,7 +1187,10 @@ export default function fixturesService(db: any) {
       const sourceDate = new Date(String(sourceTournament.Date));
       const targetDate = new Date(String(targetTournament.Date));
       const sourceScheduleTimes = sourceFixtures
-        .flatMap((fixture: any) => [fixture.scheduledPlanned, fixture.scheduled])
+        .flatMap((fixture: any) => [
+          fixture.scheduledPlanned,
+          fixture.scheduled,
+        ])
         .map((value: any) => (value ? new Date(String(value)).getTime() : NaN))
         .filter((value: number) => Number.isFinite(value));
       const sourceAnchor = sourceScheduleTimes.length
@@ -1090,11 +1221,15 @@ export default function fixturesService(db: any) {
       const categoryMapping = new Map<string, string>();
       const pitchMapping = new Map<string, string>();
       if (options.templateTeams) {
-        const templateName = (prefix: string, index: number) => `${prefix}_${index + 1}`;
+        const templateName = (prefix: string, index: number) =>
+          `${prefix}_${index + 1}`;
         sourceFixtures.forEach((fixture: any) => {
           const category = String(fixture.category || '');
           if (category && !categoryMapping.has(category)) {
-            categoryMapping.set(category, templateName('COMP', categoryMapping.size));
+            categoryMapping.set(
+              category,
+              templateName('COMP', categoryMapping.size)
+            );
           }
           const pitch = String(fixture.pitch || fixture.pitchPlanned || '');
           if (pitch && !pitchMapping.has(pitch)) {
@@ -1142,7 +1277,11 @@ export default function fixturesService(db: any) {
 
       const teamMapping = new Map<string, string>();
       const globalTeamMapping = new Map<string, string>();
-      const teamKey = (category: unknown, groupNumber: unknown, team: unknown) =>
+      const teamKey = (
+        category: unknown,
+        groupNumber: unknown,
+        team: unknown
+      ) =>
         `${String(category)}\u0000${String(groupNumber ?? 'all')}\u0000${String(team)}`;
       const globalTeamKey = (category: unknown, team: unknown) =>
         `${String(category)}\u0000${String(team)}`;
@@ -1161,26 +1300,41 @@ export default function fixturesService(db: any) {
         sourceFixtures.forEach((fixture) => {
           ['team1Id', 'team2Id'].forEach((field) => {
             const team = fixture[field];
-            if (typeof team !== 'string' || !team || team.startsWith('~')) return;
+            if (typeof team !== 'string' || !team || team.startsWith('~'))
+              return;
             const key = teamKey(fixture.category, fixture.groupNumber, team);
             if (teamMapping.has(key)) return;
             const category = String(fixture.category);
             const nextIndex = nextIndexByCategory.get(category) || 0;
             teamMapping.set(key, templateTeamName(nextIndex));
-            globalTeamMapping.set(globalTeamKey(fixture.category, team), teamMapping.get(key)!);
+            globalTeamMapping.set(
+              globalTeamKey(fixture.category, team),
+              teamMapping.get(key)!
+            );
             nextIndexByCategory.set(category, nextIndex + 1);
           });
         });
       }
 
-      const copyTeamValue = (value: any, category: unknown, groupNumber: unknown, isUmpire = false) => {
+      const copyTeamValue = (
+        value: any,
+        category: unknown,
+        groupNumber: unknown,
+        isUmpire = false
+      ) => {
         const placeholderAdjusted = updatePlaceholders(value);
         if (!options.templateTeams || typeof placeholderAdjusted !== 'string') {
           return placeholderAdjusted;
         }
-        return (isUmpire
-          ? globalTeamMapping.get(globalTeamKey(category, placeholderAdjusted))
-          : teamMapping.get(teamKey(category, groupNumber, placeholderAdjusted))) || placeholderAdjusted;
+        return (
+          (isUmpire
+            ? globalTeamMapping.get(
+                globalTeamKey(category, placeholderAdjusted)
+              )
+            : teamMapping.get(
+                teamKey(category, groupNumber, placeholderAdjusted)
+              )) || placeholderAdjusted
+        );
       };
 
       await transaction(async (tx) => {
@@ -1198,7 +1352,12 @@ export default function fixturesService(db: any) {
           for (const pitch of sourcePitches) {
             await tx.insert(
               `INSERT INTO pitches (pitch, location, type, tournamentId) VALUES (?, ?, ?, ?)`,
-              [pitchMapping.get(String(pitch.pitch)) || pitch.pitch, pitch.location, pitch.type, targetTournamentId]
+              [
+                pitchMapping.get(String(pitch.pitch)) || pitch.pitch,
+                pitch.location,
+                pitch.type,
+                targetTournamentId,
+              ]
             );
           }
         }
@@ -1218,37 +1377,85 @@ export default function fixturesService(db: any) {
             [
               newId,
               targetTournamentId,
-              options.templateTeams ? (categoryMapping.get(String(fixture.category)) || fixture.category) : fixture.category,
+              options.templateTeams
+                ? categoryMapping.get(String(fixture.category)) ||
+                  fixture.category
+                : fixture.category,
               fixture.groupNumber,
               fixture.stage,
-              options.templateTeams ? (pitchMapping.get(String(fixture.pitchPlanned || fixture.pitch)) || fixture.pitchPlanned) : fixture.pitchPlanned,
-              options.templateTeams ? (pitchMapping.get(String(fixture.pitch)) || fixture.pitch) : fixture.pitch,
+              options.templateTeams
+                ? pitchMapping.get(
+                    String(fixture.pitchPlanned || fixture.pitch)
+                  ) || fixture.pitchPlanned
+                : fixture.pitchPlanned,
+              options.templateTeams
+                ? pitchMapping.get(String(fixture.pitch)) || fixture.pitch
+                : fixture.pitch,
               adjustDate(fixture.scheduledPlanned),
               adjustDate(fixture.scheduled),
               options.templateTeams ? null : adjustDate(fixture.started),
               options.templateTeams ? null : adjustDate(fixture.ended),
-              copyTeamValue(fixture.team1Planned, fixture.category, fixture.groupNumber),
+              copyTeamValue(
+                fixture.team1Planned,
+                fixture.category,
+                fixture.groupNumber
+              ),
               options.templateTeams
-                ? copyTeamValue(fixture.team1Planned, fixture.category, fixture.groupNumber)
-                : copyTeamValue(fixture.team1Id, fixture.category, fixture.groupNumber),
+                ? copyTeamValue(
+                    fixture.team1Planned,
+                    fixture.category,
+                    fixture.groupNumber
+                  )
+                : copyTeamValue(
+                    fixture.team1Id,
+                    fixture.category,
+                    fixture.groupNumber
+                  ),
               options.templateTeams ? null : fixture.goals1,
               options.templateTeams ? null : fixture.goals1Extra,
               options.templateTeams ? null : fixture.goals1Penalties,
               options.templateTeams ? null : fixture.points1,
               options.templateTeams ? null : fixture.points1Extra,
-              copyTeamValue(fixture.team2Planned, fixture.category, fixture.groupNumber),
+              copyTeamValue(
+                fixture.team2Planned,
+                fixture.category,
+                fixture.groupNumber
+              ),
               options.templateTeams
-                ? copyTeamValue(fixture.team2Planned, fixture.category, fixture.groupNumber)
-                : copyTeamValue(fixture.team2Id, fixture.category, fixture.groupNumber),
+                ? copyTeamValue(
+                    fixture.team2Planned,
+                    fixture.category,
+                    fixture.groupNumber
+                  )
+                : copyTeamValue(
+                    fixture.team2Id,
+                    fixture.category,
+                    fixture.groupNumber
+                  ),
               options.templateTeams ? null : fixture.goals2,
               options.templateTeams ? null : fixture.goals2Extra,
               options.templateTeams ? null : fixture.goals2Penalties,
               options.templateTeams ? null : fixture.points2,
               options.templateTeams ? null : fixture.points2Extra,
-              copyTeamValue(fixture.umpireTeamPlanned, fixture.category, fixture.groupNumber, true),
+              copyTeamValue(
+                fixture.umpireTeamPlanned,
+                fixture.category,
+                fixture.groupNumber,
+                true
+              ),
               options.templateTeams
-                ? copyTeamValue(fixture.umpireTeamPlanned, fixture.category, fixture.groupNumber, true)
-                : copyTeamValue(fixture.umpireTeamId, fixture.category, fixture.groupNumber, true),
+                ? copyTeamValue(
+                    fixture.umpireTeamPlanned,
+                    fixture.category,
+                    fixture.groupNumber,
+                    true
+                  )
+                : copyTeamValue(
+                    fixture.umpireTeamId,
+                    fixture.category,
+                    fixture.groupNumber,
+                    true
+                  ),
               fixture.notes,
               options.templateTeams ? 'not played' : fixture.outcome,
             ]
@@ -1293,33 +1500,19 @@ export default function fixturesService(db: any) {
       tournamentId: number,
       fixtureId?: number
     ) => {
-      if (!stageCompletionProcessor?.processStageCompletion) {
-        throw new Error('Fixture recalculation is unavailable');
+      let category: string | undefined;
+      if (fixtureId) {
+        const [fixture] = await select(
+          'SELECT category FROM fixtures WHERE id = ? AND tournamentId = ?',
+          [fixtureId, tournamentId]
+        );
+        if (!fixture) throw new Error('Fixture not found');
+        category = String(fixture.category);
       }
-
-      const fixtures = (
-        fixtureId
-          ? await select(
-              `SELECT id FROM fixtures WHERE id = ? AND tournamentId = ? AND stage = 'group'`,
-              [fixtureId, tournamentId]
-            )
-          : await select(
-              `SELECT MIN(id) AS id
-             FROM fixtures
-             WHERE tournamentId = ? AND stage = 'group'
-             GROUP BY category, groupNumber`,
-              [tournamentId]
-            )
-      ) as Array<{ id?: number }>;
-
-      const recalculatedFixtureIds: number[] = [];
-      for (const fixture of fixtures) {
-        if (!fixture?.id) continue;
-        await stageCompletionProcessor.processStageCompletion(fixture.id);
-        recalculatedFixtureIds.push(fixture.id);
-      }
-
-      return { recalculatedFixtureIds };
+      return calculatedFixturesService(db).refresh(tournamentId, {
+        category,
+        approveGroups: true,
+      });
     },
   };
 }

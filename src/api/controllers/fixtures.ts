@@ -96,8 +96,9 @@ const rescheduleSchema = z
     placement: z.enum(['before', 'after'], {
       required_error: 'placement is required',
       invalid_type_error: 'placement must be before or after',
-    }),
+    }).optional(),
     targetPitch: z.string().optional(),
+    plannedTime: z.string().regex(/^\d{2}:\d{2}$/, 'plannedTime must use HH:mm').optional(),
     targetFixtureId: z.number().int().positive().optional(),
     targetFixture: z.number().int().positive().optional(),
     relativeFixtureId: z.number().int().positive().optional(),
@@ -105,6 +106,7 @@ const rescheduleSchema = z
   .refine(
     (data) => {
       return !!(
+        data.plannedTime ||
         data.targetFixtureId ||
         data.targetFixture ||
         data.relativeFixtureId
@@ -305,7 +307,7 @@ function fixturesController(db: any, useMock: boolean) {
           return;
         }
 
-        const { placement, targetPitch } = validationResult.data;
+        const { placement, targetPitch, plannedTime } = validationResult.data;
         const relativeFixtureId =
           validationResult.data.targetFixtureId ||
           validationResult.data.targetFixture ||
@@ -318,7 +320,8 @@ function fixturesController(db: any, useMock: boolean) {
           tournamentId: parseInt(tournamentId, 10),
           fixtureId: parseInt(fixtureId, 10),
           relativeFixtureId,
-          placement,
+          placement: placement || 'after',
+          plannedTime,
           action,
         };
 

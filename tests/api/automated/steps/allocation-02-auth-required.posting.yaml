@@ -1,0 +1,7 @@
+name: Require organizer credentials to write allocations
+method: PUT
+path: /api/tournaments/$ALLOCATION_TOURNAMENT_ID/team-allocations/teams/$ALLOCATION_TEAM_ID
+body:
+  allocations: []
+expect:
+  status: 401

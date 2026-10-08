@@ -1,0 +1,15 @@
+name: Authenticated refresh accepts a category
+method: POST
+path: /api/tournaments/68/calculated-fixtures/refresh
+headers:
+  Authorization: Bearer $TOKEN
+body:
+  category: CAMOGIE
+  mode: resolve
+expect:
+  status: 200
+  json:
+    - path: data.tournamentId
+      equals: 68
+    - path: data.changes
+      exists: true

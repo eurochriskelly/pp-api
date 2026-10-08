@@ -1,3 +1,9 @@
+import {
+  competitionRules,
+  CompetitionSettings,
+  getCompetitionSettings,
+  settingsSignature,
+} from './tournaments/competition-settings';
 import { v4 as uuidv4 } from 'uuid';
 import { II, DD } from '../../lib/logging';
 import dbHelper from '../../lib/db-helper';
@@ -8,6 +14,7 @@ import {
   cleanStandingsData,
 } from '../../lib/headToHead';
 import { buildReport } from './tournaments/build-report/index';
+import { refreshCalculatedFixtures } from './fixtures/calculated-fixtures';
 import TSVValidator from './fixtures/validate-tsv';
 import { buildFixturesInsertSQL } from './tournaments/import-fixtures';
 import { generateFixturesForCompetition } from './tournaments/generate-fixtures';
@@ -588,6 +595,11 @@ export default (db: any) => {
         winPoints = 2,
         drawPoints = 1,
         lossPoints = 0,
+        verifyGroupStages = false,
+        competitionSettings = [],
+        endDate = null,
+        codeReferee = null,
+        codeTeam = null,
       }: {
         region: string;
         title: string;
@@ -600,6 +612,11 @@ export default (db: any) => {
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
+        verifyGroupStages?: boolean;
+        competitionSettings?: CompetitionSettings;
+        endDate?: string | null;
+        codeReferee?: string;
+        codeTeam?: string;
       }
     ) => {
       const eventUuid = uuidv4();
@@ -607,9 +624,9 @@ export default (db: any) => {
         `INSERT INTO tournaments (
            region, Title, Date, Location, Lat, Lon, eventUuid, code,
            codeCoordinator, status,
-           pointsForWin, pointsForDraw, pointsForLoss
+           pointsForWin, pointsForDraw, pointsForLoss, verifyGroupStages, competitionSettings, endDate, codeReferee, codeTeam
          )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           region,
           title,
@@ -624,6 +641,11 @@ export default (db: any) => {
           winPoints,
           drawPoints,
           lossPoints,
+          verifyGroupStages,
+          JSON.stringify(competitionSettings),
+          endDate,
+          codeReferee,
+          codeTeam,
         ]
       );
       const [newTournament] = await select(
@@ -638,7 +660,10 @@ export default (db: any) => {
         `INSERT INTO sec_roles (UserId, RoleName, tournamentId) VALUES (?, ?, ?)`,
         [userId, 'organizer', newTournamentId]
       );
-      return newTournament;
+      return {
+        ...newTournament,
+        competitionSettings: getCompetitionSettings(newTournament),
+      };
     },
 
     publishTournamentArchive: async ({
@@ -723,11 +748,20 @@ export default (db: any) => {
         winPoints?: number;
         drawPoints?: number;
         lossPoints?: number;
+        verifyGroupStages?: boolean;
+        competitionSettings?: CompetitionSettings;
+        endDate?: string | null;
+        codeReferee?: string;
+        codeTeam?: string;
       }
     ) => {
       const fields: string[] = [];
-      const values: (string | number | null)[] = [];
+      const values: (string | number | boolean | null)[] = [];
       const fieldMap: Record<string, string> = {
+        competitionSettings: 'competitionSettings',
+        endDate: 'endDate',
+        codeReferee: 'codeReferee',
+        codeTeam: 'codeTeam',
         region: 'Region',
         title: 'Title',
         date: 'Date',
@@ -739,21 +773,97 @@ export default (db: any) => {
         winPoints: 'pointsForWin',
         drawPoints: 'pointsForDraw',
         lossPoints: 'pointsForLoss',
+        verifyGroupStages: 'verifyGroupStages',
       };
       for (const [key, value] of Object.entries(updateData)) {
-        if (value !== undefined) {
+        if (value !== undefined && fieldMap[key]) {
           fields.push(`${fieldMap[key]} = ?`);
-          values.push(value);
+          values.push(
+            key === 'competitionSettings'
+              ? JSON.stringify(value)
+              : (value as string | number | boolean | null)
+          );
         }
       }
       if (fields.length === 0) {
         throw new Error('No fields provided for update');
       }
       values.push(id);
-      await update(
-        `UPDATE tournaments SET ${fields.join(', ')} WHERE id = ?`,
-        values
-      );
+      await transaction(async (tx) => {
+        const [existing] = await tx.select(
+          'SELECT * FROM tournaments WHERE id = ? FOR UPDATE',
+          [id]
+        );
+        if (!existing)
+          throw Object.assign(new Error('Tournament not found'), {
+            statusCode: 404,
+          });
+        let nextSettings =
+          updateData.competitionSettings ?? getCompetitionSettings(existing);
+        if (
+          !updateData.competitionSettings &&
+          ['winPoints', 'drawPoints', 'lossPoints', 'verifyGroupStages'].some(
+            (key) => updateData[key] !== undefined
+          )
+        ) {
+          const settings = getCompetitionSettings(existing).map((setting) => ({
+            ...setting,
+            winPoints: updateData.winPoints ?? setting.winPoints,
+            drawPoints: updateData.drawPoints ?? setting.drawPoints,
+            losePoints: updateData.lossPoints ?? setting.losePoints,
+            verifyGroupStages:
+              updateData.verifyGroupStages ?? setting.verifyGroupStages,
+          }));
+          nextSettings = settings;
+          fields.push('competitionSettings = ?');
+          values.splice(values.length - 1, 0, JSON.stringify(settings));
+        }
+        const nextTournament = {
+          ...existing,
+          competitionSettings: nextSettings,
+          pointsForWin: updateData.winPoints ?? existing.pointsForWin,
+          pointsForDraw: updateData.drawPoints ?? existing.pointsForDraw,
+          pointsForLoss: updateData.lossPoints ?? existing.pointsForLoss,
+          verifyGroupStages:
+            updateData.verifyGroupStages ?? existing.verifyGroupStages,
+        };
+        const rulesChanged =
+          settingsSignature(getCompetitionSettings(existing)) !==
+            settingsSignature(nextSettings) ||
+          [
+            'pointsForWin',
+            'pointsForDraw',
+            'pointsForLoss',
+            'verifyGroupStages',
+          ].some((key) => nextTournament[key] !== existing[key]);
+        await tx.update(
+          `UPDATE tournaments SET ${fields.join(', ')} WHERE id = ?`,
+          values
+        );
+        if (rulesChanged) {
+          const stored = existing.groupStageVerificationHashes;
+          const hashes =
+            typeof stored === 'string'
+              ? JSON.parse(stored)
+              : { ...((stored as any) || {}) };
+          for (const category of Object.keys(hashes)) {
+            if (
+              JSON.stringify(competitionRules(existing, category)) !==
+              JSON.stringify(competitionRules(nextTournament, category))
+            )
+              delete hashes[category];
+          }
+          await tx.update(
+            'UPDATE tournaments SET groupStageVerificationHashes = ? WHERE id = ?',
+            [JSON.stringify(hashes), id]
+          );
+          await tx.update(
+            'UPDATE fixtures SET updated = CURRENT_TIMESTAMP WHERE tournamentId = ?',
+            [id]
+          );
+          await refreshCalculatedFixtures(tx, id);
+        }
+      });
       const [updatedTournament] = await select(
         `SELECT * FROM tournaments WHERE id = ?`,
         [id]
@@ -854,7 +964,7 @@ export default (db: any) => {
     },
 
     listTournamentTemplates: async () => {
-      const tournaments = await select(
+      const tournaments = (await select(
         `SELECT t.id, t.Title, t.Date, t.Location,
                 COUNT(DISTINCT f.id) AS fixtureCount,
                 COUNT(DISTINCT p.id) AS pitchCount
@@ -863,14 +973,14 @@ export default (db: any) => {
          LEFT JOIN pitches p ON p.tournamentId = t.id
          GROUP BY t.id, t.Title, t.Date, t.Location
          ORDER BY t.Date DESC, t.Title ASC`
-      ) as any[];
+      )) as any[];
 
-      const fixtureRows = await select(
+      const fixtureRows = (await select(
         `SELECT tournamentId, category, groupNumber, stage,
                 team1Id, team2Id, umpireTeamId
          FROM fixtures
          WHERE category IS NOT NULL AND TRIM(category) != ''`
-      ) as any[];
+      )) as any[];
 
       const templates = new Map<number, any>();
       tournaments.forEach((tournament) => {
@@ -1086,6 +1196,10 @@ export default (db: any) => {
     getGroupStandings: async (id: number, useHeadToHead: boolean = true) => {
       const standings: { [key: string]: { [key: string]: any[] } } = {};
 
+      const [tournament] = await select(
+        'SELECT * FROM tournaments WHERE id = ?',
+        [id]
+      );
       if (useHeadToHead) {
         // Use head-to-head tiebreaker
         const rawResults = await select(
@@ -1127,7 +1241,8 @@ export default (db: any) => {
           const finalStandings = applyHeadToHeadTiebreaker(
             uniqueStandings,
             h2hMatches,
-            true
+            true,
+            competitionRules(tournament || {}, category).points
           );
 
           standings[category] = standings[category] || {};
@@ -1392,7 +1507,7 @@ export default (db: any) => {
 
     getTournament: async (id: number, uuid: string) => {
       let tournamentRows;
-      const baseQueryFields = `id, Date, endDate, Title, Location, region, season, eventUuid, status, code, Lat, Lon, codeCoordinator, codeReferee, codeTeam`;
+      const baseQueryFields = `id, Date, endDate, Title, Location, region, season, eventUuid, status, code, Lat, Lon, codeCoordinator, codeReferee, codeTeam, verifyGroupStages, competitionSettings, pointsForWin, pointsForDraw, pointsForLoss`;
       if (uuid) {
         DD(`Getting tournament by uuid [${uuid}]`);
         tournamentRows = await select(
@@ -1416,7 +1531,7 @@ export default (db: any) => {
       );
 
       const tId = tournamentData.id;
-      const [groups, pitchesData] = await Promise.all([
+      const [groups, pitchesData, categoryRows] = await Promise.all([
         select(
           `SELECT category, grp, team FROM ${sqlGroupStandings(winAward)} WHERE tournamentId = ?`,
           [tId]
@@ -1425,10 +1540,28 @@ export default (db: any) => {
           `SELECT MAX(id) AS id, pitch, location FROM pitches WHERE tournamentId = ? GROUP BY pitch, location`,
           [tId]
         ),
+        select(
+          `SELECT name AS category FROM tournament_competitions WHERE tournamentId = ? UNION SELECT category FROM fixtures WHERE tournamentId = ? AND NULLIF(TRIM(category), '') IS NOT NULL`,
+          [tId, tId]
+        ),
       ]);
 
       return {
         ...tournamentData,
+        competitionSettings: getCompetitionSettings(tournamentData, [
+          ...new Set(categoryRows.map((g: any) => String(g.category))),
+        ]),
+        codeOrganizer: tournamentData.code,
+        title: tournamentData.Title,
+        date: tournamentData.Date
+          ? new Date(tournamentData.Date).toISOString().split('T')[0]
+          : null,
+        location: tournamentData.Location,
+        lat: tournamentData.Lat,
+        latitude: tournamentData.Lat,
+        lon: tournamentData.Lon,
+        longitude: tournamentData.Lon,
+        verifyGroupStages: Boolean(tournamentData.verifyGroupStages),
         Date: tournamentData.Date
           ? new Date(tournamentData.Date).toISOString().split('T')[0]
           : null,
@@ -1438,7 +1571,12 @@ export default (db: any) => {
         lifecycleStatus: lifecycleStatus,
         groups: groups,
         pitches: pitchesData,
-        categories: [...new Set(groups.map((g: any) => g.category))],
+        categories: [
+          ...new Set([
+            ...categoryRows.map((g: any) => g.category),
+            ...getCompetitionSettings(tournamentData).map((s) => s.category),
+          ]),
+        ],
       };
     },
 
@@ -1492,7 +1630,10 @@ export default (db: any) => {
     createTournamentCompetition: async (tournamentId: number, name: string) => {
       const normalizedName = name.trim();
       if (!normalizedName) throw new Error('Competition name is required');
-      const tournament = await select('SELECT id FROM tournaments WHERE id = ?', [tournamentId]);
+      const tournament = await select(
+        'SELECT id FROM tournaments WHERE id = ?',
+        [tournamentId]
+      );
       if (!tournament[0]) throw new Error('Tournament not found');
       await insert(
         'INSERT IGNORE INTO tournament_competitions (tournamentId, name) VALUES (?, ?)',
@@ -1903,7 +2044,7 @@ export default (db: any) => {
 
     getOrganizers: async (tournamentId: string) => {
       const organizers = await select(
-        `SELECT sr.UserId as userId, su.Name as name
+        `SELECT DISTINCT sr.UserId as userId, su.Name as name
          FROM sec_roles sr
          JOIN sec_users su ON sr.UserId = su.id
          WHERE sr.tournamentId = ? AND sr.RoleName = 'organizer'`,
@@ -1913,10 +2054,18 @@ export default (db: any) => {
     },
 
     assignOrganizer: async (tournamentId: string, userId: string) => {
-      await insert(
-        `INSERT INTO sec_roles (UserId, RoleName, tournamentId) VALUES (?, ?, ?)`,
-        [userId, 'organizer', tournamentId]
-      );
+      await transaction(async (tx) => {
+        const [tournament] = await tx.select(
+          'SELECT id FROM tournaments WHERE id = ? FOR UPDATE',
+          [tournamentId]
+        );
+        if (!tournament) throw new Error('Tournament not found');
+        await tx.insert(
+          `INSERT INTO sec_roles (UserId, RoleName, tournamentId)
+           SELECT ?, 'organizer', ? WHERE NOT EXISTS (SELECT 1 FROM sec_roles WHERE UserId = ? AND RoleName = 'organizer' AND tournamentId = ?)`,
+          [userId, tournamentId, userId, tournamentId]
+        );
+      });
     },
 
     uploadTeamsheet: async (

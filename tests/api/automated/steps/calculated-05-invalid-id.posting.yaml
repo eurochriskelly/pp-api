@@ -1,0 +1,7 @@
+name: Reject invalid tournament identifier
+method: POST
+path: /api/tournaments/invalid/calculated-fixtures/refresh
+headers:
+  Authorization: Bearer $TOKEN
+expect:
+  status: 400

@@ -1,0 +1,9 @@
+name: Reject coordinator credentials on allocation writes
+method: PUT
+path: /api/tournaments/$ALLOCATION_TOURNAMENT_ID/team-allocations/teams/$ALLOCATION_TEAM_ID
+headers:
+  X-Tournament-Organizer-Code: $ALLOCATION_COORDINATOR_CODE
+body:
+  allocations: []
+expect:
+  status: 403

@@ -1,0 +1,10 @@
+name: Read the saved allocation without editor credentials
+method: GET
+path: /api/tournaments/$ALLOCATION_TOURNAMENT_ID/team-allocations
+expect:
+  status: 200
+  json:
+    - path: data.competitions.0.teams.0.totalPlayers
+      equals: 15
+    - path: data.competitions.0.teams.0.allocations.0.numPlayers
+      equals: 8

@@ -170,10 +170,12 @@ function generalService(db: DbConnection): GeneralService {
     getUsers: async (filter?: string): Promise<User[]> => {
       let query = `SELECT id as userId, Name as name FROM sec_users WHERE IsActive = 1`;
       const params: string[] = [];
-      if (filter && filter.length >= 2) {
+      if (filter && filter.trim().length >= 2) {
         query += ` AND LOWER(Name) LIKE LOWER(?)`;
-        params.push(`%${filter}%`);
+        params.push(`%${filter.trim()}%`);
       }
+      query += ' ORDER BY Name, id';
+      if (filter && filter.trim().length >= 2) query += ' LIMIT 50';
       const users = (await select(query, params)) as unknown as User[];
       return users;
     },

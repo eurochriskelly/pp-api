@@ -1,0 +1,11 @@
+name: Refresh calculated fixtures for one category
+method: POST
+url: $T_HOST/api/tournaments/$T_ID/calculated-fixtures/refresh
+body:
+  content: '{"category":"CAMOGIE","mode":"resolve"}'
+  content_type: application/json
+headers:
+  - name: Content-Type
+    value: application/json
+  - name: Authorization
+    value: Bearer $T_TOKEN

@@ -40,6 +40,7 @@ export class FixtureLaneManager {
           `SELECT id FROM fixtures 
            WHERE tournamentId = ? AND pitch = ? AND started IS NULL 
            AND team1Id NOT LIKE '~%' AND team2Id NOT LIKE '~%'
+           AND team1Id NOT IN ('PENDING', 'CONTESTED') AND team2Id NOT IN ('PENDING', 'CONTESTED')
            ORDER BY scheduled ASC, id ASC 
            LIMIT 1`,
           [fixture.tournamentId, fixture.pitch]
@@ -88,7 +89,12 @@ export class FixtureLaneManager {
     const team1Identifier = String(fixture.team1Id || fixture.team1 || '');
     const team2Identifier = String(fixture.team2Id || fixture.team2 || '');
 
-    if (team1Identifier.startsWith('~') || team2Identifier.startsWith('~')) {
+    if (
+      [team1Identifier, team2Identifier].some(
+        (team) =>
+          team.startsWith('~') || ['PENDING', 'CONTESTED'].includes(team)
+      )
+    ) {
       this.logger(
         `Fixture [${fixture.id}] (Tournament: ${fixture.tournamentId}): Team identifier (${team1Identifier} or ${team2Identifier}) starts with '~'. Allowed lanes restricted to ['planned'].`
       );

@@ -1,0 +1,9 @@
+name: Reject invalid refresh mode
+method: POST
+path: /api/tournaments/68/calculated-fixtures/refresh
+headers:
+  Authorization: Bearer $TOKEN
+body:
+  mode: invalid
+expect:
+  status: 400

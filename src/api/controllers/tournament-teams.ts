@@ -94,6 +94,16 @@ function tournamentTeamsController(db: any, useMock: boolean) {
           return;
         }
 
+        const existing = await dbSvc.getTeamById(tournamentId, teamId);
+        if ((existing as any)?.competitionId) {
+          res
+            .status(409)
+            .json({
+              error:
+                'Use the team-allocations endpoint to edit competition teams. Fixture references and the leading entrant are managed by that model.',
+            });
+          return;
+        }
         const row = await dbSvc.updateTeam(tournamentId, teamId, req.body);
         res.json({ data: row });
       } catch (err) {
@@ -132,7 +142,9 @@ function tournamentTeamsController(db: any, useMock: boolean) {
         const squadSize = parseId(String(req.body.squadSize));
 
         if (tournamentId === null || teamId === null || squadSize === null) {
-          res.status(400).json({ error: 'Invalid tournament ID, team ID or squadSize' });
+          res
+            .status(400)
+            .json({ error: 'Invalid tournament ID, team ID or squadSize' });
           return;
         }
 

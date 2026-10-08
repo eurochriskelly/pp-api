@@ -1,3 +1,4 @@
+import { tournamentDetailsSchema } from '../services/tournaments/competition-settings';
 import { Request, Response, NextFunction } from 'express';
 import serviceFactory from '../services/tournaments';
 import mockServiceFactory from '../services/mocks/tournaments';
@@ -21,7 +22,10 @@ class UnsupportedFixtureImportError extends Error {
   }
 }
 
-function sendFixtureImportError(res: Response, err: FixtureValidationError | UnsupportedFixtureImportError): void {
+function sendFixtureImportError(
+  res: Response,
+  err: FixtureValidationError | UnsupportedFixtureImportError
+): void {
   res.status(err.statusCode).json({
     error:
       err instanceof FixtureValidationError
@@ -261,7 +265,28 @@ function tournamentsController(db: any, useMock: boolean) {
           winPoints = 2,
           drawPoints = 1,
           lossPoints = 0,
+          verifyGroupStages = false,
         } = req.body;
+        if (typeof verifyGroupStages !== 'boolean') {
+          res.status(400).json({ error: 'INVALID_VERIFY_GROUP_STAGES' });
+          return;
+        }
+        const parsed = tournamentDetailsSchema.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(400).json({
+            error: 'INVALID_TOURNAMENT',
+            details: parsed.error.flatten(),
+          });
+          return;
+        }
+        if (
+          parsed.data.endDate &&
+          parsed.data.date &&
+          parsed.data.endDate < parsed.data.date
+        ) {
+          res.status(400).json({ error: 'INVALID_DATE_RANGE' });
+          return;
+        }
         const tournament = await dbSvc.createTournament(userId, {
           region,
           title,
@@ -274,6 +299,8 @@ function tournamentsController(db: any, useMock: boolean) {
           winPoints,
           drawPoints,
           lossPoints,
+          verifyGroupStages,
+          ...parsed.data,
         });
         res.status(201).json(tournament);
       } catch (err) {
@@ -340,45 +367,41 @@ function tournamentsController(db: any, useMock: boolean) {
     ) => {
       try {
         const { tournamentId } = req.params as TournamentParams;
-        const {
-          region,
-          title,
-          date,
-          location,
-          lat,
-          lon,
-          codeOrganizer,
-          codeCoordinator,
-          winPoints,
-          drawPoints,
-          lossPoints,
-        } = req.body;
-        const updateData: Partial<{
-          region: string;
-          title: string;
-          date: string;
-          location: string;
-          lat: number;
-          lon: number;
-          codeOrganizer: string;
-          codeCoordinator: string;
-          winPoints: number;
-          drawPoints: number;
-          lossPoints: number;
-        }> = {};
-        if (region !== undefined) updateData.region = region;
-        if (title !== undefined) updateData.title = title;
-        if (date !== undefined) updateData.date = date;
-        if (location !== undefined) updateData.location = location;
-        if (lat !== undefined) updateData.lat = lat;
-        if (lon !== undefined) updateData.lon = lon;
-        if (codeOrganizer !== undefined) updateData.codeOrganizer = codeOrganizer;
-        if (codeCoordinator !== undefined) updateData.codeCoordinator = codeCoordinator;
-        if (winPoints !== undefined) updateData.winPoints = winPoints;
-        if (drawPoints !== undefined) updateData.drawPoints = drawPoints;
-        if (lossPoints !== undefined) updateData.lossPoints = lossPoints;
+        const parsed = tournamentDetailsSchema.safeParse(req.body);
+        if (!parsed.success) {
+          res.status(400).json({
+            error:
+              req.body.verifyGroupStages !== undefined &&
+              typeof req.body.verifyGroupStages !== 'boolean'
+                ? 'INVALID_VERIFY_GROUP_STAGES'
+                : 'INVALID_TOURNAMENT',
+            details: parsed.error.flatten(),
+          });
+          return;
+        }
+        const updateData = parsed.data;
+        if (!Object.values(updateData).some((value) => value !== undefined)) {
+          res.status(400).json({ error: 'NO_UPDATE_FIELDS' });
+          return;
+        }
+        const existing = await dbSvc.getTournament(tournamentId);
+        if (!existing) {
+          res.status(404).json({ error: 'NOT_FOUND' });
+          return;
+        }
+        const startDate =
+          updateData.date ?? existing.Date ?? existing.startDate;
+        const endDate =
+          updateData.endDate === undefined
+            ? existing.endDate
+            : updateData.endDate;
+        if (startDate && endDate && endDate < startDate) {
+          res.status(400).json({ error: 'INVALID_DATE_RANGE' });
+          return;
+        }
         await dbSvc.updateTournament(tournamentId, updateData);
         const tournament = await dbSvc.getTournament(tournamentId);
+        await reportCache.refreshTournament(Number(tournamentId), 'requested');
         res.status(200).json(tournament);
       } catch (err) {
         next(err);
@@ -780,7 +803,10 @@ function tournamentsController(db: any, useMock: boolean) {
           res.status(400).json({ error: 'Competition name is required' });
           return;
         }
-        const data = await dbSvc.createTournamentCompetition(tournamentId, name);
+        const data = await dbSvc.createTournamentCompetition(
+          tournamentId,
+          name
+        );
         res.status(201).json({ data });
       } catch (err) {
         next(err);
@@ -1030,7 +1056,10 @@ function tournamentsController(db: any, useMock: boolean) {
         const fixtures = await dbSvc.createFixtures(tournamentId, fixtureRows);
         res.status(201).json({ data: fixtures });
       } catch (err) {
-        if (err instanceof FixtureValidationError || err instanceof UnsupportedFixtureImportError) {
+        if (
+          err instanceof FixtureValidationError ||
+          err instanceof UnsupportedFixtureImportError
+        ) {
           sendFixtureImportError(res, err);
           return;
         }
@@ -1111,9 +1140,18 @@ function tournamentsController(db: any, useMock: boolean) {
         let lossPoints = 0;
         if (winDrawLoss) {
           const parts = winDrawLoss.split(',').map((s) => s.trim());
-          winPoints = parseInt(parts[0], 10) || 2;
-          drawPoints = parseInt(parts[1], 10) || 1;
-          lossPoints = parseInt(parts[2], 10) || 0;
+          winPoints = Number(parts[0]);
+          drawPoints = Number(parts[1]);
+          lossPoints = Number(parts[2]);
+          if (
+            parts.length !== 3 ||
+            [winPoints, drawPoints, lossPoints].some(
+              (points) => !Number.isInteger(points) || points < 0
+            )
+          ) {
+            res.status(400).json({ error: 'INVALID_SCORING' });
+            return;
+          }
         }
 
         const userId =
@@ -1138,9 +1176,7 @@ function tournamentsController(db: any, useMock: boolean) {
             lon,
             codeOrganizer,
             codeCoordinator,
-            winPoints,
-            drawPoints,
-            lossPoints,
+            ...(winDrawLoss ? { winPoints, drawPoints, lossPoints } : {}),
           });
           tournament = await dbSvc.getTournament(tournament.id);
         } else {
@@ -1172,7 +1208,10 @@ function tournamentsController(db: any, useMock: boolean) {
           },
         });
       } catch (err) {
-        if (err instanceof FixtureValidationError || err instanceof UnsupportedFixtureImportError) {
+        if (
+          err instanceof FixtureValidationError ||
+          err instanceof UnsupportedFixtureImportError
+        ) {
           sendFixtureImportError(res, err);
           return;
         }

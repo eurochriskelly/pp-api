@@ -1,0 +1,10 @@
+name: Reject fractional player counts
+method: PUT
+path: /api/tournaments/$ALLOCATION_TOURNAMENT_ID/team-allocations/teams/$ALLOCATION_TEAM_ID
+headers:
+  X-Tournament-Organizer-Code: $ALLOCATION_ORGANIZER_CODE
+body:
+  content: '{"allocations":[{"entrantId":$ALLOCATION_ENTRANT_1,"numPlayers":1.5}]}'
+  content_type: application/json
+expect:
+  status: 400
