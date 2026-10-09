@@ -15,3 +15,4 @@ backups/
 docs/external/
 tests/api/automated/artifacts/*
 !tests/api/automated/artifacts/.gitkeep
+test/api/test.env

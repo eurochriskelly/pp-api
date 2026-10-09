@@ -62,7 +62,7 @@ To authenticate and receive a token, use the login endpoint.
     "email": "user@example.com",
     "id": 123
   },
-  "token": "REDACTED_JWT..."
+  "token": "<jwt-token>"
 }
 ```
 
@@ -74,7 +74,7 @@ Include the received `token` in the Authorization header for subsequent requests
 `GET /api/auth/me`
 
 ```http
-Authorization: Bearer REDACTED_JWT...
+Authorization: Bearer <jwt-token>
 ```
 
 ## Role Management
